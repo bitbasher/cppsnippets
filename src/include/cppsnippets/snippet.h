@@ -3,8 +3,7 @@
  * @brief Core snippet data structure
  */
 
-#ifndef CPPSNIPPETS_SNIPPET_H
-#define CPPSNIPPETS_SNIPPET_H
+#pragma once
 
 #include "export.h"
 #include <string>
@@ -101,5 +100,3 @@ private:
 };
 
 } // namespace cppsnippets
-
-#endif // CPPSNIPPETS_SNIPPET_H

@@ -3,8 +3,7 @@
  * @brief Snippet management and storage functionality
  */
 
-#ifndef CPPSNIPPETS_SNIPPET_MANAGER_H
-#define CPPSNIPPETS_SNIPPET_MANAGER_H
+#pragma once
 
 #include "export.h"
 #include "snippet.h"
@@ -105,5 +104,3 @@ private:
 };
 
 } // namespace cppsnippets
-
-#endif // CPPSNIPPETS_SNIPPET_MANAGER_H

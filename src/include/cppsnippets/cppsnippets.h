@@ -47,8 +47,7 @@
  * - BUILD_APP: Build Qt application (default: ON)
  */
 
-#ifndef CPPSNIPPETS_H
-#define CPPSNIPPETS_H
+#pragma once
 
 #include "export.h"
 #include "snippet.h"
@@ -86,5 +85,3 @@ CPPSNIPPETS_API int getVersionMinor();
 CPPSNIPPETS_API int getVersionPatch();
 
 } // namespace cppsnippets
-
-#endif // CPPSNIPPETS_H

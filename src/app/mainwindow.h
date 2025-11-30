@@ -3,8 +3,7 @@
  * @brief Main window for the cppsnippets application
  */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <memory>
@@ -54,5 +53,3 @@ private:
     QLineEdit* m_descriptionEdit;
     QLineEdit* m_searchEdit;
 };
-
-#endif // MAINWINDOW_H

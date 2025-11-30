@@ -3,8 +3,7 @@
  * @brief Snippet file parsing functionality
  */
 
-#ifndef CPPSNIPPETS_SNIPPET_PARSER_H
-#define CPPSNIPPETS_SNIPPET_PARSER_H
+#pragma once
 
 #include "export.h"
 #include "snippet.h"
@@ -66,5 +65,3 @@ public:
 };
 
 } // namespace cppsnippets
-
-#endif // CPPSNIPPETS_SNIPPET_PARSER_H

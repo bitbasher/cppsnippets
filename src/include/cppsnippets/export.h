@@ -6,8 +6,7 @@
  * or consuming the cppsnippets library as a shared/dynamic library.
  */
 
-#ifndef CPPSNIPPETS_EXPORT_H
-#define CPPSNIPPETS_EXPORT_H
+#pragma once
 
 #if defined(_WIN32) || defined(_WIN64)
     #ifdef CPPSNIPPETS_EXPORTS
@@ -22,5 +21,3 @@
         #define CPPSNIPPETS_API
     #endif
 #endif
-
-#endif // CPPSNIPPETS_EXPORT_H
