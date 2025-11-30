@@ -1,61 +1,141 @@
 # cppsnippets
-making a comprehesive snippets tool for use in C++ programs
-Defining and Parsing Snippets
 
-    Snippet Definition & Parsing:
-        src/vs/workbench/contrib/snippets/browser/snippetsFile.ts
-            The SnippetFile class handles parsing of snippet files provided by users/extensions.
-            See _parseSnippet: parses snippet objects, determines prefix/body/description/scopes, integrates extension source info.
-                Code for _parseSnippet
+A comprehensive snippets tool for use in C++ programs - defining, parsing, storing, and using code snippets.
 
-2. Snippet Storage (User, Workspace, Extensions)
+## Features
 
-    Managing and Loading Snippets:
-        src/vs/workbench/contrib/snippets/browser/snippetsService.ts
-            The SnippetsService class manages loading snippets from user files, workspace files, and extensions.
-                Methods like _initUserSnippets, _initWorkspaceSnippets, _initExtensionSnippets handle sources.
-                _addSnippetFile stores snippet files by extension or .json type.
-            Filtering and sorting of available snippets is also performed here.
+- Cross-platform support (Windows, macOS, Linux)
+- Qt-based GUI application
+- Dynamic library (.dll/.so/.dylib) for integration into other projects
+- JSON-compatible snippet format (VS Code compatible)
+- GoogleTest-based unit testing
 
-    Profile & File Storage:
-        src/vs/workbench/services/userDataProfile/browser/snippetsResource.ts
-            SnippetsResource class is used to read/write user snippets profile data.
-            Snippet file content is stored per user profile.
+## Project Structure
 
-3. Writing (Creating/Editing) Snippets
+```
+cppsnippets/
+├── CMakeLists.txt          # Main CMake build configuration
+├── cmake/                  # CMake configuration files
+├── doc/                    # Documentation
+├── src/                    # Source code
+│   ├── include/            # Public API headers
+│   │   └── cppsnippets/    # Library headers
+│   ├── app/                # Qt application source
+│   └── *.cpp               # Library implementation
+├── src-orig/               # Original/reference sources
+└── tests/                  # Unit tests
+```
 
-    Creating Snippet Files:
-        src/vs/workbench/contrib/snippets/browser/commands/configureSnippets.ts
-            createSnippetFile prepares snippet JSON files interactively for users.
-            ConfigureSnippetsAction is the editor command to access snippet configuration UI.
+## Building
 
-4. Using Snippets in the Editor (Insertion, Navigation, Completion)
+### Prerequisites
 
-    Insertion in the Editor:
-        src/vs/editor/contrib/snippet/browser/snippetController2.ts
-            SnippetController2 is integrated into the editor as a contribution that manages snippet session lifecycles, insertion, navigation.
-                Methods: insert, apply, finish, cancel, prev, next.
-            Registers editor commands for keybindings (Tab to jump next, etc.).
-        src/vs/editor/contrib/snippet/browser/snippetSession.ts
-            SnippetSession manages the current snippet instance in the editor (tabstops, edits, session state).
+- CMake 3.16 or higher
+- C++17 compatible compiler
+- Qt 5 or Qt 6 (optional, for GUI application)
 
-    Completion & Suggestion:
-        src/vs/workbench/contrib/snippets/browser/snippetCompletionProvider.ts
-            Provides snippet completions in the suggestion widget; defines SnippetCompletion and SnippetCompletionProvider.
+### Build Options
 
-    Commands to Insert Snippets:
-        src/vs/workbench/contrib/snippets/browser/commands/insertSnippet.ts
-            InsertSnippetAction is the editor action for invoking snippet insertion.
+| Option | Default | Description |
+|--------|---------|-------------|
+| `BUILD_SHARED_LIBS` | ON | Build as shared/dynamic library |
+| `BUILD_TESTS` | ON | Build unit tests |
+| `BUILD_APP` | ON | Build Qt GUI application |
 
-5. Tracking and Using Snippets/Telemetry
+### Linux/macOS
 
-    In snippetCompletionProvider.ts, the command markSnippetAsUsed is registered, and snippets are marked as used in the service. This is for usage tracking and telemetry.
+```bash
+# Create build directory
+mkdir build && cd build
 
-Summary Table
-Purpose	Main File(s)	Classes/Functions
-Define/Parse	snippetsFile.ts	SnippetFile, _parseSnippet
-Store/Manage	snippetsService.ts, snippetsResource.ts	SnippetsService, SnippetsResource
-Write	configureSnippets.ts	ConfigureSnippetsAction, createSnippetFile
-Use/Insert	snippetController2.ts, snippetSession.ts, insertSnippet.ts, snippetCompletionProvider.ts	SnippetController2, SnippetSession, InsertSnippetAction, SnippetCompletionProvider
+# Configure (library and tests only)
+cmake .. -DBUILD_APP=OFF
 
-You can browse, create, and use snippets via the UI and commands, while the above files handle the logic for storage, definition, UI, and editor operations. Let me know if you need further details or specific code!
+# Or configure with Qt application
+cmake .. -DBUILD_APP=ON
+
+# Build
+cmake --build . --parallel
+
+# Run tests
+ctest --output-on-failure
+
+# Install (optional)
+sudo cmake --install .
+```
+
+### Windows
+
+```bash
+# Create build directory
+mkdir build && cd build
+
+# Configure
+cmake .. -DBUILD_APP=OFF
+
+# Build
+cmake --build . --config Release --parallel
+
+# Run tests
+ctest -C Release --output-on-failure
+```
+
+## Using the Library
+
+### CMake Integration
+
+```cmake
+find_package(cppsnippets REQUIRED)
+target_link_libraries(your_target PRIVATE cppsnippets::cppsnippets_lib)
+```
+
+### Example Usage
+
+```cpp
+#include <cppsnippets/cppsnippets.h>
+#include <iostream>
+
+int main() {
+    cppsnippets::SnippetManager manager;
+    
+    // Create and add a snippet
+    cppsnippets::Snippet snippet("cout", "std::cout << $1 << std::endl;", "Output to console");
+    manager.addSnippet(snippet);
+    
+    // Find a snippet
+    auto found = manager.findByPrefix("cout");
+    if (found) {
+        std::cout << found->getBody() << std::endl;
+    }
+    
+    return 0;
+}
+```
+
+## API Reference
+
+### Core Classes
+
+- `Snippet` - Represents a single code snippet with prefix, body, description, and scopes
+- `SnippetParser` - Parses and serializes snippets in JSON format
+- `SnippetManager` - Manages collections of snippets with search and filtering
+
+### Library Functions
+
+- `getVersion()` - Returns the library version string
+- `getVersionMajor()`, `getVersionMinor()`, `getVersionPatch()` - Version components
+
+## Testing
+
+The project uses GoogleTest for unit testing. Tests are automatically discovered by CTest.
+
+```bash
+cd build
+ctest --output-on-failure
+```
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+Copyright (c) 2025 Jeff Hayes

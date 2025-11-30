@@ -39,3 +39,38 @@
 
 # debug information files
 *.dwo
+
+# CMake build directories
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# IDE files
+.idea/
+.vscode/
+*.code-workspace
+*.user
+*.suo
+*.sln
+*.vcxproj*
+
+# Qt generated files
+*_autogen/
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+.qmake.stash
+*.pro.user*
+
+# Testing artifacts
+Testing/
+CTestTestfile.cmake
+DartConfiguration.tcl
+
+# CodeQL build artifacts
+_codeql_build_dir/
+_codeql_detected_source_root

@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+    
+    - name: Configure CMake (Library only)
+      run: cmake -B build -DBUILD_TESTS=ON -DBUILD_APP=OFF
+    
+    - name: Build
+      run: cmake --build build --parallel
+    
+    - name: Run tests
+      working-directory: build
+      run: ctest --output-on-failure
+    
+    - name: Check shared library
+      run: |
+        ls -la build/libcppsnippets.so* || true
+        file build/libcppsnippets.so* || true
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure CMake (Library only)
+      run: cmake -B build -DBUILD_TESTS=ON -DBUILD_APP=OFF
+    
+    - name: Build
+      run: cmake --build build --parallel
+    
+    - name: Run tests
+      working-directory: build
+      run: ctest --output-on-failure
+    
+    - name: Check shared library
+      run: |
+        ls -la build/libcppsnippets.dylib* || true
+        file build/libcppsnippets.dylib* || true
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure CMake (Library only)
+      run: cmake -B build -DBUILD_TESTS=ON -DBUILD_APP=OFF
+    
+    - name: Build
+      run: cmake --build build --config Release --parallel
+    
+    - name: Run tests
+      working-directory: build
+      run: ctest -C Release --output-on-failure
+    
+    - name: Check DLL
+      run: |
+        Get-ChildItem -Path build -Recurse -Filter "cppsnippets.dll" | Select-Object FullName
+
+  build-with-qt:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.5.*'
+        cache: true
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential libgl1-mesa-dev
+    
+    - name: Configure CMake (Full build)
+      run: cmake -B build -DBUILD_TESTS=ON -DBUILD_APP=ON
+    
+    - name: Build
+      run: cmake --build build --parallel
+    
+    - name: Run tests
+      working-directory: build
+      run: ctest --output-on-failure
