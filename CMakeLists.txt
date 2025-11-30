@@ -1,11 +1,38 @@
 cmake_minimum_required(VERSION 3.16)
-project(cppsnippets VERSION 1.0.0 LANGUAGES CXX)
+
+# Let AUTOMOC and AUTOUIC process GENERATED files.
+cmake_policy(SET CMP0071 NEW)
+# FindOpenGL prefers GLVND by default when available.
+cmake_policy(SET CMP0072 NEW)
+#`target_link_libraries()` allows use with targets in other directories.
+cmake_policy(SET CMP0079 NEW)
+# Let parent project set child project options (used to skip python lookup from manifold & force TBB)
+cmake_policy(SET CMP0079 NEW)
+if(POLICY CMP0082) # Since CMake 3.14
+  # Install rules from add_subdirectory() calls are interleaved with those in caller.
+  cmake_policy(SET CMP0082 NEW)
+endif()
+if(POLICY CMP0167) # Since CMake 3.30
+  # Use upstream's FindBoost.cmake to find Boost libraries.
+  # this project does not use boost, but this may be needed
+  #  in future for compatibiltiy with OpenSCAD
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
+# project(cppsnippets VERSION 1.0.0 LANGUAGES CXX)
+project(cppsnippets
+  VERSION ${PROJECT_VERSION}
+  DESCRIPTION "A code snippet solution in C++"
+  HOMEPAGE_URL "https://jartisan.com/"
+  LANGUAGES CXX
+)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Options
+option(INFO "Display build configuration info at end of cmake config" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Build test suite" ON)
 option(BUILD_APP "Build Qt application" ON)
@@ -13,30 +40,45 @@ option(BUILD_APP "Build Qt application" ON)
 # Export compile commands for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Find Qt6 (or Qt5 as fallback)
+# Find Qt6 (no fallback to Qt5)
 if(BUILD_APP)
     find_package(Qt6 COMPONENTS Core Widgets QUIET)
     if(NOT Qt6_FOUND)
-        find_package(Qt5 COMPONENTS Core Widgets QUIET)
-        if(Qt5_FOUND)
-            set(QT_VERSION 5)
-            set(QT_LIBRARIES Qt5::Core Qt5::Widgets)
-        endif()
+        message(WARNING "Qt not found - Qt application will not be built")
+        set(BUILD_APP OFF)
     else()
+        # Minimum version required for Qt-6.5
+        set(DEPLOYMENT_TARGET "11.0")
         set(QT_VERSION 6)
         set(QT_LIBRARIES Qt6::Core Qt6::Widgets)
     endif()
     
-    if(NOT Qt6_FOUND AND NOT Qt5_FOUND)
-        message(WARNING "Qt not found - Qt application will not be built")
-        set(BUILD_APP OFF)
-    else()
-        message(STATUS "Found Qt${QT_VERSION}")
-        set(CMAKE_AUTOMOC ON)
-        set(CMAKE_AUTOUIC ON)
-        set(CMAKE_AUTORCC ON)
-    endif()
+    message(STATUS "Found Qt${QT_VERSION}")
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTOUIC ON)
+    set(CMAKE_AUTORCC ON)
 endif()
+
+# Use clang-tidy if run with -DCLANG_TIDY=1
+set(CLANG_TIDY ${CLANG_TIDY} CACHE BOOL "Enable clang-tidy")
+if(CLANG_TIDY)
+  if(APPLE)
+    # clang-tidy isn't directly available on Homebrew, but exists inside the llvm package
+    set(CLANG_TIDY_HINTS "/opt/homebrew/opt/llvm/bin" "/usr/local/opt/llvm/bin")
+  endif()
+  find_program(CLANG_TIDY_EXE NAMES clang-tidy REQUIRED HINTS ${CLANG_TIDY_HINTS})
+  message(STATUS "Found clang-tidy: ${CLANG_TIDY_EXE}")
+  include("cmake/Modules/RegexUtils.cmake")
+  escape_string_as_regex(regex "${CMAKE_SOURCE_DIR}/src/")
+  # /src/ext/.clang-tidy disables all checks for that dir.  Copy into build dir to ignore generated sources.
+  configure_file(${CMAKE_SOURCE_DIR}/src/ext/.clang-tidy ${CMAKE_BINARY_DIR} COPYONLY)
+  # Regex hack below since negative lookahead is not supported (POSIX regex only)
+  #  (?!ext/) becomes ([^e]...|e[^x]..|ex[^t].|ext[^/]|.{0,3}$)
+  # CMAKE_CXX_CLANG_TIDY must be set before target is created (with add_executable())
+  set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};--header-filter=${regex}([^e]...|e[^x]..|ex[^t].|ext[^/]|.{0,3}$)")
+  #  append ";--fix" to arguments above to apply automatic fix (if the given checks support it)
+endif(CLANG_TIDY)
+
 
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
