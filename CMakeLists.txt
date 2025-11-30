@@ -122,7 +122,20 @@ if(BUILD_TESTS)
         GTest::gtest
         GTest::gtest_main
     )
-    
+
+    # Ensure GTest built shared when desired (already in your PR maybe).
+    # After target_link_libraries(cppsnippets_tests PRIVATE GTest::gtest_main ...)
+
+    if (WIN32 AND BUILD_SHARED_LIBS)
+      # Copy GTest and project library DLLs next to the test executable so the Windows loader finds them
+      add_custom_command(TARGET cppsnippets_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying runtime DLLs to test output dir..."
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest> $<TARGET_FILE_DIR:cppsnippets_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest_main> $<TARGET_FILE_DIR:cppsnippets_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:cppsnippets_lib> $<TARGET_FILE_DIR:cppsnippets_tests>
+        COMMENT "Copy GTest and project DLLs to test binary directory")
+    endif()
+
     # Discover tests for CTest
     gtest_discover_tests(cppsnippets_tests)
 endif()
