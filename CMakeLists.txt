@@ -21,7 +21,7 @@ endif()
 
 # project(cppsnippets VERSION 1.0.0 LANGUAGES CXX)
 project(cppsnippets
-  VERSION ${PROJECT_VERSION}
+  VERSION 1.0.0
   DESCRIPTION "A code snippet solution in C++"
   HOMEPAGE_URL "https://jartisan.com/"
   LANGUAGES CXX
