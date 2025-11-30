@@ -1,0 +1,5 @@
+if(EXISTS "/home/runner/work/cppsnippets/cppsnippets/_codeql_build_dir/cppsnippets_tests[1]_tests.cmake")
+  include("/home/runner/work/cppsnippets/cppsnippets/_codeql_build_dir/cppsnippets_tests[1]_tests.cmake")
+else()
+  add_test(cppsnippets_tests_NOT_BUILT cppsnippets_tests_NOT_BUILT)
+endif()

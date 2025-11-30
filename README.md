@@ -93,16 +93,17 @@ target_link_libraries(your_target PRIVATE cppsnippets::cppsnippets_lib)
 
 ```cpp
 #include <cppsnippets/cppsnippets.h>
+#include <iostream>
 
 int main() {
     cppsnippets::SnippetManager manager;
     
     // Create and add a snippet
-    cppsnippets::Snippet snippet("log", "console.log($1);", "Log to console");
+    cppsnippets::Snippet snippet("cout", "std::cout << $1 << std::endl;", "Output to console");
     manager.addSnippet(snippet);
     
     // Find a snippet
-    auto found = manager.findByPrefix("log");
+    auto found = manager.findByPrefix("cout");
     if (found) {
         std::cout << found->getBody() << std::endl;
     }
