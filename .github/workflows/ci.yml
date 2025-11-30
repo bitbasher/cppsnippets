@@ -11,30 +11,25 @@ permissions:
 
 jobs:
   build-linux:
+    name: Build & Test (Linux)
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake build-essential
-    
-    - name: Configure CMake (Library only)
-      run: cmake -B build -DBUILD_TESTS=ON -DBUILD_APP=OFF
-    
-    - name: Build
-      run: cmake --build build --parallel
-    
-    - name: Run tests
-      working-directory: build
-      run: ctest --output-on-failure
-    
-    - name: Check shared library
-      run: |
-        ls -la build/libcppsnippets.so* || true
-        file build/libcppsnippets.so* || true
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+      - name: Configure
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --config Release -- -j
+      - name: Run tests
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Check shared library
+        run: |
+          ls -la build/libcppsnippets.so* || true
+          file build/libcppsnippets.so* || true
 
   build-macos:
     runs-on: macos-latest
