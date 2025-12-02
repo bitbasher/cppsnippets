@@ -40,20 +40,23 @@ option(BUILD_APP "Build Qt application" ON)
 # Export compile commands for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+
 # Find Qt6 (no fallback to Qt5)
 if(BUILD_APP)
-    find_package(Qt6 COMPONENTS Core Widgets QUIET)
+    # User hint: set CMAKE_PREFIX_PATH to your Qt install, e.g.:
+    # cmake -B build -DCMAKE_PREFIX_PATH="C:/bin/Qt/6.10.0/msvc2019_64"
+    if(NOT DEFINED CMAKE_PREFIX_PATH)
+        set(CMAKE_PREFIX_PATH "C:/bin/Qt/6.10.0/msvc2019_64" CACHE PATH "Path to Qt6 installation")
+    endif()
+    find_package(Qt6 COMPONENTS Core Widgets REQUIRED)
     if(NOT Qt6_FOUND)
-        message(WARNING "Qt not found - Qt application will not be built")
-        set(BUILD_APP OFF)
+        message(FATAL_ERROR "Qt 6 not found! Please set CMAKE_PREFIX_PATH to your Qt installation.")
     else()
-        # Minimum version required for Qt-6.5
         set(DEPLOYMENT_TARGET "11.0")
         set(QT_VERSION 6)
         set(QT_LIBRARIES Qt6::Core Qt6::Widgets)
     endif()
-    
-    message(STATUS "Found Qt${QT_VERSION}")
+    message(STATUS "Found Qt${QT_VERSION} at ${CMAKE_PREFIX_PATH}")
     set(CMAKE_AUTOMOC ON)
     set(CMAKE_AUTOUIC ON)
     set(CMAKE_AUTORCC ON)
@@ -157,6 +160,7 @@ if(BUILD_TESTS)
         tests/test_snippet.cpp
         tests/test_snippet_parser.cpp
         tests/test_snippet_manager.cpp
+        tests/test_snippet_session.cpp
     )
     
     target_link_libraries(cppsnippets_tests PRIVATE

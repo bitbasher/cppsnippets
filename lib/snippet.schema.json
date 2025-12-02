@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CppSnippets File",
+  "type": "object",
+  "patternProperties": {
+    "^.*$": {
+      "type": "object",
+      "required": [
+        "prefix",
+        "body",
+        "filetype",
+        "varient",
+        "language",
+        "encoding"
+      ],
+      "properties": {
+        "prefix": { "type": "string" },
+        "body": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "description": { "type": "string" },
+        "scope": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "filetype": {
+          "type": "string",
+          "enum": ["text", "openscad", "json", "markup"]
+        },
+        "varient": { "type": "string" },
+        "language": {
+          "type": "string",
+          "default": "en"
+        },
+        "encoding": {
+          "type": "string",
+          "default": "UTF8"
+        },
+        "minScadVersion": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
