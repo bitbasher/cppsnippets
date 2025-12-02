@@ -1,0 +1,8 @@
+{
+  "for": {
+    "prefix": "for",
+    "body": "for(i=[%1:%3:%2)
+	",
+    "description": "for loop using index"
+  }
+}
