@@ -1,15 +1,15 @@
 /**
  * @file snippet_parser.cpp
- * @brief SnippetParser class implementation
+ * @brief TemplateParser class implementation
  */
 
-#include "cppsnippets/snippet_parser.h"
+#include "scadtemplates/template_parser.h"
 #include <fstream>
 #include <sstream>
 
-namespace cppsnippets {
+namespace scadtemplates {
 
-ParseResult SnippetParser::parseJson(const std::string& jsonContent) {
+ParseResult TemplateParser::parseJson(const std::string& jsonContent) {
     ParseResult result;
     result.success = false;
     
@@ -20,13 +20,13 @@ ParseResult SnippetParser::parseJson(const std::string& jsonContent) {
         return result;
     }
     
-    // For now, return success with empty snippets
+    // For now, return success with empty templates
     // TODO: Implement proper JSON parsing (e.g., using nlohmann/json)
     result.success = true;
     return result;
 }
 
-ParseResult SnippetParser::parseFile(const std::string& filePath) {
+ParseResult TemplateParser::parseFile(const std::string& filePath) {
     ParseResult result;
     result.success = false;
     
@@ -42,30 +42,30 @@ ParseResult SnippetParser::parseFile(const std::string& filePath) {
     return parseJson(buffer.str());
 }
 
-std::string SnippetParser::toJson(const Snippet& snippet) {
+std::string TemplateParser::toJson(const Template& tmpl) {
     std::stringstream ss;
     ss << "{\n";
-    ss << "  \"" << snippet.getPrefix() << "\": {\n";
-    ss << "    \"prefix\": \"" << snippet.getPrefix() << "\",\n";
-    ss << "    \"body\": \"" << snippet.getBody() << "\",\n";
-    ss << "    \"description\": \"" << snippet.getDescription() << "\"\n";
+    ss << "  \"" << tmpl.getPrefix() << "\": {\n";
+    ss << "    \"prefix\": \"" << tmpl.getPrefix() << "\",\n";
+    ss << "    \"body\": \"" << tmpl.getBody() << "\",\n";
+    ss << "    \"description\": \"" << tmpl.getDescription() << "\"\n";
     ss << "  }\n";
     ss << "}";
     return ss.str();
 }
 
-std::string SnippetParser::toJson(const std::vector<Snippet>& snippets) {
+std::string TemplateParser::toJson(const std::vector<Template>& templates) {
     std::stringstream ss;
     ss << "{\n";
     
-    for (size_t i = 0; i < snippets.size(); ++i) {
-        const auto& snippet = snippets[i];
-        ss << "  \"" << snippet.getPrefix() << "\": {\n";
-        ss << "    \"prefix\": \"" << snippet.getPrefix() << "\",\n";
-        ss << "    \"body\": \"" << snippet.getBody() << "\",\n";
-        ss << "    \"description\": \"" << snippet.getDescription() << "\"\n";
+    for (size_t i = 0; i < templates.size(); ++i) {
+        const auto& tmpl = templates[i];
+        ss << "  \"" << tmpl.getPrefix() << "\": {\n";
+        ss << "    \"prefix\": \"" << tmpl.getPrefix() << "\",\n";
+        ss << "    \"body\": \"" << tmpl.getBody() << "\",\n";
+        ss << "    \"description\": \"" << tmpl.getDescription() << "\"\n";
         ss << "  }";
-        if (i < snippets.size() - 1) {
+        if (i < templates.size() - 1) {
             ss << ",";
         }
         ss << "\n";
@@ -75,4 +75,4 @@ std::string SnippetParser::toJson(const std::vector<Snippet>& snippets) {
     return ss.str();
 }
 
-} // namespace cppsnippets
+} // namespace scadtemplates

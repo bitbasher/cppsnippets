@@ -19,10 +19,10 @@ if(POLICY CMP0167) # Since CMake 3.30
   cmake_policy(SET CMP0167 NEW)
 endif()
 
-# project(cppsnippets VERSION 1.0.0 LANGUAGES CXX)
-project(cppsnippets
-  VERSION 1.0.0
-  DESCRIPTION "A code snippet solution in C++"
+# project(scadtemplates VERSION 1.0.0 LANGUAGES CXX)
+project(scadtemplates
+  VERSION 1.1.1
+  DESCRIPTION "A code template solution for OpenSCAD"
   HOMEPAGE_URL "https://jartisan.com/"
   LANGUAGES CXX
 )
@@ -36,49 +36,75 @@ option(INFO "Display build configuration info at end of cmake config" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Build test suite" ON)
 option(BUILD_APP "Build Qt application" ON)
+option(USE_QSCINTILLA "Enable QScintilla editor integration" OFF)
 
 # Export compile commands for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
-# Find Qt6 (no fallback to Qt5)
-if(BUILD_APP)
-    # Auto-detect Qt6 path based on compiler
-    if(NOT DEFINED CMAKE_PREFIX_PATH OR CMAKE_PREFIX_PATH STREQUAL "")
-        if(MSVC)
-            set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/msvc2022_64")
-        elseif(MINGW)
-            set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/mingw_64")
-        else()
-            set(QT6_DEFAULT_PATH "")
-        endif()
-        
-        if(EXISTS "${QT6_DEFAULT_PATH}/lib/cmake/Qt6/Qt6Config.cmake")
-            set(CMAKE_PREFIX_PATH "${QT6_DEFAULT_PATH}" CACHE PATH "Path to Qt6 installation")
-            message(STATUS "Auto-detected Qt6 at: ${QT6_DEFAULT_PATH}")
-        else()
-            message(WARNING "Qt6 not found at default path: ${QT6_DEFAULT_PATH}")
-            message(WARNING "Please set CMAKE_PREFIX_PATH to your Qt6 installation")
-        endif()
+# Auto-detect Qt6 path based on compiler
+if(NOT DEFINED CMAKE_PREFIX_PATH OR CMAKE_PREFIX_PATH STREQUAL "")
+    if(MSVC)
+        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/msvc2022_64")
+    elseif(MINGW)
+        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/mingw_64")
+    else()
+        set(QT6_DEFAULT_PATH "")
     endif()
     
-    find_package(Qt6 COMPONENTS Core Widgets QUIET)
-    if(NOT Qt6_FOUND)
-        message(WARNING "Qt6 not found - Qt application will not be built")
-        message(WARNING "Set CMAKE_PREFIX_PATH to your Qt6 installation, e.g.:")
-        message(WARNING "  cmake -B build -DCMAKE_PREFIX_PATH=\"C:/bin/Qt/6.10.0/msvc2022_64\"")
+    if(EXISTS "${QT6_DEFAULT_PATH}/lib/cmake/Qt6/Qt6Config.cmake")
+        set(CMAKE_PREFIX_PATH "${QT6_DEFAULT_PATH}" CACHE PATH "Path to Qt6 installation")
+        message(STATUS "Auto-detected Qt6 at: ${QT6_DEFAULT_PATH}")
+    else()
+        message(WARNING "Qt6 not found at default path: ${QT6_DEFAULT_PATH}")
+        message(WARNING "Please set CMAKE_PREFIX_PATH to your Qt6 installation")
+    endif()
+endif()
+
+# Find Qt6 Core and Gui (required for library - QString, QVector, QSysInfo, QScreen)
+find_package(Qt6 COMPONENTS Core Gui REQUIRED)
+message(STATUS "Found Qt6::Core at ${Qt6_DIR}")
+message(STATUS "Found Qt6::Gui at ${Qt6Gui_DIR}")
+
+# Find Qt6 Widgets for application (optional)
+if(BUILD_APP)
+    find_package(Qt6 COMPONENTS Widgets QUIET)
+    if(NOT Qt6Widgets_FOUND)
+        message(WARNING "Qt6::Widgets not found - Qt application will not be built")
         set(BUILD_APP OFF)
     else()
         set(DEPLOYMENT_TARGET "11.0")
         set(QT_VERSION 6)
         set(QT_LIBRARIES Qt6::Core Qt6::Widgets)
-        message(STATUS "Found Qt${QT_VERSION} at ${Qt6_DIR}")
+        message(STATUS "Found Qt6::Widgets - application will be built")
     endif()
     
     if(BUILD_APP)
         set(CMAKE_AUTOMOC ON)
         set(CMAKE_AUTOUIC ON)
         set(CMAKE_AUTORCC ON)
+        
+        # Optional QScintilla support
+        if(USE_QSCINTILLA)
+            find_package(QScintilla QUIET)
+            if(NOT QScintilla_FOUND)
+                # Try pkg-config as fallback
+                find_package(PkgConfig QUIET)
+                if(PkgConfig_FOUND)
+                    pkg_check_modules(QSCINTILLA qscintilla2-qt6)
+                endif()
+            endif()
+            
+            if(QScintilla_FOUND OR QSCINTILLA_FOUND)
+                message(STATUS "Found QScintilla - editor integration enabled")
+                add_compile_definitions(HAS_QSCINTILLA)
+            else()
+                message(WARNING "QScintilla not found - editor integration disabled")
+                message(WARNING "Install via: vcpkg install qscintilla:x64-windows")
+                message(WARNING "Or download from: https://www.riverbankcomputing.com/software/qscintilla/")
+                set(USE_QSCINTILLA OFF)
+            endif()
+        endif()
     endif()
 endif()
 
@@ -108,35 +134,57 @@ include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
 # Library source files
 set(LIB_SOURCES
-    src/snippets.cpp
-    src/snippet.cpp
-    src/snippet_parser.cpp
-    src/snippet_manager.cpp
+    src/scadtemplates_version.cpp
+    src/template.cpp
+    src/template_parser.cpp
+    src/template_manager.cpp
+    src/scad_template_session.cpp
+    src/editsubtype.cpp
+    src/edittype.cpp
+    src/filesubtype.cpp
+    src/filetype.cpp
+    src/extnOSVersRef.cpp
+    src/platformInfo.cpp
+    src/resourcePaths.cpp
+    src/resourceLocationManager.cpp
 )
 
 set(LIB_HEADERS
-    src/include/cppsnippets/cppsnippets.h
-    src/include/cppsnippets/snippet.h
-    src/include/cppsnippets/snippet_parser.h
-    src/include/cppsnippets/snippet_manager.h
-    src/include/cppsnippets/export.h
+    src/include/scadtemplates/scadtemplates.h
+    src/include/scadtemplates/template.h
+    src/include/scadtemplates/template_parser.h
+    src/include/scadtemplates/template_manager.h
+    src/include/scadtemplates/scad_template_session.h
+    src/include/scadtemplates/export.h
+    src/include/scadtemplates/editsubtype.h
+    src/include/scadtemplates/edittype.h
+    src/include/scadtemplates/filesubtype.h
+    src/include/scadtemplates/filetype.h
+    src/include/platformInfo/export.h
+    src/include/platformInfo/extnOSVersRef.h
+    src/include/platformInfo/platformInfo.h
+    src/include/platformInfo/resourcePaths.h
+    src/include/platformInfo/resourceLocationManager.h
 )
 
 # Build the shared/dynamic library
-add_library(cppsnippets_lib ${LIB_SOURCES} ${LIB_HEADERS})
-target_include_directories(cppsnippets_lib PUBLIC
+add_library(scadtemplates_lib ${LIB_SOURCES} ${LIB_HEADERS})
+target_include_directories(scadtemplates_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
     $<INSTALL_INTERFACE:include>
 )
 
+# Link Qt6::Core and Qt6::Gui for QString, QVector, QSysInfo, QScreen support in library
+target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui)
+
 # Set library properties for Windows DLL export
 if(BUILD_SHARED_LIBS)
-    target_compile_definitions(cppsnippets_lib PRIVATE CPPSNIPPETS_EXPORTS)
+    target_compile_definitions(scadtemplates_lib PRIVATE SCADTEMPLATES_EXPORTS PLATFORMINFO_EXPORTS)
 endif()
 
 # Set output name and versioning
-set_target_properties(cppsnippets_lib PROPERTIES
-    OUTPUT_NAME cppsnippets
+set_target_properties(scadtemplates_lib PROPERTIES
+    OUTPUT_NAME scadtemplates
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
@@ -147,14 +195,31 @@ if(BUILD_APP)
         src/app/main.cpp
         src/app/mainwindow.cpp
         src/app/mainwindow.h
+        src/app/preferencesdialog.cpp
+        src/app/preferencesdialog.h
+        src/app/resourcelocationwidget.cpp
     )
     
-    add_executable(cppsnippets_app ${APP_SOURCES})
-    target_link_libraries(cppsnippets_app PRIVATE cppsnippets_lib ${QT_LIBRARIES})
-    set_target_properties(cppsnippets_app PROPERTIES
-        OUTPUT_NAME cppsnippets
+    add_executable(scadtemplates_app ${APP_SOURCES})
+    target_link_libraries(scadtemplates_app PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    set_target_properties(scadtemplates_app PROPERTIES
+        OUTPUT_NAME scadtemplates
         WIN32_EXECUTABLE ON
     )
+    
+    # Copy Qt platform plugins to app output directory
+    if(WIN32)
+        add_custom_command(TARGET scadtemplates_app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${Qt6_DIR}/../../../plugins/platforms"
+                "$<TARGET_FILE_DIR:scadtemplates_app>/platforms"
+            COMMENT "Copying Qt platform plugins..."
+        )
+    endif()
+    
+    # Utility: Qt StandardPaths display names
+    add_executable(qt_standardpaths_displaynames src/utils/qt_standardpaths_displaynames.cpp)
+    target_link_libraries(qt_standardpaths_displaynames PRIVATE Qt6::Core)
 endif()
 
 # GoogleTest integration
@@ -175,16 +240,20 @@ if(BUILD_TESTS)
     include(GoogleTest)
     
     # Test executable
-    add_executable(cppsnippets_tests
+    add_executable(scadtemplates_tests
         tests/test_main.cpp
-        tests/test_snippet.cpp
-        tests/test_snippet_parser.cpp
-        tests/test_snippet_manager.cpp
-        tests/test_snippet_session.cpp
+        tests/test_template.cpp
+        tests/test_template_parser.cpp
+        tests/test_template_manager.cpp
+        tests/test_scad_template_session.cpp
+        tests/test_editsubtype.cpp
+        tests/test_edittype.cpp
+        tests/test_filesubtype.cpp
+        tests/test_filetype.cpp
     )
     
-    target_link_libraries(cppsnippets_tests PRIVATE
-        cppsnippets_lib
+    target_link_libraries(scadtemplates_tests PRIVATE
+        scadtemplates_lib
         GTest::gtest
         GTest::gtest_main
     )
@@ -193,63 +262,68 @@ if(BUILD_TESTS)
     # After target_link_libraries(cppsnippets_tests PRIVATE GTest::gtest_main ...)
 
     if (WIN32 AND BUILD_SHARED_LIBS)
-      # Copy GTest and project library DLLs next to the test executable so the Windows loader finds them
-      add_custom_command(TARGET cppsnippets_tests POST_BUILD
+      # Copy GTest, Qt, and project library DLLs next to the test executable so the Windows loader finds them
+      add_custom_command(TARGET scadtemplates_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "Copying runtime DLLs to test output dir..."
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest> $<TARGET_FILE_DIR:cppsnippets_tests>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest_main> $<TARGET_FILE_DIR:cppsnippets_tests>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:cppsnippets_lib> $<TARGET_FILE_DIR:cppsnippets_tests>
-        COMMENT "Copy GTest and project DLLs to test binary directory")
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest> $<TARGET_FILE_DIR:scadtemplates_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest_main> $<TARGET_FILE_DIR:scadtemplates_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:scadtemplates_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:scadtemplates_tests>
+        COMMENT "Copy GTest, Qt, and project DLLs to test binary directory")
     endif()
 
     # Discover tests for CTest
-    gtest_discover_tests(cppsnippets_tests)
+    # Use PRE_TEST discovery mode to defer test discovery until ctest runs,
+    # avoiding DLL loading issues during build when using Ninja generator
+    gtest_discover_tests(scadtemplates_tests
+        DISCOVERY_MODE PRE_TEST
+    )
 endif()
 
 # Installation rules
 include(GNUInstallDirs)
 
-install(TARGETS cppsnippets_lib
-    EXPORT cppsnippets-targets
+install(TARGETS scadtemplates_lib
+    EXPORT scadtemplates-targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(DIRECTORY src/include/cppsnippets
+install(DIRECTORY src/include/scadtemplates
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 if(BUILD_APP)
-    install(TARGETS cppsnippets_app
+    install(TARGETS scadtemplates_app
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()
 
 # Export targets for find_package support
-install(EXPORT cppsnippets-targets
-    FILE cppsnippets-targets.cmake
-    NAMESPACE cppsnippets::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppsnippets
+install(EXPORT scadtemplates-targets
+    FILE scadtemplates-targets.cmake
+    NAMESPACE scadtemplates::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/scadtemplates
 )
 
 # Generate package config
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
-    ${CMAKE_SOURCE_DIR}/cmake/cppsnippets-config.cmake.in
-    ${CMAKE_BINARY_DIR}/cppsnippets-config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppsnippets
+    ${CMAKE_SOURCE_DIR}/cmake/scadtemplates-config.cmake.in
+    ${CMAKE_BINARY_DIR}/scadtemplates-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/scadtemplates
 )
 
 write_basic_package_version_file(
-    ${CMAKE_BINARY_DIR}/cppsnippets-config-version.cmake
+    ${CMAKE_BINARY_DIR}/scadtemplates-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
 
 install(FILES
-    ${CMAKE_BINARY_DIR}/cppsnippets-config.cmake
-    ${CMAKE_BINARY_DIR}/cppsnippets-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cppsnippets
+    ${CMAKE_BINARY_DIR}/scadtemplates-config.cmake
+    ${CMAKE_BINARY_DIR}/scadtemplates-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/scadtemplates
 )

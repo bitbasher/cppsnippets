@@ -1,75 +1,86 @@
-// SnippetSession.cpp
-#include "cppsnippets/SnippetSession.h"
-#include <QScintilla/qscintilla.h> // Adjust include as needed for your build
+// TemplateSession.cpp
+#include "scadtemplates/scad_template_session.h"
 #include <regex>
 
-namespace cppsnippets {
+#ifdef HAS_QSCINTILLA
+#include <QString>
+#endif
 
-SnippetSession::SnippetSession(QScintillaEditor* editor, const Snippet& snippet)
-    : m_editor(editor), m_snippet(snippet), m_currentIndex(0) {
+namespace scadtemplates {
+
+TemplateSession::TemplateSession(EditorWidget* editor, const Template& tmpl)
+    : m_editor(editor), m_template(tmpl), m_currentIndex(0) {
     parsePlaceholders();
 }
 
-void SnippetSession::insert() {
-    // Replace current selection with snippet body
+void TemplateSession::insert() {
+    // Replace current selection with template body
     if (!m_editor) return;
-    m_editor->replaceSelectedText(QString::fromStdString(m_snippet.getBody()));
+#ifdef HAS_QSCINTILLA
+    m_editor->replaceSelectedText(QString::fromStdString(m_template.getBody()));
     // Move cursor to first placeholder if any
     if (!m_placeholders.empty()) {
         const auto& ph = m_placeholders[0];
-        m_editor->setSelection(ph.start, ph.end);
+        // QScintilla uses (line, index) pairs for selection
+        // For simplicity, treat as single-line positions
+        m_editor->setSelection(0, ph.start, 0, ph.end);
         m_currentIndex = 0;
     }
+#endif
 }
 
-void SnippetSession::nextPlaceholder() {
+void TemplateSession::nextPlaceholder() {
     if (m_currentIndex + 1 < static_cast<int>(m_placeholders.size())) {
         ++m_currentIndex;
+#ifdef HAS_QSCINTILLA
         const auto& ph = m_placeholders[m_currentIndex];
-        m_editor->setSelection(ph.start, ph.end);
+        m_editor->setSelection(0, ph.start, 0, ph.end);
+#endif
     }
 }
 
-void SnippetSession::prevPlaceholder() {
+void TemplateSession::prevPlaceholder() {
     if (m_currentIndex > 0) {
         --m_currentIndex;
+#ifdef HAS_QSCINTILLA
         const auto& ph = m_placeholders[m_currentIndex];
-        m_editor->setSelection(ph.start, ph.end);
+        m_editor->setSelection(0, ph.start, 0, ph.end);
+#endif
     }
 }
 
-void SnippetSession::cancel() {
+void TemplateSession::cancel() {
     // Optionally restore original text or clear selection
     m_placeholders.clear();
     m_currentIndex = 0;
 }
 
-void SnippetSession::merge(const Snippet& snippet) {
+void TemplateSession::merge(const Template& tmpl) {
     // For simplicity, just replace the body and re-parse placeholders
-    m_snippet = snippet;
+    m_template = tmpl;
     parsePlaceholders();
     insert();
 }
 
-bool SnippetSession::isAtLastPlaceholder() const {
+bool TemplateSession::isAtLastPlaceholder() const {
     return m_currentIndex == static_cast<int>(m_placeholders.size()) - 1;
 }
 
-bool SnippetSession::isAtFirstPlaceholder() const {
+bool TemplateSession::isAtFirstPlaceholder() const {
     return m_currentIndex == 0;
 }
 
-int SnippetSession::getCurrentPlaceholderIndex() const {
+int TemplateSession::getCurrentPlaceholderIndex() const {
     return m_currentIndex;
 }
 
-std::vector<Placeholder> SnippetSession::getAllPlaceholders() const {
+std::vector<Placeholder> TemplateSession::getAllPlaceholders() const {
     return m_placeholders;
 }
 
-void SnippetSession::parsePlaceholders() {
+void TemplateSession::parsePlaceholders() {
     m_placeholders.clear();
-    const std::string& body = m_snippet.getBody();
+    const std::string& body = m_template.getBody();
     std::regex re(R"(\$(\d+)(?::([^}]+))?)");
     auto begin = std::sregex_iterator(body.begin(), body.end(), re);
     auto end = std::sregex_iterator();
@@ -82,4 +93,4 @@ void SnippetSession::parsePlaceholders() {
     }
 }
 
-} // namespace cppsnippets
+} // namespace scadtemplates

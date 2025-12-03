@@ -1,128 +1,128 @@
 /**
  * @file snippet_manager.cpp
- * @brief SnippetManager class implementation
+ * @brief TemplateManager class implementation
  */
 
-#include "cppsnippets/snippet_manager.h"
-#include "cppsnippets/snippet_parser.h"
+#include "scadtemplates/template_manager.h"
+#include "scadtemplates/template_parser.h"
 #include <algorithm>
 #include <fstream>
 
-namespace cppsnippets {
+namespace scadtemplates {
 
-class SnippetManager::Impl {
+class TemplateManager::Impl {
 public:
-    std::vector<Snippet> snippets;
+    std::vector<Template> templates;
 };
 
-SnippetManager::SnippetManager()
+TemplateManager::TemplateManager()
     : m_impl(std::make_unique<Impl>()) {
 }
 
-SnippetManager::~SnippetManager() = default;
+TemplateManager::~TemplateManager() = default;
 
-bool SnippetManager::addSnippet(const Snippet& snippet) {
-    if (!snippet.isValid()) {
+bool TemplateManager::addTemplate(const Template& tmpl) {
+    if (!tmpl.isValid()) {
         return false;
     }
     
     // Check for duplicate prefix
-    auto it = std::find_if(m_impl->snippets.begin(), m_impl->snippets.end(),
-        [&snippet](const Snippet& s) {
-            return s.getPrefix() == snippet.getPrefix();
+    auto it = std::find_if(m_impl->templates.begin(), m_impl->templates.end(),
+        [&tmpl](const Template& t) {
+            return t.getPrefix() == tmpl.getPrefix();
         });
     
-    if (it != m_impl->snippets.end()) {
-        // Update existing snippet
-        *it = snippet;
+    if (it != m_impl->templates.end()) {
+        // Update existing template
+        *it = tmpl;
     } else {
-        m_impl->snippets.push_back(snippet);
+        m_impl->templates.push_back(tmpl);
     }
     
     return true;
 }
 
-bool SnippetManager::removeSnippet(const std::string& prefix) {
-    auto it = std::find_if(m_impl->snippets.begin(), m_impl->snippets.end(),
-        [&prefix](const Snippet& s) {
-            return s.getPrefix() == prefix;
+bool TemplateManager::removeTemplate(const std::string& prefix) {
+    auto it = std::find_if(m_impl->templates.begin(), m_impl->templates.end(),
+        [&prefix](const Template& t) {
+            return t.getPrefix() == prefix;
         });
     
-    if (it != m_impl->snippets.end()) {
-        m_impl->snippets.erase(it);
+    if (it != m_impl->templates.end()) {
+        m_impl->templates.erase(it);
         return true;
     }
     
     return false;
 }
 
-std::optional<Snippet> SnippetManager::findByPrefix(const std::string& prefix) const {
-    auto it = std::find_if(m_impl->snippets.begin(), m_impl->snippets.end(),
-        [&prefix](const Snippet& s) {
-            return s.getPrefix() == prefix;
+std::optional<Template> TemplateManager::findByPrefix(const std::string& prefix) const {
+    auto it = std::find_if(m_impl->templates.begin(), m_impl->templates.end(),
+        [&prefix](const Template& t) {
+            return t.getPrefix() == prefix;
         });
     
-    if (it != m_impl->snippets.end()) {
+    if (it != m_impl->templates.end()) {
         return *it;
     }
     
     return std::nullopt;
 }
 
-std::vector<Snippet> SnippetManager::findByScope(const std::string& scope) const {
-    std::vector<Snippet> result;
+std::vector<Template> TemplateManager::findByScope(const std::string& scope) const {
+    std::vector<Template> result;
     
-    for (const auto& snippet : m_impl->snippets) {
-        const auto& scopes = snippet.getScopes();
+    for (const auto& tmpl : m_impl->templates) {
+        const auto& scopes = tmpl.getScopes();
         if (std::find(scopes.begin(), scopes.end(), scope) != scopes.end()) {
-            result.push_back(snippet);
+            result.push_back(tmpl);
         }
     }
     
     return result;
 }
 
-std::vector<Snippet> SnippetManager::search(const std::string& keyword) const {
-    std::vector<Snippet> result;
+std::vector<Template> TemplateManager::search(const std::string& keyword) const {
+    std::vector<Template> result;
     
-    for (const auto& snippet : m_impl->snippets) {
-        if (snippet.getPrefix().find(keyword) != std::string::npos ||
-            snippet.getDescription().find(keyword) != std::string::npos) {
-            result.push_back(snippet);
+    for (const auto& tmpl : m_impl->templates) {
+        if (tmpl.getPrefix().find(keyword) != std::string::npos ||
+            tmpl.getDescription().find(keyword) != std::string::npos) {
+            result.push_back(tmpl);
         }
     }
     
     return result;
 }
 
-std::vector<Snippet> SnippetManager::getAllSnippets() const {
-    return m_impl->snippets;
+std::vector<Template> TemplateManager::getAllTemplates() const {
+    return m_impl->templates;
 }
 
-size_t SnippetManager::count() const {
-    return m_impl->snippets.size();
+size_t TemplateManager::count() const {
+    return m_impl->templates.size();
 }
 
-void SnippetManager::clear() {
-    m_impl->snippets.clear();
+void TemplateManager::clear() {
+    m_impl->templates.clear();
 }
 
-bool SnippetManager::loadFromFile(const std::string& filePath) {
-    SnippetParser parser;
+bool TemplateManager::loadFromFile(const std::string& filePath) {
+    TemplateParser parser;
     auto result = parser.parseFile(filePath);
     
     if (result.success) {
-        for (const auto& snippet : result.snippets) {
-            addSnippet(snippet);
+        for (const auto& tmpl : result.templates) {
+            addTemplate(tmpl);
         }
     }
     
     return result.success;
 }
 
-bool SnippetManager::saveToFile(const std::string& filePath) const {
-    SnippetParser parser;
-    std::string json = parser.toJson(m_impl->snippets);
+bool TemplateManager::saveToFile(const std::string& filePath) const {
+    TemplateParser parser;
+    std::string json = parser.toJson(m_impl->templates);
     
     std::ofstream file(filePath);
     if (!file.is_open()) {
@@ -133,4 +133,4 @@ bool SnippetManager::saveToFile(const std::string& filePath) const {
     return file.good();
 }
 
-} // namespace cppsnippets
+} // namespace scadtemplates

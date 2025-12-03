@@ -1,57 +1,74 @@
 /**
  * @file snippet.cpp
- * @brief Snippet class implementation
+ * @brief Template class implementation
  */
 
-#include "cppsnippets/snippet.h"
+#include "scadtemplates/template.h"
 
-namespace cppsnippets {
+namespace scadtemplates {
 
-Snippet::Snippet(const std::string& prefix, const std::string& body, 
+Template::Template(const std::string& prefix, const std::string& body, 
                  const std::string& description)
     : m_prefix(prefix)
     , m_body(body)
     , m_description(description) {
 }
 
-const std::string& Snippet::getPrefix() const {
+const std::string& Template::getPrefix() const {
     return m_prefix;
 }
 
-void Snippet::setPrefix(const std::string& prefix) {
+void Template::setPrefix(const std::string& prefix) {
     m_prefix = prefix;
 }
 
-const std::string& Snippet::getBody() const {
+const std::string& Template::getBody() const {
     return m_body;
 }
 
-void Snippet::setBody(const std::string& body) {
+void Template::setBody(const std::string& body) {
     m_body = body;
 }
 
-const std::string& Snippet::getDescription() const {
+const std::string& Template::getDescription() const {
     return m_description;
 }
 
-void Snippet::setDescription(const std::string& description) {
+void Template::setDescription(const std::string& description) {
     m_description = description;
 }
 
-const std::vector<std::string>& Snippet::getScopes() const {
+const std::vector<std::string>& Template::getScopes() const {
     return m_scopes;
 }
 
-void Snippet::addScope(const std::string& scope) {
+void Template::addScope(const std::string& scope) {
     m_scopes.push_back(scope);
 }
 
-void Snippet::clearScopes() {
+void Template::clearScopes() {
     m_scopes.clear();
 }
 
-bool Snippet::isValid() const {
+bool Template::isValid() const {
     return !m_prefix.empty() && !m_body.empty();
 }
 
-} // namespace cppsnippets
+EditType Template::getType() const {
+    return m_type;
+}
+
+void Template::setType(EditType type) {
+    m_type = type;
+}
+
+EditSubtype Template::getSubtype() const {
+    return m_subtype;
+}
+
+void Template::setSubtype(EditSubtype subtype) {
+    m_subtype = subtype;
+    m_type = typeFromSubtype(subtype);
+}
+
+} // namespace scadtemplates

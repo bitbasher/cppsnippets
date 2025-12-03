@@ -1,29 +1,29 @@
 /**
- * @file cppsnippets.h
- * @brief Main header file for the cppsnippets library
+ * @file scadtemplates.h
+ * @brief Main header file for the scadtemplates library
  * 
- * This is the main include file for the cppsnippets library.
+ * This is the main include file for the scadtemplates library.
  * Include this file to access all library functionality.
  * 
- * @version 1.0.0
+ * @version 1.1.0
  * @author Jeff Hayes
  * @copyright MIT License
  * 
  * @section usage Usage
  * 
  * @code{.cpp}
- * #include <cppsnippets/cppsnippets.h>
+ * #include <scadtemplates/scadtemplates.h>
  * #include <iostream>
  * 
  * int main() {
- *     cppsnippets::SnippetManager manager;
+ *     scadtemplates::SnippetManager manager;
  *     
- *     // Create and add a snippet
- *     cppsnippets::Snippet snippet("cout", "std::cout << $1 << std::endl;", "Output to console");
- *     manager.addSnippet(snippet);
+ *     // Create and add a template
+ *     scadtemplates::Template tmpl("cube", "cube([$1, $2, $3]);", "Create a cube");
+ *     manager.addTemplate(tmpl);
  *     
- *     // Find a snippet
- *     auto found = manager.findByPrefix("cout");
+ *     // Find a template
+ *     auto found = manager.findByPrefix("cube");
  *     if (found) {
  *         std::cout << found->getBody() << std::endl;
  *     }
@@ -50,38 +50,38 @@
 #pragma once
 
 #include "export.h"
-#include "snippet.h"
-#include "snippet_parser.h"
-#include "snippet_manager.h"
+#include "template.h"
+#include "template_parser.h"
+#include "template_manager.h"
 
 /**
- * @namespace cppsnippets
- * @brief Main namespace for the cppsnippets library
+ * @namespace scadtemplates
+ * @brief Main namespace for the scadtemplates library
  */
-namespace cppsnippets {
+namespace scadtemplates {
 
 /**
  * @brief Get the library version string
  * @return Version string in format "major.minor.patch"
  */
-CPPSNIPPETS_API const char* getVersion();
+SCADTEMPLATES_API const char* getVersion();
 
 /**
  * @brief Get the library version major number
  * @return Major version number
  */
-CPPSNIPPETS_API int getVersionMajor();
+SCADTEMPLATES_API int getVersionMajor();
 
 /**
  * @brief Get the library version minor number
  * @return Minor version number
  */
-CPPSNIPPETS_API int getVersionMinor();
+SCADTEMPLATES_API int getVersionMinor();
 
 /**
  * @brief Get the library version patch number
  * @return Patch version number
  */
-CPPSNIPPETS_API int getVersionPatch();
+SCADTEMPLATES_API int getVersionPatch();
 
-} // namespace cppsnippets
+} // namespace scadtemplates

@@ -1,17 +1,17 @@
 /**
  * @file test_snippet_session.cpp
- * @brief Unit tests for the SnippetSession class (core logic, no editor)
+ * @brief Unit tests for the TemplateSession class (core logic, no editor)
  */
 
 #include <gtest/gtest.h>
-#include <cppsnippets/snippet.h>
+#include <scadtemplates/template.h>
 #include <vector>
 #include <string>
 #include <regex>
 
-using namespace cppsnippets;
+using namespace scadtemplates;
 
-// Placeholder struct for testing (mirrors SnippetSession.h)
+// Placeholder struct for testing (mirrors TemplateSession.h)
 struct Placeholder {
     int index;
     int start;
@@ -36,7 +36,7 @@ std::vector<Placeholder> parsePlaceholders(const std::string& body) {
     return placeholders;
 }
 
-TEST(SnippetSessionTest, ParseSimplePlaceholders) {
+TEST(TemplateSessionTest, ParseSimplePlaceholders) {
     std::string body = "for (int $1 = 0; $1 < $2; $1++) { $3 }";
     auto phs = parsePlaceholders(body);
     EXPECT_EQ(phs.size(), 5);
@@ -47,7 +47,7 @@ TEST(SnippetSessionTest, ParseSimplePlaceholders) {
     EXPECT_EQ(phs[4].index, 3);
 }
 
-TEST(SnippetSessionTest, ParsePlaceholdersWithDefaults) {
+TEST(TemplateSessionTest, ParsePlaceholdersWithDefaults) {
     std::string body = "console.log(${1:message});";
     auto phs = parsePlaceholders(body);
     ASSERT_EQ(phs.size(), 1);
@@ -55,7 +55,7 @@ TEST(SnippetSessionTest, ParsePlaceholdersWithDefaults) {
     EXPECT_EQ(phs[0].defaultValue, "message");
 }
 
-TEST(SnippetSessionTest, ParseMultiplePlaceholdersWithDefaults) {
+TEST(TemplateSessionTest, ParseMultiplePlaceholdersWithDefaults) {
     std::string body = "function ${1:name}(${2:args}) { ${3:body} }";
     auto phs = parsePlaceholders(body);
     ASSERT_EQ(phs.size(), 3);
@@ -67,13 +67,13 @@ TEST(SnippetSessionTest, ParseMultiplePlaceholdersWithDefaults) {
     EXPECT_EQ(phs[2].defaultValue, "body");
 }
 
-TEST(SnippetSessionTest, NoPlaceholders) {
+TEST(TemplateSessionTest, NoPlaceholders) {
     std::string body = "Hello, world!";
     auto phs = parsePlaceholders(body);
     EXPECT_TRUE(phs.empty());
 }
 
-TEST(SnippetSessionTest, PlaceholderPositions) {
+TEST(TemplateSessionTest, PlaceholderPositions) {
     std::string body = "abc $1 def $2 ghi";
     auto phs = parsePlaceholders(body);
     ASSERT_EQ(phs.size(), 2);
@@ -83,7 +83,7 @@ TEST(SnippetSessionTest, PlaceholderPositions) {
     EXPECT_EQ(phs[1].end, 13);
 }
 
-TEST(SnippetSessionTest, MixedPlaceholderStyles) {
+TEST(TemplateSessionTest, MixedPlaceholderStyles) {
     std::string body = "$1 ${2:default} $3";
     auto phs = parsePlaceholders(body);
     ASSERT_EQ(phs.size(), 3);
@@ -95,7 +95,7 @@ TEST(SnippetSessionTest, MixedPlaceholderStyles) {
     EXPECT_EQ(phs[2].defaultValue, "");
 }
 
-TEST(SnippetSessionTest, NavigationSimulation) {
+TEST(TemplateSessionTest, NavigationSimulation) {
     std::string body = "$1 $2 $3";
     auto phs = parsePlaceholders(body);
     ASSERT_EQ(phs.size(), 3);

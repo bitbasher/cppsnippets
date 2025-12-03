@@ -1,6 +1,6 @@
 /**
  * @file mainwindow.h
- * @brief Main window for the cppsnippets application
+ * @brief Main window for the scadtemplates application
  */
 
 #pragma once
@@ -11,9 +11,15 @@
 class QListWidget;
 class QTextEdit;
 class QLineEdit;
+class QPlainTextEdit;
+class QSettings;
 
-namespace cppsnippets {
-class SnippetManager;
+namespace scadtemplates {
+class TemplateManager;
+}
+
+namespace platformInfo {
+class ResourceLocationManager;
 }
 
 /**
@@ -35,21 +41,36 @@ public:
     ~MainWindow() override;
 
 private slots:
-    void onNewSnippet();
-    void onDeleteSnippet();
-    void onSaveSnippet();
-    void onSnippetSelected();
+    void onNewTemplate();
+    void onDeleteTemplate();
+    void onSaveTemplate();
+    void onTemplateSelected();
     void onSearch(const QString& text);
+    void onPreferences();
+    void onNewFile();
+    void onOpenFile();
+    void onSaveFile();
+    void onSaveFileAs();
 
 private:
     void setupUi();
     void setupMenus();
-    void refreshSnippetList();
+    void refreshTemplateList();
+    void updateWindowTitle();
     
-    std::unique_ptr<cppsnippets::SnippetManager> m_snippetManager;
-    QListWidget* m_snippetList;
+    std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;
+    std::unique_ptr<platformInfo::ResourceLocationManager> m_resourceManager;
+    std::unique_ptr<QSettings> m_settings;
+    
+    // Template panel
+    QListWidget* m_templateList;
     QLineEdit* m_prefixEdit;
     QTextEdit* m_bodyEdit;
     QLineEdit* m_descriptionEdit;
     QLineEdit* m_searchEdit;
+    
+    // Main editor
+    QPlainTextEdit* m_editor;
+    QString m_currentFile;
+    bool m_modified = false;
 };

@@ -1,14 +1,24 @@
-// SnippetSession.h
+// TemplateSession.h
 #pragma once
 
 #include <vector>
 #include <string>
 #include <memory>
-#include "snippet.h"
+#include "template.h"
 
-class QScintillaEditor; // Forward declaration for editor integration
+#ifdef HAS_QSCINTILLA
+#include <Qsci/qsciscintilla.h>
+using EditorWidget = QsciScintilla;
+#else
+// Stub for builds without QScintilla
+class EditorWidget {
+public:
+    void replaceSelectedText(const QString&) {}
+    void setSelection(int, int, int, int) {}
+};
+#endif
 
-namespace cppsnippets {
+namespace scadtemplates {
 
 struct Placeholder {
     int index; // Placeholder number (e.g., 1 for $1)
@@ -17,24 +27,24 @@ struct Placeholder {
     std::string defaultValue;
 };
 
-class SnippetSession {
+class TemplateSession {
 public:
-    SnippetSession(QScintillaEditor* editor, const Snippet& snippet);
+    TemplateSession(EditorWidget* editor, const Template& tmpl);
     void insert();
     void nextPlaceholder();
     void prevPlaceholder();
     void cancel();
-    void merge(const Snippet& snippet);
+    void merge(const Template& tmpl);
     bool isAtLastPlaceholder() const;
     bool isAtFirstPlaceholder() const;
     int getCurrentPlaceholderIndex() const;
     std::vector<Placeholder> getAllPlaceholders() const;
 private:
-    QScintillaEditor* m_editor;
-    Snippet m_snippet;
+    EditorWidget* m_editor;
+    Template m_template;
     std::vector<Placeholder> m_placeholders;
     int m_currentIndex;
     void parsePlaceholders();
 };
 
-} // namespace cppsnippets
+} // namespace scadtemplates
