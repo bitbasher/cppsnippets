@@ -6,14 +6,15 @@
 #include <QApplication>
 #include <QDebug>
 #include "mainwindow.h"
+#include <scadtemplates/scadtemplates.h>
 
 int main(int argc, char *argv[]) {
     qDebug() << "Starting CppSnippets application...";
     
     QApplication app(argc, argv);
     
-    app.setApplicationName("CppSnippets");
-    app.setApplicationVersion("1.0.0");
+    app.setApplicationName("ScadTemplates");
+    app.setApplicationVersion(scadtemplates::getVersion());
     app.setOrganizationName("CppSnippets");
     
     qDebug() << "Creating main window...";

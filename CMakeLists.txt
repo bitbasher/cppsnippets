@@ -19,13 +19,43 @@ if(POLICY CMP0167) # Since CMake 3.30
   cmake_policy(SET CMP0167 NEW)
 endif()
 
-# project(scadtemplates VERSION 1.0.0 LANGUAGES CXX)
+# Version: MAJOR.MINOR.PATCH
+# - MAJOR: Manual (breaking changes)
+# - MINOR: Auto-incremented from Git commit count  
+# - PATCH: Manual (features/fixes within a release)
+set(SCADTEMPLATES_VERSION_MAJOR 1)
+set(SCADTEMPLATES_VERSION_PATCH 1)
+
+# Get Git commit count for auto-incrementing minor version
+find_package(Git QUIET)
+if(Git_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-list --count HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_COUNT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE GIT_RESULT
+    )
+    if(NOT GIT_RESULT EQUAL 0)
+        set(GIT_COMMIT_COUNT 0)
+    endif()
+else()
+    set(GIT_COMMIT_COUNT 0)
+endif()
+set(SCADTEMPLATES_VERSION_MINOR ${GIT_COMMIT_COUNT})
+
+# Compose full version string
+set(SCADTEMPLATES_VERSION "${SCADTEMPLATES_VERSION_MAJOR}.${SCADTEMPLATES_VERSION_MINOR}.${SCADTEMPLATES_VERSION_PATCH}")
+
 project(scadtemplates
-  VERSION 1.1.1
+  VERSION ${SCADTEMPLATES_VERSION}
   DESCRIPTION "A code template solution for OpenSCAD"
   HOMEPAGE_URL "https://jartisan.com/"
   LANGUAGES CXX
 )
+
+message(STATUS "ScadTemplates version: ${SCADTEMPLATES_VERSION} (Git commits: ${GIT_COMMIT_COUNT})")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -132,9 +162,16 @@ endif(CLANG_TIDY)
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
+# Generate version source file from template
+configure_file(
+    ${CMAKE_SOURCE_DIR}/src/scadtemplates_version.cpp.in
+    ${CMAKE_BINARY_DIR}/generated/scadtemplates_version.cpp
+    @ONLY
+)
+
 # Library source files
 set(LIB_SOURCES
-    src/scadtemplates_version.cpp
+    ${CMAKE_BINARY_DIR}/generated/scadtemplates_version.cpp
     src/template.cpp
     src/template_parser.cpp
     src/template_manager.cpp
@@ -195,16 +232,74 @@ if(BUILD_APP)
         src/app/main.cpp
         src/app/mainwindow.cpp
         src/app/mainwindow.h
-        src/app/preferencesdialog.cpp
-        src/app/preferencesdialog.h
-        src/app/resourcelocationwidget.cpp
+        src/gui/preferencesdialog.cpp
+        src/include/gui/preferencesdialog.h
+        src/gui/resourcelocationwidget.cpp
+        src/include/gui/resourceLocationWidget.hpp
+        src/gui/locationInputWidget.cpp
+        src/include/gui/locationInputWidget.hpp
+        src/gui/platformInfoWidget.cpp
+        src/include/gui/platformInfoWidget.hpp
+        src/gui/dialogButtonBar.cpp
+        src/include/gui/dialogButtonBar.hpp
+        src/gui/installationTab.cpp
+        src/include/gui/installationTab.hpp
+        src/gui/machineTab.cpp
+        src/include/gui/machineTab.hpp
+        src/gui/userTab.cpp
+        src/include/gui/userTab.hpp
+        src/gui/aboutDialog.cpp
+        src/include/gui/aboutDialog.h
+        src/gui/sysInfoDialog.cpp
+        src/include/gui/sysInfoDialog.h
+        # Resource inventory classes
+        src/resInventory/resourceItem.cpp
+        src/include/resInventory/resourceItem.h
+        src/resInventory/resourceTreeWidget.cpp
+        src/include/resInventory/resourceTreeWidget.h
+        src/resInventory/resourceScanner.cpp
+        src/include/resInventory/resourceScanner.h
     )
     
     add_executable(scadtemplates_app ${APP_SOURCES})
     target_link_libraries(scadtemplates_app PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(scadtemplates_app PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    )
     set_target_properties(scadtemplates_app PROPERTIES
         OUTPUT_NAME scadtemplates
         WIN32_EXECUTABLE ON
+    )
+    
+    # Inventory test console app (non-GUI)
+    set(INVENTORY_TEST_SOURCES
+        src/app/inventory_test.cpp
+        # GUI classes needed for env var helpers
+        src/gui/machineTab.cpp
+        src/include/gui/machineTab.hpp
+        src/gui/userTab.cpp
+        src/include/gui/userTab.hpp
+        src/gui/resourcelocationwidget.cpp
+        src/include/gui/resourceLocationWidget.hpp
+        src/gui/locationInputWidget.cpp
+        src/include/gui/locationInputWidget.hpp
+        # Resource inventory classes
+        src/resInventory/resourceItem.cpp
+        src/include/resInventory/resourceItem.h
+        src/resInventory/resourceTreeWidget.cpp
+        src/include/resInventory/resourceTreeWidget.h
+        src/resInventory/resourceScanner.cpp
+        src/include/resInventory/resourceScanner.h
+    )
+    
+    add_executable(inventory_test ${INVENTORY_TEST_SOURCES})
+    target_link_libraries(inventory_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(inventory_test PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    )
+    set_target_properties(inventory_test PROPERTIES
+        OUTPUT_NAME inventory_test
+        WIN32_EXECUTABLE OFF  # Console app, not GUI
     )
     
     # Copy Qt platform plugins to app output directory
@@ -216,10 +311,6 @@ if(BUILD_APP)
             COMMENT "Copying Qt platform plugins..."
         )
     endif()
-    
-    # Utility: Qt StandardPaths display names
-    add_executable(qt_standardpaths_displaynames src/utils/qt_standardpaths_displaynames.cpp)
-    target_link_libraries(qt_standardpaths_displaynames PRIVATE Qt6::Core)
 endif()
 
 # GoogleTest integration

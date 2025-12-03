@@ -134,6 +134,55 @@ cd build
 ctest --output-on-failure
 ```
 
+## GUI Architecture
+
+The Qt application follows the **TabDialog pattern** where each tab/dialog component is its own `QWidget` subclass, promoting separation of concerns and reusability.
+
+### GUI File Structure
+
+```
+src/include/gui/
+├── preferencesdialog.h           # Dialog that assembles all widgets
+├── platformInfoWidget.hpp        # Platform information group box
+├── dialogButtonBar.hpp           # Action buttons (Restore/Apply/OK/Cancel)
+├── resourceLocationWidget.hpp    # Reusable location list widget
+├── installationTab.hpp           # Installation tab class
+├── machineTab.hpp                # Machine tab class
+├── userTab.hpp                   # User tab class
+├── aboutDialog.h                 # About dialog
+└── sysInfoDialog.h               # System info dialog
+
+src/gui/
+├── preferencesdialog.cpp
+├── platformInfoWidget.cpp
+├── dialogButtonBar.cpp
+├── resourcelocationwidget.cpp
+├── installationTab.cpp
+├── machineTab.cpp
+├── userTab.cpp
+├── aboutDialog.cpp
+└── sysInfoDialog.cpp
+```
+
+### TabDialog Pattern
+
+Each widget class:
+- Inherits from `QWidget` with `Q_OBJECT` macro
+- Creates its own child widgets in the constructor
+- Applies layout at the end of the constructor
+- Emits signals for parent dialog communication
+
+The parent dialog (`PreferencesDialog`) simply:
+- Creates instances of each widget class
+- Adds tabs to a `QTabWidget`
+- Connects signals between widgets
+
+A reference implementation is available in `src/utils/` with its own CMake build:
+- `tabDialog.hpp/cpp` - Example dialog assembling tabs
+- `generalTab.hpp/cpp` - File info tab
+- `permsTab.hpp/cpp` - Permissions tab  
+- `appsTab.hpp/cpp` - Applications tab
+
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.

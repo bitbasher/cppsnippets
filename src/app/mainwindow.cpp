@@ -4,9 +4,10 @@
  */
 
 #include "mainwindow.h"
-#include "preferencesdialog.h"
+#include "gui/preferencesdialog.h"
 #include <scadtemplates/scadtemplates.h>
 #include <platformInfo/resourceLocationManager.h>
+#include <resInventory/resourceScanner.h>
 
 #include <QMenuBar>
 #include <QMenu>
@@ -34,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_templateManager(std::make_unique<scadtemplates::TemplateManager>())
     , m_resourceManager(std::make_unique<platformInfo::ResourceLocationManager>())
+    , m_inventoryManager(std::make_unique<resInventory::ResourceInventoryManager>())
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
     , m_templateList(nullptr)
     , m_prefixEdit(nullptr)
@@ -44,6 +46,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     // Set application path for resource manager
     m_resourceManager->setApplicationPath(QCoreApplication::applicationDirPath());
+    
+    // Build resource inventory from all known locations
+    m_inventoryManager->buildInventory(*m_resourceManager);
     
     setupUi();
     setupMenus();
@@ -279,16 +284,20 @@ void MainWindow::setupMenus() {
             resourceDir = tr("(not found)");
         }
         
+        QString resourceCounts = m_inventoryManager->countSummary();
+        
         QMessageBox::about(this, tr("About ScadTemplates"),
             tr("ScadTemplates v%1\n\n"
                "A code template and resource management tool for OpenSCAD.\n\n"
                "Platform: %2\n"
                "Resource Directory: %3\n\n"
+               "Resources Found:\n%4\n\n"
                "Copyright (c) 2025\n"
                "MIT License")
             .arg(scadtemplates::getVersion())
             .arg(m_resourceManager->folderName())
-            .arg(resourceDir));
+            .arg(resourceDir)
+            .arg(resourceCounts));
     });
 }
 

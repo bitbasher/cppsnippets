@@ -3,18 +3,16 @@
  * @brief Implementation of ResourceLocationWidget
  */
 
-#include "preferencesdialog.h"
+#include "gui/resourceLocationWidget.hpp"
+#include "gui/locationInputWidget.hpp"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QLineEdit>
 #include <QPushButton>
 #include <QLabel>
-#include <QCheckBox>
-#include <QFileDialog>
 #include <QDir>
 
 ResourceLocationWidget::ResourceLocationWidget(const QString& title,
@@ -22,13 +20,12 @@ ResourceLocationWidget::ResourceLocationWidget(const QString& title,
                                                  bool allowRemove,
                                                  QWidget* parent)
     : QWidget(parent)
+    , m_groupBox(nullptr)
     , m_listWidget(nullptr)
-    , m_pathEdit(nullptr)
-    , m_nameEdit(nullptr)
-    , m_addButton(nullptr)
+    , m_inputWidget(nullptr)
     , m_removeButton(nullptr)
-    , m_browseButton(nullptr)
     , m_readOnly(false)
+    , m_allowAdd(allowAdd)
 {
     setupUi(title, allowAdd, allowRemove);
 }
@@ -37,64 +34,37 @@ void ResourceLocationWidget::setupUi(const QString& title, bool allowAdd, bool a
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     
-    // Group box with title
-    QGroupBox* groupBox = new QGroupBox(title, this);
-    QVBoxLayout* groupLayout = new QVBoxLayout(groupBox);
+    // Group box with title for the list
+    m_groupBox = new QGroupBox(title, this);
+    QVBoxLayout* groupLayout = new QVBoxLayout(m_groupBox);
     
     // List widget for locations
-    m_listWidget = new QListWidget(groupBox);
+    m_listWidget = new QListWidget(m_groupBox);
     m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     connect(m_listWidget, &QListWidget::itemChanged, this, &ResourceLocationWidget::onItemChanged);
     connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &ResourceLocationWidget::onSelectionChanged);
     groupLayout->addWidget(m_listWidget);
     
-    // Edit section
-    QHBoxLayout* editLayout = new QHBoxLayout();
-    
-    QLabel* pathLabel = new QLabel(tr("Path:"), groupBox);
-    editLayout->addWidget(pathLabel);
-    
-    m_pathEdit = new QLineEdit(groupBox);
-    m_pathEdit->setPlaceholderText(tr("Enter or browse for a folder path"));
-    editLayout->addWidget(m_pathEdit);
-    
-    m_browseButton = new QPushButton(tr("Browse..."), groupBox);
-    connect(m_browseButton, &QPushButton::clicked, this, &ResourceLocationWidget::onBrowse);
-    editLayout->addWidget(m_browseButton);
-    
-    groupLayout->addLayout(editLayout);
-    
-    QHBoxLayout* nameLayout = new QHBoxLayout();
-    
-    QLabel* nameLabel = new QLabel(tr("Name:"), groupBox);
-    nameLayout->addWidget(nameLabel);
-    
-    m_nameEdit = new QLineEdit(groupBox);
-    m_nameEdit->setPlaceholderText(tr("Display name (optional)"));
-    nameLayout->addWidget(m_nameEdit);
-    
-    groupLayout->addLayout(nameLayout);
-    
-    // Buttons
-    QHBoxLayout* buttonLayout = new QHBoxLayout();
-    
-    if (allowAdd) {
-        m_addButton = new QPushButton(tr("Add"), groupBox);
-        connect(m_addButton, &QPushButton::clicked, this, &ResourceLocationWidget::onAddLocation);
-        buttonLayout->addWidget(m_addButton);
-    }
-    
+    // Remove button
     if (allowRemove) {
-        m_removeButton = new QPushButton(tr("Remove"), groupBox);
+        QHBoxLayout* buttonLayout = new QHBoxLayout;
+        m_removeButton = new QPushButton(tr("Remove"), m_groupBox);
         m_removeButton->setEnabled(false);
         connect(m_removeButton, &QPushButton::clicked, this, &ResourceLocationWidget::onRemoveLocation);
         buttonLayout->addWidget(m_removeButton);
+        buttonLayout->addStretch();
+        groupLayout->addLayout(buttonLayout);
     }
     
-    buttonLayout->addStretch();
-    groupLayout->addLayout(buttonLayout);
+    mainLayout->addWidget(m_groupBox);
     
-    mainLayout->addWidget(groupBox);
+    // Input widget for adding new locations
+    if (allowAdd) {
+        m_inputWidget = new LocationInputWidget(this);
+        connect(m_inputWidget, &LocationInputWidget::addClicked, this, &ResourceLocationWidget::onAddLocation);
+        mainLayout->addWidget(m_inputWidget);
+    }
+    
     setLayout(mainLayout);
 }
 
@@ -183,10 +153,7 @@ void ResourceLocationWidget::setReadOnly(bool readOnly)
 {
     m_readOnly = readOnly;
     
-    if (m_pathEdit) m_pathEdit->setEnabled(!readOnly);
-    if (m_nameEdit) m_nameEdit->setEnabled(!readOnly);
-    if (m_browseButton) m_browseButton->setEnabled(!readOnly);
-    if (m_addButton) m_addButton->setEnabled(!readOnly);
+    if (m_inputWidget) m_inputWidget->setEnabled(!readOnly);
     if (m_removeButton) m_removeButton->setEnabled(!readOnly);
     
     // In read-only mode, don't allow checking/unchecking
@@ -200,11 +167,23 @@ void ResourceLocationWidget::setReadOnly(bool readOnly)
     }
 }
 
+void ResourceLocationWidget::setInputVisible(bool visible)
+{
+    if (m_inputWidget) {
+        m_inputWidget->setVisible(visible);
+    }
+}
+
+bool ResourceLocationWidget::isInputVisible() const
+{
+    return m_inputWidget ? m_inputWidget->isVisible() : false;
+}
+
 void ResourceLocationWidget::onAddLocation()
 {
-    if (m_readOnly) return;
+    if (m_readOnly || !m_inputWidget) return;
     
-    QString path = m_pathEdit->text().trimmed();
+    QString path = m_inputWidget->path().trimmed();
     if (path.isEmpty()) return;
     
     // Check if path already exists in list
@@ -216,7 +195,7 @@ void ResourceLocationWidget::onAddLocation()
     
     platformInfo::ResourceLocation newLoc;
     newLoc.path = path;
-    newLoc.displayName = m_nameEdit->text().trimmed();
+    newLoc.displayName = m_inputWidget->name().trimmed();
     newLoc.isEnabled = true;
     newLoc.exists = QDir(path).exists();
     newLoc.isWritable = newLoc.exists; // Simplified check
@@ -238,8 +217,7 @@ void ResourceLocationWidget::onAddLocation()
     }
     
     // Clear inputs
-    m_pathEdit->clear();
-    m_nameEdit->clear();
+    m_inputWidget->clear();
     
     emit locationsChanged();
 }
@@ -265,23 +243,6 @@ void ResourceLocationWidget::onRemoveLocation()
     delete m_listWidget->takeItem(m_listWidget->row(item));
     
     emit locationsChanged();
-}
-
-void ResourceLocationWidget::onBrowse()
-{
-    QString dir = QFileDialog::getExistingDirectory(this, 
-        tr("Select Resource Directory"),
-        m_pathEdit->text().isEmpty() ? QDir::homePath() : m_pathEdit->text());
-    
-    if (!dir.isEmpty()) {
-        m_pathEdit->setText(dir);
-        
-        // Auto-fill name if empty
-        if (m_nameEdit->text().isEmpty()) {
-            QDir d(dir);
-            m_nameEdit->setText(d.dirName());
-        }
-    }
 }
 
 void ResourceLocationWidget::onItemChanged()

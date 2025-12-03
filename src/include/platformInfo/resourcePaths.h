@@ -190,27 +190,55 @@ public:
      */
     static QStringList resourceExtensions(ResourceType type);
     
-    // ========== Application Resource Paths ==========
+    // ========== Default Search Paths (Immutable) ==========
+    //
+    // These are compile-time constants defining where to look for resources.
+    // Used as the "Restore Defaults" source in preferences.
+    // User cannot modify these - they modify their selection in ResLocMap.
+    
+    /**
+     * @brief Get default installation search paths for this platform
+     * @return Immutable list of relative paths to search for installation resources
+     * 
+     * These paths are relative to the application executable directory.
+     * This is a compile-time constant list that cannot be modified by the user.
+     * Used as the default/reset source for the Installation tier in preferences.
+     * 
+     * @note Paths may include the build suffix (e.g., " (Nightly)") for share paths.
+     */
+    static const QStringList& defaultInstallSearchPaths();
+    
+    /**
+     * @brief Get default machine-level search paths for this platform
+     * @return Immutable list of absolute paths for machine-wide resources
+     * 
+     * These are system-wide locations accessible to all users.
+     * This is a compile-time constant list that cannot be modified by the user.
+     * Used as the default/reset source for the Machine tier in preferences.
+     */
+    static const QStringList& defaultMachineSearchPaths();
+    
+    /**
+     * @brief Get default user-level search paths for this platform
+     * @return Immutable list of paths for user-specific resources
+     * 
+     * These are locations in the user's home/config directory.
+     * This is a compile-time constant list that cannot be modified by the user.
+     * Used as the default/reset source for the User tier in preferences.
+     * 
+     * @note Paths are relative to userConfigBasePath() or userDocumentsPath().
+     */
+    static const QStringList& defaultUserSearchPaths();
     
     /**
      * @brief Get platform-specific search paths for application resources
      * @return List of relative paths to search for resource directory
      * 
+     * Convenience method that returns defaultInstallSearchPaths().
      * These paths are relative to the application path and are searched
      * in order until a valid resource directory is found.
      */
     QStringList appSearchPaths() const;
-    
-    /**
-     * @brief Get search paths for the current platform
-     * @param osType The OS type to get paths for
-     * @param suffix Build suffix for share paths (e.g., "" or " (Nightly)")
-     * @return List of relative search paths
-     * 
-     * @note For share paths, this mimics OpenSCAD's RESOURCE_FOLDER macro:
-     * RESOURCE_FOLDER("../share/openscad") expands to "../share/openscad" + suffix
-     */
-    static QStringList searchPathsForPlatform(ExtnOSType osType, const QString& suffix = QString());
     
     /**
      * @brief Find the application resource directory
@@ -357,15 +385,6 @@ private:
      * @brief Detect the current OS type
      */
     void detectOSType();
-    
-    /**
-     * @brief Build the share path with suffix (RESOURCE_FOLDER equivalent)
-     * @param basePath Base path ending with "/" (e.g., "../share/")
-     * @return Path with "openscad" + suffix appended (e.g., "../share/openscad (Nightly)")
-     * 
-     * @note Equivalent to OpenSCAD's RESOURCE_FOLDER("../share/openscad") macro
-     */
-    QString buildSharePath(const QString& basePath) const;
     
     /**
      * @brief Resolve user config base path (internal, with caching)

@@ -134,67 +134,87 @@ QStringList ResourcePaths::resourceExtensions(ResourceType type) {
     return info ? info->primaryExtensions : QStringList();
 }
 
-QString ResourcePaths::buildSharePath(const QString& basePath) const {
-    // Equivalent to RESOURCE_FOLDER("../share/openscad"):
-    // basePath already ends with "openscad", we just append the suffix
-    return basePath + m_suffix;
+// ============================================================================
+// Default Search Paths (Immutable, Compile-Time Constants)
+// ============================================================================
+//
+// These static const lists define the default locations to search for resources.
+// They are platform-specific and determined at compile time using #ifdef.
+// Users cannot modify these - they are the "Restore Defaults" source.
+//
+// Note: The suffix (e.g., " (Nightly)") is handled separately when resolving paths.
+// These are the base paths without suffix applied.
+
+// Installation tier: relative to application executable
+#ifdef Q_OS_WIN
+static const QStringList s_defaultInstallSearchPaths = {
+    QStringLiteral("."),                        // Release location (same as exe)
+    QStringLiteral("../share/openscad"),        // MSYS2 style
+    QStringLiteral("..")                        // Dev location
+};
+#elif defined(Q_OS_MACOS)
+static const QStringList s_defaultInstallSearchPaths = {
+    QStringLiteral("../Resources"),             // Resources bundled in .app
+    QStringLiteral("../../.."),                 // Dev location
+    QStringLiteral("../../../.."),              // Test location (cmake)
+    QStringLiteral(".."),                       // Test location
+    QStringLiteral("../share/openscad")         // Unix mode
+};
+#else  // Linux/BSD/POSIX
+static const QStringList s_defaultInstallSearchPaths = {
+    QStringLiteral("../share/openscad"),        // Standard install
+    QStringLiteral("../../share/openscad"),     // Alternate install
+    QStringLiteral("."),                        // Build directory
+    QStringLiteral(".."),                       // Up one
+    QStringLiteral("../..")                     // Up two
+};
+#endif
+
+// Machine tier: system-wide locations for all users
+#ifdef Q_OS_WIN
+static const QStringList s_defaultMachineSearchPaths = {
+    QStringLiteral("C:/ProgramData/OpenSCAD")   // All users app data
+};
+#elif defined(Q_OS_MACOS)
+static const QStringList s_defaultMachineSearchPaths = {
+    QStringLiteral("/Library/Application Support/OpenSCAD")  // System-wide
+};
+#else  // Linux/BSD/POSIX
+static const QStringList s_defaultMachineSearchPaths = {
+    QStringLiteral("/usr/share/openscad"),      // System packages
+    QStringLiteral("/usr/local/share/openscad"), // Local installs
+    QStringLiteral("/opt/openscad/share")       // Opt installs
+};
+#endif
+
+// User tier: relative paths (resolved against userConfigBasePath/userDocumentsPath)
+// These are folder names to look for under the user's OpenSCAD directory
+static const QStringList s_defaultUserSearchPaths = {
+    QStringLiteral(".")                         // The OpenSCAD folder itself (userOpenSCADPath)
+};
+
+const QStringList& ResourcePaths::defaultInstallSearchPaths() {
+    return s_defaultInstallSearchPaths;
+}
+
+const QStringList& ResourcePaths::defaultMachineSearchPaths() {
+    return s_defaultMachineSearchPaths;
+}
+
+const QStringList& ResourcePaths::defaultUserSearchPaths() {
+    return s_defaultUserSearchPaths;
 }
 
 QStringList ResourcePaths::appSearchPaths() const {
-    return searchPathsForPlatform(m_osType, m_suffix);
-}
-
-QStringList ResourcePaths::searchPathsForPlatform(ExtnOSType osType, const QString& suffix) {
+    // Apply suffix to paths that need it (share paths)
     QStringList paths;
-    
-    // RESOURCE_FOLDER macro in OpenSCAD:
-    //   #ifdef OPENSCAD_SUFFIX
-    //     #define RESOURCE_FOLDER(path) path OPENSCAD_SUFFIX
-    //   #else
-    //     #define RESOURCE_FOLDER(path) path
-    //   #endif
-    //
-    // Usage: RESOURCE_FOLDER("../share/openscad") expands to:
-    //   "../share/openscad" (release) or "../share/openscad (Nightly)" (nightly)
-    //
-    // Helper lambda mimics this behavior:
-    auto resourceFolder = [&suffix](const QString& path) -> QString {
-        return path + suffix;
-    };
-    
-    // These search paths match OpenSCAD's PlatformUtils.cc exactly:
-    // #ifdef __APPLE__ / #ifdef _WIN32 / #else (POSIX)
-    
-    switch (osType) {
-        case ExtnOSType::MacOS:
-            // macOS search paths (from OpenSCAD #ifdef __APPLE__)
-            paths << QStringLiteral("../Resources");                                    // Resources bundled in .app
-            paths << QStringLiteral("../../..");                                        // Dev location
-            paths << QStringLiteral("../../../..");                                     // Test location (cmake)
-            paths << QStringLiteral("..");                                              // Test location
-            paths << resourceFolder(QStringLiteral("../share/openscad"));               // Unix mode
-            break;
-            
-        case ExtnOSType::Windows:
-            // Windows search paths (from OpenSCAD #ifdef _WIN32)
-            paths << QStringLiteral(".");                                               // Release location
-            paths << resourceFolder(QStringLiteral("../share/openscad"));               // MSYS2
-            paths << QStringLiteral("..");                                              // Dev location
-            break;
-            
-        case ExtnOSType::Linux:
-        case ExtnOSType::BSD:
-        case ExtnOSType::Solaris:
-        default:
-            // Linux/POSIX search paths (from OpenSCAD #else)
-            paths << resourceFolder(QStringLiteral("../share/openscad"));               // Standard install
-            paths << resourceFolder(QStringLiteral("../../share/openscad"));            // Alternate install
-            paths << QStringLiteral(".");                                               // Build directory
-            paths << QStringLiteral("..");                                              // Up one
-            paths << QStringLiteral("../..");                                           // Up two
-            break;
+    for (const QString& path : s_defaultInstallSearchPaths) {
+        if (path.contains(QStringLiteral("share/openscad"))) {
+            paths << (path + m_suffix);
+        } else {
+            paths << path;
+        }
     }
-    
     return paths;
 }
 

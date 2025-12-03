@@ -22,6 +22,10 @@ namespace platformInfo {
 class ResourceLocationManager;
 }
 
+namespace resInventory {
+class ResourceInventoryManager;
+}
+
 /**
  * @brief Main application window
  */
@@ -60,6 +64,7 @@ private:
     
     std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;
     std::unique_ptr<platformInfo::ResourceLocationManager> m_resourceManager;
+    std::unique_ptr<resInventory::ResourceInventoryManager> m_inventoryManager;
     std::unique_ptr<QSettings> m_settings;
     
     // Template panel

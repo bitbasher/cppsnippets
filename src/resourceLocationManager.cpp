@@ -227,7 +227,16 @@ QString ResourceLocationManager::effectiveInstallationPath() const {
 // ============================================================================
 
 QStringList ResourceLocationManager::installationSearchPaths() const {
-    return ResourcePaths::searchPathsForPlatform(m_osType, m_suffix);
+    // Use the immutable default paths, applying suffix to share paths
+    QStringList paths;
+    for (const QString& path : ResourcePaths::defaultInstallSearchPaths()) {
+        if (path.contains(QStringLiteral("share/openscad"))) {
+            paths << (path + m_suffix);
+        } else {
+            paths << path;
+        }
+    }
+    return paths;
 }
 
 QString ResourceLocationManager::findInstallationResourceDir() const {
