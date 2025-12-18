@@ -1,5 +1,8 @@
 #include "resInventory/resourceTreeWidget.h"
 #include <QHeaderView>
+#include <QDir>
+#include <QFileInfo>
+#include <QCoreApplication>
 
 namespace resInventory {
 
@@ -43,12 +46,59 @@ void ResourceTreeItem::setEnabled(bool enabled)
     updateDisplay();
 }
 
+QString ResourceTreeItem::shortenedLocation(const QString& fullPath, ResourceTier tier)
+{
+    QString path = QDir::toNativeSeparators(fullPath);
+    
+    if (tier == ResourceTier::User) {
+        // Remove home directory prefix
+        QString homePath = QDir::toNativeSeparators(QDir::homePath());
+        if (path.startsWith(homePath)) {
+            path.remove(0, homePath.length());
+            if (path.startsWith(QDir::separator())) {
+                path.remove(0, 1);
+            }
+        }
+        
+        // Remove /OpenSCAD/templates/ and filename
+        // Path format: AppData/Local/OpenSCAD/templates/filename.ext
+        // Want: AppData/Local
+        int templatesIdx = path.indexOf(QStringLiteral("/OpenSCAD/templates/"), Qt::CaseInsensitive);
+        if (templatesIdx < 0) {
+            templatesIdx = path.indexOf(QStringLiteral("\\OpenSCAD\\templates\\"), Qt::CaseInsensitive);
+        }
+        if (templatesIdx >= 0) {
+            return path.left(templatesIdx);
+        }
+        
+        // Fallback: just remove filename
+        return QFileInfo(path).path();
+    }
+    else if (tier == ResourceTier::Installation) {
+        // For installation, show relative to application directory
+        QString appDir = QCoreApplication::applicationDirPath();
+        if (path.startsWith(appDir)) {
+            path.remove(0, appDir.length());
+            if (path.startsWith(QDir::separator())) {
+                path.remove(0, 1);
+            }
+        }
+        return QFileInfo(path).path();
+    }
+    else if (tier == ResourceTier::Machine) {
+        // For machine, show directory name only
+        return QFileInfo(path).path();
+    }
+    
+    return path;
+}
+
 void ResourceTreeItem::updateDisplay()
 {
+    setText(ColTier, resourceTierToString(m_item.tier()));
     setText(ColName, m_item.displayName());
     setText(ColCategory, m_item.category());
-    setText(ColPath, m_item.path());
-    setText(ColTier, resourceTierToString(m_item.tier()));
+    setText(ColPath, shortenedLocation(m_item.path(), m_item.tier()));
     
     // Set tooltip with full info
     setToolTip(ColName, m_item.description().isEmpty() 
@@ -59,12 +109,20 @@ void ResourceTreeItem::updateDisplay()
     if (!m_item.exists()) {
         setForeground(ColName, QBrush(Qt::gray));
         setForeground(ColPath, QBrush(Qt::gray));
-    } else if (!m_item.isEnabled()) {
-        setForeground(ColName, QBrush(Qt::darkGray));
-        setForeground(ColPath, QBrush(Qt::darkGray));
     } else {
         setForeground(ColName, QBrush());
         setForeground(ColPath, QBrush());
+        
+        // Show read-only items in italic
+        if (m_item.access() == ResourceAccess::ReadOnly) {
+            QFont font = this->font(ColName);
+            font.setItalic(true);
+            setFont(ColName, font);
+        } else {
+            QFont font = this->font(ColName);
+            font.setItalic(false);
+            setFont(ColName, font);
+        }
     }
     
     // Checkbox for enabling/disabling
@@ -84,15 +142,15 @@ ResourceTreeWidget::ResourceTreeWidget(QWidget* parent)
     : QTreeWidget(parent)
 {
     setColumnCount(4);
-    setHeaderLabels({tr("Name"), tr("Category"), tr("Path"), tr("Tier")});
+    setHeaderLabels({tr("Tier"), tr("Name"), tr("Category"), tr("Location")});
     
     header()->setStretchLastSection(false);
+    header()->setSectionResizeMode(ResourceTreeItem::ColTier, QHeaderView::ResizeToContents);
     header()->setSectionResizeMode(ResourceTreeItem::ColName, QHeaderView::ResizeToContents);
     header()->setSectionResizeMode(ResourceTreeItem::ColCategory, QHeaderView::ResizeToContents);
     header()->setSectionResizeMode(ResourceTreeItem::ColPath, QHeaderView::Stretch);
-    header()->setSectionResizeMode(ResourceTreeItem::ColTier, QHeaderView::ResizeToContents);
     
-    setSelectionMode(QAbstractItemView::ExtendedSelection);
+    setSelectionMode(QAbstractItemView::SingleSelection);
     setAlternatingRowColors(true);
     
     connect(this, &QTreeWidget::itemChanged, this, &ResourceTreeWidget::onItemChanged);
@@ -112,6 +170,11 @@ ResourceTreeItem* ResourceTreeWidget::addResource(const ResourceItem& item)
 ResourceTreeItem* ResourceTreeWidget::addResourceToCategory(const ResourceItem& item, const QString& category)
 {
     ResourceTreeItem* categoryNode = findCategoryNode(category, true);
+    if (categoryNode) {
+        ResourceItem catItem = categoryNode->resourceItem();
+        catItem.setTier(item.tier());
+        categoryNode->setResourceItem(catItem);
+    }
     return addChildResource(categoryNode, item);
 }
 

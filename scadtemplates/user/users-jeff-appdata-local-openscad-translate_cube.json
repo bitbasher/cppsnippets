@@ -1,0 +1,14 @@
+{
+    "translate_cube": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "translate([$0,,])",
+            "\tcube(1,center=true);",
+            ""
+        ],
+        "description": "Converted from legacy template (translate_cube.json)",
+        "prefix": "translate_cube"
+    }
+}

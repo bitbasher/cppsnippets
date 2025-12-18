@@ -1,0 +1,12 @@
+{
+    "translate": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "translate([$0,,]) "
+        ],
+        "description": "Converted from legacy template (translate.json)",
+        "prefix": "translate"
+    }
+}

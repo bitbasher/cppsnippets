@@ -1,0 +1,12 @@
+{
+    "color_name": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "color(\"$0\") "
+        ],
+        "description": "Converted from legacy template (color_name.json)",
+        "prefix": "color_name"
+    }
+}

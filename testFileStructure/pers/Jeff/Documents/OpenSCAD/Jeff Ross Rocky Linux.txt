@@ -1,0 +1,89 @@
+From Jeff Ross
+
+Here's mine from RockyLinux 9.5:
+
+OpenSCAD Version: 2025.08.17.snap (git 95e5b30a9)
+System information: Linux 5.14.0-503.40.1.el9_5.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Apr 30 17:38:54 UTC 2025 x86_64 Ubuntu Core 24 4 CPUs 15.28 GB RAM
+User Agent: OpenSCAD/2025.08.17.snap (git 95e5b30a9) (Linux x86_64; Ubuntu Core 24)
+Compiler: Clang "18.1.3 (1ubuntu1)" 64bit
+MinGW build: No
+Debug build: No
+Boost version: 1_83
+Eigen version: 3.4.0
+CGAL version, kernels: 6.0.1, Cartesian<Gmpq>, Extended_cartesian<Gmpq>
+Python Version: Python 3.12.3
+OpenCSG version: OpenCSG 1.8.1
+Clipper2 version: 1.5.2
+Manifold version: 3.2.1
+Qt version: 5.15.13
+QScintilla version: 2.14.1
+InputDrivers: 
+GLib version: 2.80.0
+lodepng version: 20230410
+libzip version: 1.7.3
+fontconfig version: 2.15.0
+freetype version: 2.13.2
+harfbuzz version: 11.4.1
+cairo version: 1.18.0
+lib3mf version: 2.4.1
+Features: roof*, input-driver-dbus, lazy-union*, vertex-object-renderers-indexing*, textmetrics*, import-function, object-function, predictible-output*, python-engine*
+Application Path: /snap/openscad-nightly/5199/usr/bin
+Documents Path: /home/jross/snap/openscad-nightly/5199/.local/share
+User Documents Path: /home/jross/snap/openscad-nightly/5199
+Resource Path: /snap/openscad-nightly/5199/usr/share/openscad-nightly
+User Library Path: /home/jross/snap/openscad-nightly/5199/.local/share/OpenSCAD/libraries
+User Examples Path: /home/jross/snap/openscad-nightly/5199/.local/share/OpenSCAD/examples
+User Config Path: /home/jross/snap/openscad-nightly/5199/.config/OpenSCAD
+Backup Path: /home/jross/snap/openscad-nightly/5199/.local/share/OpenSCAD/backups
+OPENSCADPATH: <not set>
+OpenSCAD library path:
+/home/jross/snap/openscad-nightly/5199/.local/share/OpenSCAD/libraries
+/snap/openscad-nightly/5199/usr/share/openscad-nightly/libraries
+
+OPENSCAD_FONT_PATH: <not set>
+OpenSCAD font path:
+/home/jross/snap/openscad-nightly/5199/.local/share/fonts
+/home/jross/snap/openscad-nightly/5199/fonts
+/home/jross/.local/share/flatpak/exports/share/fonts
+/var/lib/flatpak/exports/share/fonts
+/var/lib/snapd/desktop/fonts
+/home/jross/snap/openscad-nightly/5199/.fonts
+/home/jross/.local/share/fonts
+/snap/openscad-nightly/5199/usr/share/fonts
+/usr/local/share/fonts
+/usr/share/fonts
+/usr/X11/lib/X11/fonts
+/System/Library/Fonts
+/Library/Fonts
+/home/jross/snap/openscad-nightly/5199/Library/Fonts
+/home/jross/.local/share/fonts/Apple
+/snap/openscad-nightly/5199/usr/share/fonts/truetype
+/usr/share/fonts/adobe-source-code-pro
+/usr/share/fonts/cantarell
+/usr/share/fonts/dejavu-sans-fonts
+/usr/share/fonts/dejavu-sans-mono-fonts
+/usr/share/fonts/dejavu-serif-fonts
+/usr/share/fonts/gnu-free
+/usr/share/fonts/google-carlito-fonts
+/usr/share/fonts/google-crosextra-caladea-fonts
+/usr/share/fonts/google-droid-sans-fonts
+/usr/share/fonts/google-noto
+/usr/share/fonts/liberation-mono
+/usr/share/fonts/liberation-sans
+/usr/share/fonts/liberation-serif
+/usr/share/fonts/opensymbol
+/usr/share/fonts/urw-base35
+/home/jross/.local/share/fonts/Apple/TrueType
+/snap/openscad-nightly/5199/usr/share/fonts/truetype/dejavu
+/home/jross/.local/share/fonts/Apple/TrueType/Osaka
+GLAD version: 2.0.4
+OpenGL Version: 3.3 (Compatibility Profile) Mesa 25.0.7-0ubuntu0.24.04.1
+GL Renderer: Mesa Intel(R) HD Graphics 3000 (SNB GT2)
+GL Vendor: Intel
+RGBA(8880), depth(0), stencil(0)
+GL_ARB_framebuffer_object: yes
+GL_EXT_framebuffer_object: yes
+GL_EXT_packed_depth_stencil: yes
+
+Qt graphics widget: QOpenGLWidget
+QSurfaceFormat: RGBA(8880), depth(0), stencil(0)

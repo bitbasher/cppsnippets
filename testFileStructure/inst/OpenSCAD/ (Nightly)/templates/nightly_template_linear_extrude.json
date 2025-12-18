@@ -1,0 +1,19 @@
+{
+  "name": "Linear Extrude from Nightly",
+  "description": "Linear extrude template from Nightly build",
+  "scope": "source.scad",
+  "body": [
+    "// Linear extrude template from nightly",
+    "// Location: inst/OpenSCAD (Nightly)/templates/",
+    "linear_extrude(",
+    "  height=${1:10},",
+    "  center=${2:false},",
+    "  slices=${3:10},",
+    "  twist=${4:0}",
+    ") {",
+    "  ${5:circle(r=5);}",
+    "}",
+    "$0"
+  ],
+  "prefix": "linear_extrude_nightly"
+}

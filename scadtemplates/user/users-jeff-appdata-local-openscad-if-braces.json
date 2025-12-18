@@ -1,0 +1,18 @@
+{
+    "if-braces": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "if($0) {",
+            "\t;",
+            "}",
+            "\telse {",
+            "\t;",
+            "}",
+            ""
+        ],
+        "description": "Converted from legacy template (if-braces.json)",
+        "prefix": "if-braces"
+    }
+}

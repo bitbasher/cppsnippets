@@ -1,0 +1,14 @@
+{
+    "echo_str": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "",
+            "echo( e=str($0));",
+            ""
+        ],
+        "description": "Converted from legacy template (echo_str.json)",
+        "prefix": "echo_str"
+    }
+}

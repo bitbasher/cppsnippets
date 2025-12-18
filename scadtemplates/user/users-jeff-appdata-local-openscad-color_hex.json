@@ -1,0 +1,12 @@
+{
+    "color_hex": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "color(\"#000$0\") "
+        ],
+        "description": "Converted from legacy template (color_hex.json)",
+        "prefix": "color_hex"
+    }
+}

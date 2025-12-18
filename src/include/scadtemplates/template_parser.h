@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <QJsonObject>
 
 namespace scadtemplates {
 
@@ -48,6 +49,15 @@ public:
      * @return ParseResult containing success status and parsed templates
      */
     ParseResult parseFile(const std::string& filePath);
+
+    /**
+     * @brief Convert a template to JSON format with source provenance
+     * @param tmpl The template to convert
+     * @param source The provenance source (default: "cppsnippet-made")
+     * @return JSON object in modern format with _source field
+     */
+    static QJsonObject templateToJson(const Template& tmpl, 
+                                       const std::string& source = "cppsnippet-made");
 
     /**
      * @brief Convert a template to JSON format

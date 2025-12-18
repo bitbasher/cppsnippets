@@ -1,0 +1,4 @@
+{
+    "key" : "new_object",
+    "content" : "\no = object( ^~^=\"\", b=12 );\n"
+}

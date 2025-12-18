@@ -1,0 +1,4 @@
+{
+    "key" : "echo",
+    "content" : "echo(\"^~^\");\n"
+}

@@ -1,0 +1,14 @@
+{
+    "translate_sphere": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "translate([$0,,])",
+            "\tsphere(1);",
+            ""
+        ],
+        "description": "Converted from legacy template (translate_sphere.json)",
+        "prefix": "translate_sphere"
+    }
+}

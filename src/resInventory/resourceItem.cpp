@@ -66,7 +66,8 @@ QString resourceTypeToString(ResourceType type)
 {
     switch (type) {
         case ResourceType::Unknown:     return QStringLiteral("Unknown");
-        case ResourceType::ColorScheme: return QStringLiteral("ColorScheme");
+        case ResourceType::RenderColors: return QStringLiteral("RenderColors");
+        case ResourceType::EditorColors: return QStringLiteral("EditorColors");
         case ResourceType::Font:        return QStringLiteral("Font");
         case ResourceType::Library:     return QStringLiteral("Library");
         case ResourceType::Example:     return QStringLiteral("Example");
@@ -80,7 +81,8 @@ QString resourceTypeToString(ResourceType type)
 
 ResourceType stringToResourceType(const QString& str)
 {
-    if (str == QLatin1String("ColorScheme")) return ResourceType::ColorScheme;
+    if (str == QLatin1String("RenderColors")) return ResourceType::RenderColors;
+    if (str == QLatin1String("EditorColors")) return ResourceType::EditorColors;
     if (str == QLatin1String("Font"))        return ResourceType::Font;
     if (str == QLatin1String("Library"))     return ResourceType::Library;
     if (str == QLatin1String("Example"))     return ResourceType::Example;
@@ -107,6 +109,22 @@ ResourceTier stringToResourceTier(const QString& str)
     if (str == QLatin1String("Machine"))      return ResourceTier::Machine;
     if (str == QLatin1String("User"))         return ResourceTier::User;
     return ResourceTier::User;
+}
+
+// ============================================================================
+// ResourceTemplate
+// ============================================================================
+
+ResourceTemplate::ResourceTemplate(const QString& path)
+    : ResourceItem(path)
+    , m_format(QStringLiteral("text/scad.template"))
+    , m_version(QStringLiteral("1"))
+{
+}
+
+bool ResourceTemplate::isValid() const
+{
+    return ResourceItem::isValid() && !m_body.isEmpty();
 }
 
 } // namespace resInventory

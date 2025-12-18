@@ -18,9 +18,22 @@ TEST(TemplateParserTest, ParseEmptyJson) {
 
 TEST(TemplateParserTest, ParseValidJson) {
     TemplateParser parser;
-    auto result = parser.parseJson("{}");
+    // Test with valid modern format
+    std::string validJson = R"({
+        "test": {
+            "_format": "vscode-snippet",
+            "_source": "cppsnippet-made",
+            "_version": 1,
+            "prefix": "test",
+            "body": ["test body"],
+            "description": "Test template"
+        }
+    })";
+    auto result = parser.parseJson(validJson);
     
     EXPECT_TRUE(result.success);
+    EXPECT_EQ(result.templates.size(), 1);
+    EXPECT_EQ(result.templates[0].getPrefix(), "test");
 }
 
 TEST(TemplateParserTest, ParseNonExistentFile) {

@@ -6,16 +6,20 @@
 #pragma once
 
 #include <QMainWindow>
+#include <scadtemplates/template.h>
+#include <resInventory/resourceItem.h>
 #include <memory>
 
-class QListWidget;
 class QTextEdit;
 class QLineEdit;
 class QPlainTextEdit;
 class QSettings;
+class QPushButton;
+class QVBoxLayout;
 
 namespace scadtemplates {
 class TemplateManager;
+class Template;
 }
 
 namespace platformInfo {
@@ -24,6 +28,8 @@ class ResourceLocationManager;
 
 namespace resInventory {
 class ResourceInventoryManager;
+class ResourceTreeWidget;
+class ResourceItem;
 }
 
 /**
@@ -47,20 +53,29 @@ public:
 private slots:
     void onNewTemplate();
     void onDeleteTemplate();
+    void onCopyTemplate();
     void onSaveTemplate();
-    void onTemplateSelected();
+    void onEditTemplate();
+    void onCancelEdit();
     void onSearch(const QString& text);
     void onPreferences();
     void onNewFile();
     void onOpenFile();
     void onSaveFile();
     void onSaveFileAs();
+    void onInventoryItemSelected(const resInventory::ResourceItem& item);
+    void onInventorySelectionChanged();
 
 private:
     void setupUi();
     void setupMenus();
-    void refreshTemplateList();
     void updateWindowTitle();
+    void updateTemplateButtons();
+    void refreshInventory();
+    void populateEditorFromSelection(const resInventory::ResourceItem& item);
+    QString userTemplatesRoot() const;
+    bool saveTemplateToUser(const scadtemplates::Template& tmpl);
+    void applyFilterToTree(const QString& text);
     
     std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;
     std::unique_ptr<platformInfo::ResourceLocationManager> m_resourceManager;
@@ -68,14 +83,24 @@ private:
     std::unique_ptr<QSettings> m_settings;
     
     // Template panel
-    QListWidget* m_templateList;
+    QVBoxLayout* m_inventoryLayout;
+    resInventory::ResourceTreeWidget* m_templateTree;
     QLineEdit* m_prefixEdit;
     QTextEdit* m_bodyEdit;
-    QLineEdit* m_descriptionEdit;
+    QTextEdit* m_descriptionEdit;
     QLineEdit* m_searchEdit;
+    QLineEdit* m_sourceEdit; // non-editable provenance field
+    QPushButton* m_newBtn;
+    QPushButton* m_deleteBtn;
+    QPushButton* m_copyBtn;
+    QPushButton* m_editBtn;
+    QPushButton* m_saveBtn;
+    QPushButton* m_cancelBtn;
     
     // Main editor
     QPlainTextEdit* m_editor;
     QString m_currentFile;
     bool m_modified = false;
+    bool m_editMode = false;
+    resInventory::ResourceItem m_selectedItem;
 };

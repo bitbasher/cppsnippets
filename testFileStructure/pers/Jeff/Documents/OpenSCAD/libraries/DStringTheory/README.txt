@@ -1,0 +1,1 @@
+String Theory, a string library for OpenSCAD by 16807user on Thingiverse: https://www.thingiverse.com/thing:526023

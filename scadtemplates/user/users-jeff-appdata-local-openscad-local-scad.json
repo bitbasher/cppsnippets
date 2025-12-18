@@ -1,0 +1,15 @@
+{
+    "if-then-else": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "if($0) ",
+            "\t;",
+            "else",
+            "\t;"
+        ],
+        "description": "Converted from legacy template (local-scad.json)",
+        "prefix": "if-then-else"
+    }
+}

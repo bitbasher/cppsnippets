@@ -5,7 +5,27 @@
 #include <QFileInfo>
 #include <QDirIterator>
 
+// Allowed attachments for script-like resources (examples/tests/templates)
+static const QStringList kScriptAttachmentFilters = {
+    QStringLiteral("*.png"), QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
+    QStringLiteral("*.svg"), QStringLiteral("*.gif"),
+    QStringLiteral("*.json"), QStringLiteral("*.txt"), QStringLiteral("*.csv"),
+    QStringLiteral("*.stl"), QStringLiteral("*.off"), QStringLiteral("*.dxf"),
+    QStringLiteral("*.dat")
+};
+
 namespace resInventory {
+
+// Shared no-op scanner for resource types that are handled elsewhere
+static QVector<ResourceItem> scanNoOp(const QString& basePath,
+                                      ResourceTier tier,
+                                      const QString& locationKey)
+{
+    Q_UNUSED(basePath);
+    Q_UNUSED(tier);
+    Q_UNUSED(locationKey);
+    return {};
+}
 
 // ============================================================================
 // ResourceScanner
@@ -19,7 +39,8 @@ ResourceScanner::ResourceScanner(QObject* parent)
 QString ResourceScanner::resourceSubfolder(ResourceType type)
 {
     switch (type) {
-        case ResourceType::ColorScheme: return QStringLiteral("color-schemes");
+        case ResourceType::RenderColors: return QStringLiteral("color-schemes/render");
+        case ResourceType::EditorColors: return QStringLiteral("color-schemes/editor");
         case ResourceType::Font:        return QStringLiteral("fonts");
         case ResourceType::Library:     return QStringLiteral("libraries");
         case ResourceType::Example:     return QStringLiteral("examples");
@@ -34,7 +55,8 @@ QString ResourceScanner::resourceSubfolder(ResourceType type)
 QStringList ResourceScanner::resourceExtensions(ResourceType type)
 {
     switch (type) {
-        case ResourceType::ColorScheme:
+        case ResourceType::RenderColors:
+        case ResourceType::EditorColors:
             return {QStringLiteral(".json")};
         case ResourceType::Font:
             return {QStringLiteral(".ttf"), QStringLiteral(".otf"), 
@@ -78,13 +100,16 @@ QVector<ResourceItem> ResourceScanner::scanLocation(
     }
     
     switch (type) {
-        case ResourceType::ColorScheme:
-            return scanColorSchemes(basePath, tier, locationKey);
+        case ResourceType::RenderColors:
+            return scanRenderColors(basePath, tier, locationKey);
+        case ResourceType::EditorColors:
+            return scanEditorColors(basePath, tier, locationKey);
         case ResourceType::Font:
             return scanFonts(basePath, tier, locationKey);
         case ResourceType::Example:
-        case ResourceType::Test:
             return scanExamples(basePath, tier, locationKey);
+        case ResourceType::Test:
+            return scanTests(basePath, tier, locationKey);
         case ResourceType::Template:
             return scanTemplates(basePath, tier, locationKey);
         case ResourceType::Translation:
@@ -107,6 +132,13 @@ void ResourceScanner::scanToTree(
     
     emit scanStarted(type, locations.size());
     
+    // Libraries require hierarchical handling; delegate to dedicated scanner
+    if (type == ResourceType::Library) {
+        scanLibraries(locations, tier, tree);
+        emit scanCompleted(type, tree->allItems().size());
+        return;
+    }
+
     int totalItems = 0;
     for (const auto& loc : locations) {
         QVector<ResourceItem> items = scanLocation(loc, type, tier);
@@ -152,58 +184,75 @@ void ResourceScanner::scanLibraries(
     
     for (const auto& loc : locations) {
         if (!loc.exists || !loc.isEnabled) continue;
-        
-        QString librariesPath = QDir::cleanPath(loc.path + QStringLiteral("/libraries"));
+
+        const QString librariesPath = QDir::cleanPath(loc.path + QStringLiteral("/libraries"));
         QDir librariesDir(librariesPath);
-        
+
         if (!librariesDir.exists()) continue;
-        
+
         // Each subfolder in libraries/ is a library
-        QStringList libraryFolders = librariesDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-        
+        const QStringList libraryFolders = librariesDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
         for (const QString& libName : libraryFolders) {
-            QString libPath = librariesDir.absoluteFilePath(libName);
-            
-            // Create library item
+            const QString libPath = librariesDir.absoluteFilePath(libName);
+            QDir libDir(libPath);
+
+            // Create library root node regardless of content; children decide visibility
             ResourceItem libItem(libPath, ResourceType::Library, tier);
             libItem.setName(libName);
             libItem.setDisplayName(libName);
             libItem.setSourcePath(libPath);
             libItem.setSourceLocationKey(loc.displayName);
             libItem.setAccess(ResourceAccess::ReadOnly);
-            
-            // Check if library has .scad files
-            QDir libDir(libPath);
-            QStringList scadFiles = libDir.entryList({QStringLiteral("*.scad")}, QDir::Files);
-            if (scadFiles.isEmpty()) {
-                continue;  // Skip folders without .scad files
-            }
-            
+
             ResourceTreeItem* libNode = tree->addResource(libItem);
-            
-            // Scan for examples within this library
-            QString examplesPath = libDir.absoluteFilePath(QStringLiteral("examples"));
+
+            // Library root .scad scripts
+            QFileInfoList rootScripts = libDir.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
+            for (const QFileInfo& fi : rootScripts) {
+                ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
+                                                                  ResourceType::Library,
+                                                                  tier,
+                                                                  loc.displayName);
+                script.setCategory(libName);  // Tag with library for clarity
+                tree->addChildResource(libNode, script);
+            }
+
+            // Examples
+            const QString examplesPath = libDir.absoluteFilePath(QStringLiteral("examples"));
             if (QDir(examplesPath).exists()) {
                 QVector<ResourceItem> examples = scanExamples(examplesPath, tier, loc.displayName);
-                for (const auto& example : examples) {
+                for (auto example : examples) {
+                    example.setCategory(libName);
                     tree->addChildResource(libNode, example);
                 }
             }
-            
-            // Scan for tests within this library
-            QString testsPath = libDir.absoluteFilePath(QStringLiteral("tests"));
+
+            // Tests
+            const QString testsPath = libDir.absoluteFilePath(QStringLiteral("tests"));
             if (QDir(testsPath).exists()) {
-                QVector<ResourceItem> tests = scanExamples(testsPath, tier, loc.displayName);
-                for (auto& test : tests) {
-                    test.setType(ResourceType::Test);
+                QVector<ResourceItem> tests = scanTests(testsPath, tier, loc.displayName);
+                for (auto test : tests) {
+                    test.setCategory(libName);
                     tree->addChildResource(libNode, test);
+                }
+            }
+
+            // Templates bundled with the library (read-only)
+            const QString templatesPath = libDir.absoluteFilePath(QStringLiteral("templates"));
+            if (QDir(templatesPath).exists()) {
+                QVector<ResourceItem> templates = scanTemplates(templatesPath, tier, loc.displayName);
+                for (auto tmpl : templates) {
+                    tmpl.setCategory(libName);
+                    tmpl.setAccess(ResourceAccess::ReadOnly);
+                    tree->addChildResource(libNode, tmpl);
                 }
             }
         }
     }
 }
 
-QVector<ResourceItem> ResourceScanner::scanColorSchemes(
+QVector<ResourceItem> ResourceScanner::scanRenderColors(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
     QVector<ResourceItem> results;
@@ -215,7 +264,31 @@ QVector<ResourceItem> ResourceScanner::scanColorSchemes(
     QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
     
     for (const QFileInfo& fi : files) {
-        ResourceItem item(fi.absoluteFilePath(), ResourceType::ColorScheme, tier);
+        ResourceItem item(fi.absoluteFilePath(), ResourceType::RenderColors, tier);
+        item.setName(fi.baseName());
+        item.setDisplayName(fi.baseName());
+        item.setSourcePath(fi.absoluteFilePath());
+        item.setSourceLocationKey(locationKey);
+        item.setAccess(ResourceAccess::ReadOnly);
+        results.append(item);
+    }
+    
+    return results;
+}
+
+QVector<ResourceItem> ResourceScanner::scanEditorColors(
+    const QString& basePath, ResourceTier tier, const QString& locationKey)
+{
+    QVector<ResourceItem> results;
+    QDir dir(basePath);
+    
+    if (!dir.exists()) return results;
+    
+    QStringList filters = {QStringLiteral("*.json")};
+    QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
+    
+    for (const QFileInfo& fi : files) {
+        ResourceItem item(fi.absoluteFilePath(), ResourceType::EditorColors, tier);
         item.setName(fi.baseName());
         item.setDisplayName(fi.baseName());
         item.setSourcePath(fi.absoluteFilePath());
@@ -230,26 +303,8 @@ QVector<ResourceItem> ResourceScanner::scanColorSchemes(
 QVector<ResourceItem> ResourceScanner::scanFonts(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
-    QVector<ResourceItem> results;
-    QDir dir(basePath);
-    
-    if (!dir.exists()) return results;
-    
-    QStringList filters = {QStringLiteral("*.ttf"), QStringLiteral("*.otf"),
-                           QStringLiteral("*.woff"), QStringLiteral("*.woff2")};
-    QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
-    
-    for (const QFileInfo& fi : files) {
-        ResourceItem item(fi.absoluteFilePath(), ResourceType::Font, tier);
-        item.setName(fi.baseName());
-        item.setDisplayName(fi.baseName());
-        item.setSourcePath(fi.absoluteFilePath());
-        item.setSourceLocationKey(locationKey);
-        item.setAccess(ResourceAccess::ReadOnly);
-        results.append(item);
-    }
-    
-    return results;
+    // Fonts are supplied by the system; only bundled font is handled elsewhere.
+    return scanNoOp(basePath, tier, locationKey);
 }
 
 QVector<ResourceItem> ResourceScanner::scanExamples(
@@ -257,11 +312,32 @@ QVector<ResourceItem> ResourceScanner::scanExamples(
 {
     QVector<ResourceItem> results;
     
-    // Scan recursively for .scad files
-    scanFolderRecursive(basePath, {QStringLiteral(".scad")}, 
-                        ResourceType::Example, tier, locationKey, 
-                        QString(), results);
-    
+    // One-level scan: top-level .scad files plus immediate subfolders
+    QDir dir(basePath);
+    if (!dir.exists()) return results;
+
+    auto processDir = [&](const QString& path, const QString& category) {
+        QDir d(path);
+        QFileInfoList files = d.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
+        for (const QFileInfo& fi : files) {
+            ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
+                                                              ResourceType::Example,
+                                                              tier,
+                                                              locationKey);
+            script.setCategory(category);
+            results.append(script);
+        }
+    };
+
+    // Top-level examples
+    processDir(basePath, QString());
+
+    // One-level subfolders as categories
+    QStringList subfolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString& sub : subfolders) {
+        processDir(dir.absoluteFilePath(sub), sub);
+    }
+
     return results;
 }
 
@@ -275,7 +351,8 @@ QVector<ResourceItem> ResourceScanner::scanTemplates(
     
     // Templates: subfolders define categories
     // First scan top-level templates (no category)
-    QStringList filters = {QStringLiteral("*.scad")};
+    // Support both .scad (legacy) and .json (modern VS Code snippet format) templates
+    QStringList filters = {QStringLiteral("*.scad"), QStringLiteral("*.json")};
     QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
     
     for (const QFileInfo& fi : files) {
@@ -293,7 +370,7 @@ QVector<ResourceItem> ResourceScanner::scanTemplates(
     for (const QString& subfolder : subfolders) {
         QString subPath = dir.absoluteFilePath(subfolder);
         
-        scanFolderRecursive(subPath, {QStringLiteral(".scad")},
+        scanFolderRecursive(subPath, {QStringLiteral(".scad"), QStringLiteral(".json")},
                            ResourceType::Template, tier, locationKey,
                            subfolder, results);
     }
@@ -304,24 +381,41 @@ QVector<ResourceItem> ResourceScanner::scanTemplates(
 QVector<ResourceItem> ResourceScanner::scanTranslations(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
+    // Translations are handled elsewhere; discovery is intentionally disabled here.
+    return scanNoOp(basePath, tier, locationKey);
+}
+
+QVector<ResourceItem> ResourceScanner::scanTests(
+    const QString& basePath, ResourceTier tier, const QString& locationKey)
+{
     QVector<ResourceItem> results;
+    
+    // One-level scan: top-level .scad files plus immediate subfolders
     QDir dir(basePath);
-    
     if (!dir.exists()) return results;
-    
-    QStringList filters = {QStringLiteral("*.qm"), QStringLiteral("*.ts")};
-    QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
-    
-    for (const QFileInfo& fi : files) {
-        ResourceItem item(fi.absoluteFilePath(), ResourceType::Translation, tier);
-        item.setName(fi.baseName());
-        item.setDisplayName(fi.baseName());
-        item.setSourcePath(fi.absoluteFilePath());
-        item.setSourceLocationKey(locationKey);
-        item.setAccess(ResourceAccess::ReadOnly);
-        results.append(item);
+
+    auto processDir = [&](const QString& path, const QString& category) {
+        QDir d(path);
+        QFileInfoList files = d.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
+        for (const QFileInfo& fi : files) {
+            ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
+                                                              ResourceType::Test,
+                                                              tier,
+                                                              locationKey);
+            script.setCategory(category);
+            results.append(script);
+        }
+    };
+
+    // Top-level tests
+    processDir(basePath, QString());
+
+    // One-level subfolders as categories
+    QStringList subfolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString& sub : subfolders) {
+        processDir(dir.absoluteFilePath(sub), sub);
     }
-    
+
     return results;
 }
 
@@ -344,17 +438,9 @@ ResourceScript ResourceScanner::scanScriptWithAttachments(
     QFileInfo fi(scriptPath);
     QDir dir = fi.dir();
     
-    // Common attachment patterns
-    QStringList attachmentFilters = {
-        QStringLiteral("*.png"), QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
-        QStringLiteral("*.svg"), QStringLiteral("*.gif"),  // Images
-        QStringLiteral("*.json"), QStringLiteral("*.txt"), QStringLiteral("*.csv"),  // Data
-        QStringLiteral("*.stl"), QStringLiteral("*.off"), QStringLiteral("*.dxf")   // 3D/2D files
-    };
-    
     // Only look for attachments that share the script's base name or are in a data subfolder
     QString baseName = fi.baseName();
-    QFileInfoList candidates = dir.entryInfoList(attachmentFilters, QDir::Files);
+    QFileInfoList candidates = dir.entryInfoList(kScriptAttachmentFilters, QDir::Files);
     
     for (const QFileInfo& candidate : candidates) {
         // Include if filename starts with script's base name
@@ -366,7 +452,7 @@ ResourceScript ResourceScanner::scanScriptWithAttachments(
     // Check for a data subfolder with same name as script
     QString dataFolder = dir.absoluteFilePath(baseName);
     if (QDir(dataFolder).exists()) {
-        QDirIterator it(dataFolder, attachmentFilters, QDir::Files, QDirIterator::Subdirectories);
+        QDirIterator it(dataFolder, kScriptAttachmentFilters, QDir::Files, QDirIterator::Subdirectories);
         while (it.hasNext()) {
             script.addAttachment(it.next());
         }
@@ -460,7 +546,8 @@ void ResourceInventoryManager::buildInventory(const platformInfo::ResourceLocati
     buildInventory(ResourceType::Example);
     buildInventory(ResourceType::Library);
     buildInventory(ResourceType::Font);
-    buildInventory(ResourceType::ColorScheme);
+    buildInventory(ResourceType::RenderColors);
+    buildInventory(ResourceType::EditorColors);
     buildInventory(ResourceType::Template);
     buildInventory(ResourceType::Translation);
 }
@@ -543,7 +630,8 @@ QString ResourceInventoryManager::countSummary() const
     addCount(ResourceType::Example, "Examples");
     addCount(ResourceType::Library, "Libraries");
     addCount(ResourceType::Font, "Fonts");
-    addCount(ResourceType::ColorScheme, "Color Schemes");
+    addCount(ResourceType::RenderColors, "Render Color Schemes");
+    addCount(ResourceType::EditorColors, "Editor Color Schemes");
     addCount(ResourceType::Template, "Templates");
     addCount(ResourceType::Translation, "Translations");
     

@@ -1,0 +1,4 @@
+{
+    "key" : "translate_cube",
+    "content" : "translate([^~^,,])\n\tcube(1,center=true);\n"
+}

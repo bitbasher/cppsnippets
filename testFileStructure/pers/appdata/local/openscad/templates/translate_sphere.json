@@ -1,0 +1,4 @@
+{
+    "key" : "translate_sphere",
+    "content" : "translate([^~^,,])\n\tsphere(1);\n"
+}

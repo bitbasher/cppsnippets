@@ -1,0 +1,4 @@
+{
+    "key" : "custom_list_strings",
+    "content" : "list = \"\"; // [\"\",\"^~^\", \"\", \"\" ]\n"
+}

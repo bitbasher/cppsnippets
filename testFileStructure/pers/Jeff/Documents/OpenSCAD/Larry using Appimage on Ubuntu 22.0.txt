@@ -1,0 +1,149 @@
+Larry using Appimage on Ubuntu 22.04
+
+
+OpenSCAD Version: 2025.08.19.ai26698 (git 6afea6fca)
+System information: Linux 6.8.0-60-generic #63~22.04.1-Ubuntu SMP
+PREEMPT_DYNAMIC Tue Apr 22 19:00:15 UTC 2 x86_64 Ubuntu 22.04.5 LTS 12
+CPUs 11.02 GB RAM
+User Agent: OpenSCAD/2025.08.19.ai26698 (git 6afea6fca) (Linux x86_64;
+Ubuntu 22.04.5 LTS)
+Compiler: GCC "11.4.0" 64bit
+MinGW build: No
+Debug build: No
+Boost version: 1_74
+Eigen version: 3.4.0
+CGAL version, kernels: 5.5.1, Cartesian<Gmpq>, Extended_cartesian<Gmpq>
+Python Version: Python 3.10.12
+OpenCSG version: OpenCSG 1.8.1
+Clipper2 version: 1.5.2
+Manifold version: 3.2.1
+Qt version: 5.15.3
+QScintilla version: 2.14.1
+InputDrivers:
+GLib version: 2.72.4
+lodepng version: 20230410
+libzip version: 1.7.3
+fontconfig version: 2.13.1
+freetype version: 2.11.1
+harfbuzz version: 2.7.4
+cairo version: 1.16.0
+lib3mf version: 1.8.1
+Features: roof*, input-driver-dbus, lazy-union*, vertex-object-
+renderers-indexing, textmetrics*, import-function*, object-function,
+predictible-output, python-engine
+Application Path: /tmp/.mount_OpenSCMAGpCo/usr/bin
+Documents Path: /home/larry/.local/share
+User Documents Path: /home/larry/Documents
+Resource Path: /tmp/.mount_OpenSCMAGpCo/usr/share/openscad
+User Library Path: /home/larry/.local/share/OpenSCAD/libraries
+User Examples Path: /home/larry/.local/share/OpenSCAD/examples
+User Config Path: /home/larry/.config/OpenSCAD
+Backup Path: /home/larry/.local/share/OpenSCAD/backups
+OPENSCADPATH: /home/larry/openscad/libraries
+OpenSCAD library path:
+/home/larry/openscad/libraries
+/home/larry/.local/share/OpenSCAD/libraries
+/tmp/.mount_OpenSCMAGpCo/usr/share/openscad/libraries
+
+OPENSCAD_FONT_PATH: <not set>
+OpenSCAD font path:
+/usr/share/fonts
+/usr/local/share/fonts
+/home/larry/.local/share/fonts
+/home/larry/.fonts
+/usr/X11/lib/X11/fonts
+/System/Library/Fonts
+/Library/Fonts
+/home/larry/Library/Fonts
+/usr/share/fonts/X11
+/usr/share/fonts/cMap
+/usr/share/fonts/cmap
+/usr/share/fonts/opentype
+/usr/share/fonts/truetype
+/usr/share/fonts/type1
+/usr/share/fonts/woff
+/usr/share/fonts/X11/Type1
+/usr/share/fonts/X11/encodings
+/usr/share/fonts/X11/misc
+/usr/share/fonts/X11/util
+/usr/share/fonts/cmap/adobe-cns1
+/usr/share/fonts/cmap/adobe-gb1
+/usr/share/fonts/cmap/adobe-japan1
+/usr/share/fonts/cmap/adobe-japan2
+/usr/share/fonts/cmap/adobe-korea1
+/usr/share/fonts/opentype/cabin
+/usr/share/fonts/opentype/cantarell
+/usr/share/fonts/opentype/linux-libertine
+/usr/share/fonts/opentype/malayalam
+/usr/share/fonts/opentype/mathjax
+/usr/share/fonts/opentype/noto
+/usr/share/fonts/opentype/opendyslexic
+/usr/share/fonts/opentype/urw-base35
+/usr/share/fonts/truetype/Gargi
+/usr/share/fonts/truetype/Gubbi
+/usr/share/fonts/truetype/Nakula
+/usr/share/fonts/truetype/Navilu
+/usr/share/fonts/truetype/Sahadeva
+/usr/share/fonts/truetype/Sarai
+/usr/share/fonts/truetype/abyssinica
+/usr/share/fonts/truetype/crosextra
+/usr/share/fonts/truetype/dejavu
+/usr/share/fonts/truetype/droid
+/usr/share/fonts/truetype/fonts-beng-extra
+/usr/share/fonts/truetype/fonts-deva-extra
+/usr/share/fonts/truetype/fonts-gujr-extra
+/usr/share/fonts/truetype/fonts-guru-extra
+/usr/share/fonts/truetype/fonts-kalapi
+/usr/share/fonts/truetype/fonts-orya-extra
+/usr/share/fonts/truetype/fonts-telu-extra
+/usr/share/fonts/truetype/fonts-yrsa-rasa
+/usr/share/fonts/truetype/freefont
+/usr/share/fonts/truetype/gentium
+/usr/share/fonts/truetype/gentium-basic
+/usr/share/fonts/truetype/kacst
+/usr/share/fonts/truetype/kacst-one
+/usr/share/fonts/truetype/lao
+/usr/share/fonts/truetype/liberation
+/usr/share/fonts/truetype/liberation2
+/usr/share/fonts/truetype/libreoffice
+/usr/share/fonts/truetype/lohit-assamese
+/usr/share/fonts/truetype/lohit-bengali
+/usr/share/fonts/truetype/lohit-devanagari
+/usr/share/fonts/truetype/lohit-gujarati
+/usr/share/fonts/truetype/lohit-kannada
+/usr/share/fonts/truetype/lohit-malayalam
+/usr/share/fonts/truetype/lohit-oriya
+/usr/share/fonts/truetype/lohit-punjabi
+/usr/share/fonts/truetype/lohit-tamil
+/usr/share/fonts/truetype/lohit-tamil-classical
+/usr/share/fonts/truetype/lohit-telugu
+/usr/share/fonts/truetype/malayalam
+/usr/share/fonts/truetype/noto
+/usr/share/fonts/truetype/open-sans
+/usr/share/fonts/truetype/padauk
+/usr/share/fonts/truetype/pagul
+/usr/share/fonts/truetype/samyak
+/usr/share/fonts/truetype/samyak-fonts
+/usr/share/fonts/truetype/sinhala
+/usr/share/fonts/truetype/teluguvijayam
+/usr/share/fonts/truetype/tibetan-machine
+/usr/share/fonts/truetype/tiresias
+/usr/share/fonts/truetype/tlwg
+/usr/share/fonts/truetype/ttf-khmeros-core
+/usr/share/fonts/truetype/ubuntu
+/usr/share/fonts/type1/gsfonts
+/usr/share/fonts/type1/urw-base35
+/usr/share/fonts/woff/opendyslexic
+/usr/share/fonts/X11/encodings/large
+GLAD version: 2.0.4
+OpenGL Version: 4.6 (Compatibility Profile) Mesa 23.2.1-
+1ubuntu3.1~22.04.3
+GL Renderer: RENOIR (renoir, LLVM 15.0.7, DRM 3.57, 6.8.0-60-generic)
+GL Vendor: AMD
+RGBA(8880), depth(0), stencil(0)
+GL_ARB_framebuffer_object: yes
+GL_EXT_framebuffer_object: yes
+GL_EXT_packed_depth_stencil: yes
+
+Qt graphics widget: QOpenGLWidget
+QSurfaceFormat: RGBA(8880), depth(0), stencil(0)

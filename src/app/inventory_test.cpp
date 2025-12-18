@@ -207,7 +207,8 @@ int main(int argc, char *argv[])
     
     // Scan for each resource type
     QList<ri::ResourceType> types = {
-        ri::ResourceType::ColorScheme,
+        ri::ResourceType::RenderColors,
+        ri::ResourceType::EditorColors,
         ri::ResourceType::Font,
         ri::ResourceType::Example,
         ri::ResourceType::Template,

@@ -1,62 +1,74 @@
-# Prerequisites
-*.d
+# Backups
+*~
+*.bak
+*.hide
+*.junk
+src/*.old
+src/*.org
+
+# CMake build directories
+build/
+/build*/
+/build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
+
+# CodeQL build artifacts
+_codeql_build_dir/
+_codeql_detected_source_root
+
+# Compiled Dynamic libraries
+*.dll
+*.dylib
+*.so
 
 # Compiled Object files
-*.slo
 *.lo
+*.slo
 *.o
 *.obj
 
-# Precompiled Headers
-*.gch
-*.pch
+# Compiled Static libraries
+*.a
+*.la
+*.lai
+*.lib
 
-# Linker files
-*.ilk
-
-# Debugger Files
+# Debug files
+*.dwo
 *.pdb
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Executables
+*.app
+*.exe
+*.out
 
 # Fortran module files
 *.mod
 *.smod
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
-
-# CMake build directories
-build/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-compile_commands.json
-
 # IDE files
 .idea/
-.vscode/
 *.code-workspace
 *.user
 *.suo
 *.sln
 *.vcxproj*
+
+# Linker files
+*.ilk
+
+# Mac OS X
+.DS_Store
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Prerequisites
+*.d
 
 # Qt generated files
 *_autogen/
@@ -65,12 +77,72 @@ ui_*.h
 qrc_*.cpp
 .qmake.stash
 *.pro.user*
+moc_*.cpp
+
+
+# Release Packages
+*.dmg
+
+# Stuff that should be kept
+/*.amf
+/*.blend
+/*.csg
+/*.dat
+/*.dump
+/.dir-locals.el
+/b/
+/c/
+object_script.openscad.Debug
+object_script.openscad.Release
+objects
+resources/CMakeFiles
+*.new
+.clangd
+.clangd/
+.gcov/
+.gdbinit
+.tags*
+.uuid
+.vs/
+/openscad_adaptor.cpp
+/openscad_interface.cpp
+/release
+/vcpkg_installed
+
+# Temporary structures and files
+scripts/run-clang-tidy-cached
+.cache/
+/locale/*.mo
+/locale/*/*/*.mo
+/locale/POTFILES
+/resources/*.rc
+/resources/common.qrc
+/resources/mac.qrc
+/tmp
+/lexer_lex.cpp
+/parser_yacc.cpp
+src/*.debug
 
 # Testing artifacts
-Testing/
-CTestTestfile.cmake
-DartConfiguration.tcl
-
-# CodeQL build artifacts
-_codeql_build_dir/
-_codeql_detected_source_root
+**/#*#
+**/out*.*
+**/project.xcworkspace
+**/xcuserdata
+tests/__pycache__/
+/Testing
+/DartConfiguration.tcl
+tests/DartConfiguration.tcl
+tests/data/python/gen_issue2342.py
+tests/data/python/gen_svg_viewbox_tests.py
+tests/data/scad/2D/features/import_dxf-tests.scad
+tests/data/scad/3D/features/import_3mf-tests.scad
+tests/data/scad/3D/features/import_stl-tests.scad
+tests/data/scad/issues/issue2342.scad
+tests/data/scad/misc/include-tests.scad
+tests/data/scad/misc/use-tests.scad
+tests/data/svg/viewbox/viewbox_*.svg
+tests/regression/export-pdf-fill/*.pdf
+tests/regression/pdfexporttest/*.pdf
+tests/venv
+/tests/data/large_file.*
+/tests/data/large/*

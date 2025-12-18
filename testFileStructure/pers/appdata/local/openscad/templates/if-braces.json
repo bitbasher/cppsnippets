@@ -1,0 +1,4 @@
+{
+    "key" : "if-braces",
+    "content" : "if(^~^) {\n\t;\n}\n\telse {\n\t;\n}\n"
+}

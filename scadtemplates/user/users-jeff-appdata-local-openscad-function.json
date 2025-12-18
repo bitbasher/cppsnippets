@@ -1,0 +1,13 @@
+{
+    "function": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "function f(x) = x$0;",
+            ""
+        ],
+        "description": "Converted from legacy template (function.json)",
+        "prefix": "function"
+    }
+}

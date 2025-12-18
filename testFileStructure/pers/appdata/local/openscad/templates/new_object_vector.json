@@ -1,0 +1,4 @@
+{
+    "key" : "new_object_vector",
+    "content" : "\nv = object( [\"^~^\",12], [\"\",\"\"] );\n"
+}

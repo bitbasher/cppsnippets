@@ -1,0 +1,17 @@
+{
+    "difference": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "difference() {",
+            "\tunion() {",
+            "\t\t$0",
+            "\t}",
+            "}",
+            ""
+        ],
+        "description": "Converted from legacy template (difference.json)",
+        "prefix": "difference"
+    }
+}

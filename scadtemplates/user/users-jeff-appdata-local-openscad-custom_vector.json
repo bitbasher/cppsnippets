@@ -1,0 +1,13 @@
+{
+    "custom_vector": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "$0 = [1,1,1]; // [0:1:10]",
+            ""
+        ],
+        "description": "Converted from legacy template (custom_vector.json)",
+        "prefix": "custom_vector"
+    }
+}

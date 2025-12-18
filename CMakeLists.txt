@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
+# Job pool configuration to prevent system crashes
+# Limit compilation to -j4 and linking to -j2 to reduce memory pressure
+set_property(GLOBAL APPEND PROPERTY JOB_POOLS compile_pool=4 link_pool=2)
+set(CMAKE_JOB_POOL_COMPILE compile_pool)
+set(CMAKE_JOB_POOL_LINK link_pool)
+
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
 # FindOpenGL prefers GLVND by default when available.
@@ -18,13 +24,17 @@ if(POLICY CMP0167) # Since CMake 3.30
   #  in future for compatibiltiy with OpenSCAD
   cmake_policy(SET CMP0167 NEW)
 endif()
+if(POLICY CMP0200) # Since CMake 3.30
+  # Location and configuration selection for imported targets is more consistent
+  cmake_policy(SET CMP0200 NEW)
+endif()
 
 # Version: MAJOR.MINOR.PATCH
 # - MAJOR: Manual (breaking changes)
 # - MINOR: Auto-incremented from Git commit count  
 # - PATCH: Manual (features/fixes within a release)
-set(SCADTEMPLATES_VERSION_MAJOR 1)
-set(SCADTEMPLATES_VERSION_PATCH 1)
+set(SCADTEMPLATES_VERSION_MAJOR 2)
+set(SCADTEMPLATES_VERSION_PATCH 0)
 
 # Get Git commit count for auto-incrementing minor version
 find_package(Git QUIET)
@@ -60,6 +70,9 @@ message(STATUS "ScadTemplates version: ${SCADTEMPLATES_VERSION} (Git commits: ${
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Options
 option(INFO "Display build configuration info at end of cmake config" ON)
@@ -95,6 +108,9 @@ endif()
 find_package(Qt6 COMPONENTS Core Gui REQUIRED)
 message(STATUS "Found Qt6::Core at ${Qt6_DIR}")
 message(STATUS "Found Qt6::Gui at ${Qt6Gui_DIR}")
+
+# JsonReaderPortable integration (static library for JSON file reading with error reporting)
+add_subdirectory(src/jsonreader-portable)
 
 # Find Qt6 Widgets for application (optional)
 if(BUILD_APP)
@@ -175,11 +191,11 @@ set(LIB_SOURCES
     src/template.cpp
     src/template_parser.cpp
     src/template_manager.cpp
+    src/legacy_template_converter.cpp
     src/scad_template_session.cpp
     src/editsubtype.cpp
     src/edittype.cpp
     src/filesubtype.cpp
-    src/filetype.cpp
     src/extnOSVersRef.cpp
     src/platformInfo.cpp
     src/resourcePaths.cpp
@@ -196,7 +212,6 @@ set(LIB_HEADERS
     src/include/scadtemplates/editsubtype.h
     src/include/scadtemplates/edittype.h
     src/include/scadtemplates/filesubtype.h
-    src/include/scadtemplates/filetype.h
     src/include/platformInfo/export.h
     src/include/platformInfo/extnOSVersRef.h
     src/include/platformInfo/platformInfo.h
@@ -212,7 +227,7 @@ target_include_directories(scadtemplates_lib PUBLIC
 )
 
 # Link Qt6::Core and Qt6::Gui for QString, QVector, QSysInfo, QScreen support in library
-target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui)
+target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui JsonReaderPortable)
 
 # Set library properties for Windows DLL export
 if(BUILD_SHARED_LIBS)
@@ -302,6 +317,56 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF  # Console app, not GUI
     )
     
+    # Template converter test app
+    add_executable(convert_templates_test src/app/convert_templates_test.cpp)
+    target_link_libraries(convert_templates_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(convert_templates_test PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    )
+    set_target_properties(convert_templates_test PROPERTIES
+        OUTPUT_NAME convert_templates_test
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Template discovery test app
+    add_executable(template_discovery_test src/app/template_discovery_test.cpp)
+    target_link_libraries(template_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(template_discovery_test PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    )
+    set_target_properties(template_discovery_test PROPERTIES
+        OUTPUT_NAME template_discovery_test
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Library discovery test app
+    add_executable(library_discovery_test
+        src/app/library_discovery_test.cpp
+        src/resInventory/resourceScanner.cpp
+        src/resInventory/resourceItem.cpp
+        src/resInventory/resourceTreeWidget.cpp
+        src/include/resInventory/resourceScanner.h
+        src/include/resInventory/resourceItem.h
+        src/include/resInventory/resourceTreeWidget.h
+    )
+    target_link_libraries(library_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(library_discovery_test PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    )
+    set_target_properties(library_discovery_test PROPERTIES
+        OUTPUT_NAME library_discovery_test
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Copy Qt platform plugins so the console app can find qwindows at runtime
+    if(WIN32)
+        add_custom_command(TARGET inventory_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${Qt6_DIR}/../../../plugins/platforms"
+                "$<TARGET_FILE_DIR:inventory_test>/platforms"
+            COMMENT "Copying Qt platform plugins for inventory_test...")
+    endif()
+    
     # Copy Qt platform plugins to app output directory
     if(WIN32)
         add_custom_command(TARGET scadtemplates_app POST_BUILD
@@ -327,6 +392,16 @@ if(BUILD_TESTS)
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
+
+    # Work around MSVC 14.44 internal compiler errors in gtest/gmock amalgamated sources
+    # Disable optimization on these third-party translation units to avoid ICEs.
+    if(MSVC)
+        foreach(t gmock gmock_main gtest gtest_main)
+            if(TARGET ${t})
+                target_compile_options(${t} PRIVATE /Od /d2SSAOptimizer-)
+            endif()
+        endforeach()
+    endif()
     
     include(GoogleTest)
     
@@ -340,7 +415,7 @@ if(BUILD_TESTS)
         tests/test_editsubtype.cpp
         tests/test_edittype.cpp
         tests/test_filesubtype.cpp
-        tests/test_filetype.cpp
+        tests/test_resource_discovery.cpp
     )
     
     target_link_libraries(scadtemplates_tests PRIVATE

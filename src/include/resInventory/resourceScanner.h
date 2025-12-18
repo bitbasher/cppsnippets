@@ -106,9 +106,11 @@ signals:
 
 private:
     // Scanning methods for specific types
-    QVector<ResourceItem> scanColorSchemes(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QVector<ResourceItem> scanRenderColors(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QVector<ResourceItem> scanEditorColors(const QString& basePath, ResourceTier tier, const QString& locationKey);
     QVector<ResourceItem> scanFonts(const QString& basePath, ResourceTier tier, const QString& locationKey);
     QVector<ResourceItem> scanExamples(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QVector<ResourceItem> scanTests(const QString& basePath, ResourceTier tier, const QString& locationKey);
     QVector<ResourceItem> scanTemplates(const QString& basePath, ResourceTier tier, const QString& locationKey);
     QVector<ResourceItem> scanTranslations(const QString& basePath, ResourceTier tier, const QString& locationKey);
     

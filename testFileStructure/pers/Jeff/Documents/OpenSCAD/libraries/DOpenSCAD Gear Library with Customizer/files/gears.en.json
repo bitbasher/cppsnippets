@@ -1,0 +1,34 @@
+{
+    "fileFormatVersion": "1",
+    "parameterSets": {
+        "New set 1": {
+            "Gear_type": "herringbone_bevel_gear",
+            "Module": "1",
+            "bevel_angle": "45",
+            "bevel_width": "5",
+            "bore": "3",
+            "build_together": "true",
+            "helix_angle": "20",
+            "hub_wanted": "true",
+            "idler_bore": "3",
+            "idler_teeth": "36",
+            "lead_angle": "4",
+            "number_of_planets": "3",
+            "optimized": "false",
+            "planet_teeth": "10",
+            "pressure_angle": "20",
+            "rack_height": "4",
+            "rack_length": "50",
+            "rim_width": "3",
+            "ring_width": "5",
+            "shaft_angle": "90",
+            "solar_teeth": "20",
+            "straight": "false",
+            "teeth": "30",
+            "width": "5",
+            "worm_bore": "3",
+            "worm_length": "6",
+            "worm_starts": "1"
+        }
+    }
+}

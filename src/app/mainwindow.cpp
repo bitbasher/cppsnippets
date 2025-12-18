@@ -8,6 +8,7 @@
 #include <scadtemplates/scadtemplates.h>
 #include <platformInfo/resourceLocationManager.h>
 #include <resInventory/resourceScanner.h>
+#include <resInventory/resourceTreeWidget.h>
 
 #include <QMenuBar>
 #include <QMenu>
@@ -15,7 +16,6 @@
 #include <QToolBar>
 #include <QStatusBar>
 #include <QSplitter>
-#include <QListWidget>
 #include <QTextEdit>
 #include <QPlainTextEdit>
 #include <QLineEdit>
@@ -30,6 +30,12 @@
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QFontDatabase>
+#include <QStandardPaths>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -37,12 +43,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_resourceManager(std::make_unique<platformInfo::ResourceLocationManager>())
     , m_inventoryManager(std::make_unique<resInventory::ResourceInventoryManager>())
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
-    , m_templateList(nullptr)
-    , m_prefixEdit(nullptr)
-    , m_bodyEdit(nullptr)
-    , m_descriptionEdit(nullptr)
-    , m_searchEdit(nullptr)
-    , m_editor(nullptr)
 {
     // Set application path for resource manager
     m_resourceManager->setApplicationPath(QCoreApplication::applicationDirPath());
@@ -92,28 +92,38 @@ void MainWindow::setupUi() {
     connect(m_searchEdit, &QLineEdit::textChanged, this, &MainWindow::onSearch);
     listLayout->addWidget(m_searchEdit);
     
-    m_templateList = new QListWidget(this);
-    connect(m_templateList, &QListWidget::itemSelectionChanged, 
-            this, &MainWindow::onTemplateSelected);
-    connect(m_templateList, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
-        // Insert template into editor on double-click
-        if (item && m_editor) {
-            auto tmpl = m_templateManager->findByPrefix(item->text().toStdString());
-            if (tmpl) {
-                m_editor->insertPlainText(QString::fromStdString(tmpl->getBody()));
-            }
-        }
-    });
-    listLayout->addWidget(m_templateList);
+    // Get the pre-populated template tree from inventory manager
+    m_templateTree = m_inventoryManager->inventory(resInventory::ResourceType::Template);
+    m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
+    m_templateTree->setColumnHidden(2, true);  // Hide Category column
+    connect(m_templateTree, &resInventory::ResourceTreeWidget::itemSelectionChanged,
+            this, &MainWindow::onInventorySelectionChanged);
+    listLayout->addWidget(m_templateTree);
     
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    QPushButton* newBtn = new QPushButton(tr("New"), this);
-    QPushButton* deleteBtn = new QPushButton(tr("Delete"), this);
-    connect(newBtn, &QPushButton::clicked, this, &MainWindow::onNewTemplate);
-    connect(deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteTemplate);
-    buttonLayout->addWidget(newBtn);
-    buttonLayout->addWidget(deleteBtn);
+    m_newBtn = new QPushButton(tr("New"), this);
+    m_deleteBtn = new QPushButton(tr("Delete"), this);
+    m_copyBtn = new QPushButton(tr("Copy"), this);
+    m_editBtn = new QPushButton(tr("Edit"), this);
+    m_saveBtn = new QPushButton(tr("Save"), this);
+    m_cancelBtn = new QPushButton(tr("Cancel"), this);
+    
+    connect(m_newBtn, &QPushButton::clicked, this, &MainWindow::onNewTemplate);
+    connect(m_deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteTemplate);
+    connect(m_copyBtn, &QPushButton::clicked, this, &MainWindow::onCopyTemplate);
+    connect(m_editBtn, &QPushButton::clicked, this, &MainWindow::onEditTemplate);
+    connect(m_saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveTemplate);
+    connect(m_cancelBtn, &QPushButton::clicked, this, &MainWindow::onCancelEdit);
+    
+    buttonLayout->addWidget(m_newBtn);
+    buttonLayout->addWidget(m_deleteBtn);
+    buttonLayout->addWidget(m_copyBtn);
+    buttonLayout->addWidget(m_editBtn);
     listLayout->addLayout(buttonLayout);
+    
+    // Initialize button visibility
+    updateTemplateButtons();
     
     leftLayout->addWidget(listGroup);
     
@@ -121,27 +131,34 @@ void MainWindow::setupUi() {
     QGroupBox* editorGroup = new QGroupBox(tr("Template Editor"), this);
     QVBoxLayout* editorLayout = new QVBoxLayout(editorGroup);
     
-    QHBoxLayout* prefixLayout = new QHBoxLayout();
-    prefixLayout->addWidget(new QLabel(tr("Prefix:"), this));
+    QHBoxLayout* nameLayout = new QHBoxLayout();
+    nameLayout->addWidget(new QLabel(tr("Name:"), this));
     m_prefixEdit = new QLineEdit(this);
-    prefixLayout->addWidget(m_prefixEdit);
-    editorLayout->addLayout(prefixLayout);
+    nameLayout->addWidget(m_prefixEdit);
+    editorLayout->addLayout(nameLayout);
     
-    QHBoxLayout* descLayout = new QHBoxLayout();
-    descLayout->addWidget(new QLabel(tr("Description:"), this));
-    m_descriptionEdit = new QLineEdit(this);
-    descLayout->addWidget(m_descriptionEdit);
-    editorLayout->addLayout(descLayout);
+    QHBoxLayout* sourceLayout = new QHBoxLayout();
+    sourceLayout->addWidget(new QLabel(tr("Source:"), this));
+    m_sourceEdit = new QLineEdit(this);
+    m_sourceEdit->setReadOnly(true);
+    sourceLayout->addWidget(m_sourceEdit);
+    editorLayout->addLayout(sourceLayout);
     
-    editorLayout->addWidget(new QLabel(tr("Body:"), this));
+    editorLayout->addWidget(new QLabel(tr("Description:"), this));
+    m_descriptionEdit = new QTextEdit(this);
+    m_descriptionEdit->setMaximumHeight(80);
+    editorLayout->addWidget(m_descriptionEdit);
+    
+    editorLayout->addWidget(new QLabel(tr("Body:"), this), 0, Qt::AlignTop);
     m_bodyEdit = new QTextEdit(this);
     m_bodyEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     m_bodyEdit->setMaximumHeight(150);
     editorLayout->addWidget(m_bodyEdit);
     
-    QPushButton* saveBtn = new QPushButton(tr("Save Template"), this);
-    connect(saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveTemplate);
-    editorLayout->addWidget(saveBtn);
+    QHBoxLayout* editorButtonLayout = new QHBoxLayout();
+    editorButtonLayout->addWidget(m_saveBtn);
+    editorButtonLayout->addWidget(m_cancelBtn);
+    editorLayout->addLayout(editorButtonLayout);
     
     leftLayout->addWidget(editorGroup);
     
@@ -250,7 +267,7 @@ void MainWindow::setupMenus() {
             tr("JSON Files (*.json);;All Files (*)"));
         if (!fileName.isEmpty()) {
             if (m_templateManager->loadFromFile(fileName.toStdString())) {
-                refreshTemplateList();
+                refreshInventory();
                 statusBar()->showMessage(tr("Loaded templates from %1").arg(fileName));
             } else {
                 QMessageBox::warning(this, tr("Error"), 
@@ -317,50 +334,68 @@ void MainWindow::updateWindowTitle() {
     setWindowTitle(title);
 }
 
-void MainWindow::refreshTemplateList() {
-    m_templateList->clear();
-    
-    auto templates = m_templateManager->getAllTemplates();
-    for (const auto& tmpl : templates) {
-        m_templateList->addItem(QString::fromStdString(tmpl.getPrefix()));
-    }
+void MainWindow::onSearch(const QString& text) {
+    applyFilterToTree(text);
 }
 
 void MainWindow::onNewTemplate() {
+    m_editMode = true;
     m_prefixEdit->clear();
     m_bodyEdit->clear();
     m_descriptionEdit->clear();
+    m_sourceEdit->setText(QStringLiteral("cppsnippet-made"));  // Source tag for new templates
     m_prefixEdit->setFocus();
-    m_templateList->clearSelection();
+    m_templateTree->clearSelection();
+    m_prefixEdit->setReadOnly(false);
+    m_descriptionEdit->setReadOnly(false);
+    updateTemplateButtons();
 }
 
 void MainWindow::onDeleteTemplate() {
-    auto items = m_templateList->selectedItems();
-    if (items.isEmpty()) {
+    if (m_selectedItem.path().isEmpty()) {
         return;
     }
     
-    QString prefix = items.first()->text();
-    
     if (QMessageBox::question(this, tr("Delete Template"),
-            tr("Delete template '%1'?").arg(prefix),
+            tr("Delete template '%1'?").arg(m_selectedItem.name()),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
-        if (m_templateManager->removeTemplate(prefix.toStdString())) {
-            refreshTemplateList();
-            onNewTemplate();
-            statusBar()->showMessage(tr("Deleted template: %1").arg(prefix));
-        }
+        // TODO: Implement delete logic
+        statusBar()->showMessage(tr("Deleted template: %1").arg(m_selectedItem.name()));
     }
+}
+
+void MainWindow::onCopyTemplate() {
+    if (m_selectedItem.path().isEmpty()) {
+        return;
+    }
+    
+    m_editMode = true;
+    m_prefixEdit->setText(m_selectedItem.name() + tr("-copy"));
+    m_sourceEdit->setText(QStringLiteral("cppsnippet-made"));
+    m_descriptionEdit->setText(m_selectedItem.description());
+    // Body is already loaded from selection
+    m_prefixEdit->setFocus();
+    m_prefixEdit->setReadOnly(false);
+    m_descriptionEdit->setReadOnly(false);
+    m_templateTree->clearSelection();
+    updateTemplateButtons();
+}
+
+void MainWindow::onEditTemplate() {
+    m_editMode = true;
+    m_prefixEdit->setReadOnly(false);
+    m_descriptionEdit->setReadOnly(false);
+    updateTemplateButtons();
 }
 
 void MainWindow::onSaveTemplate() {
     QString prefix = m_prefixEdit->text().trimmed();
     QString body = m_bodyEdit->toPlainText();
-    QString description = m_descriptionEdit->text().trimmed();
+    QString description = m_descriptionEdit->toPlainText().trimmed();
     
     if (prefix.isEmpty() || body.isEmpty()) {
         QMessageBox::warning(this, tr("Error"),
-            tr("Prefix and body are required."));
+            tr("Name and body are required."));
         return;
     }
     
@@ -368,41 +403,190 @@ void MainWindow::onSaveTemplate() {
                                   body.toStdString(),
                                   description.toStdString());
     
-    if (m_templateManager->addTemplate(tmpl)) {
-        refreshTemplateList();
+    if (saveTemplateToUser(tmpl)) {
+        m_editMode = false;
+        refreshInventory();
         statusBar()->showMessage(tr("Saved template: %1").arg(prefix));
+        updateTemplateButtons();
     }
 }
 
-void MainWindow::onTemplateSelected() {
-    auto items = m_templateList->selectedItems();
-    if (items.isEmpty()) {
-        return;
-    }
-    
-    QString prefix = items.first()->text();
-    auto tmpl = m_templateManager->findByPrefix(prefix.toStdString());
-    
-    if (tmpl) {
-        m_prefixEdit->setText(QString::fromStdString(tmpl->getPrefix()));
-        m_bodyEdit->setPlainText(QString::fromStdString(tmpl->getBody()));
-        m_descriptionEdit->setText(QString::fromStdString(tmpl->getDescription()));
-    }
-}
-
-void MainWindow::onSearch(const QString& text) {
-    m_templateList->clear();
-    
-    std::vector<scadtemplates::Template> templates;
-    if (text.isEmpty()) {
-        templates = m_templateManager->getAllTemplates();
+void MainWindow::onCancelEdit() {
+    m_editMode = false;
+    m_prefixEdit->setReadOnly(true);
+    m_descriptionEdit->setReadOnly(true);
+    if (!m_selectedItem.path().isEmpty()) {
+        populateEditorFromSelection(m_selectedItem);
     } else {
-        templates = m_templateManager->search(text.toStdString());
+        m_prefixEdit->clear();
+        m_bodyEdit->clear();
+        m_descriptionEdit->clear();
+        m_sourceEdit->clear();
+    }
+    updateTemplateButtons();
+}
+
+void MainWindow::onInventoryItemSelected(const resInventory::ResourceItem& item) {
+    m_selectedItem = item;
+    // Show tier name in source field
+    QString tierName;
+    switch (item.tier()) {
+        case resInventory::ResourceTier::Installation: tierName = tr("Installation"); break;
+        case resInventory::ResourceTier::Machine: tierName = tr("Machine"); break;
+        case resInventory::ResourceTier::User: tierName = tr("User"); break;
+    }
+    m_sourceEdit->setText(tierName);
+    populateEditorFromSelection(item);
+}
+
+void MainWindow::onInventorySelectionChanged() {
+    resInventory::ResourceItem item = m_templateTree->selectedItem();
+    if (!item.path().isEmpty()) {
+        onInventoryItemSelected(item);
+    }
+}
+
+void MainWindow::refreshInventory() {
+    // Get the old tree to remove from layout
+    QLayout* parentLayout = m_templateTree->parentWidget() 
+        ? m_templateTree->parentWidget()->layout() : nullptr;
+    
+    if (parentLayout) {
+        parentLayout->removeWidget(m_templateTree);
     }
     
-    for (const auto& tmpl : templates) {
-        m_templateList->addItem(QString::fromStdString(tmpl.getPrefix()));
+    // Refresh creates a new widget
+    m_inventoryManager->refreshInventory(resInventory::ResourceType::Template);
+    
+    // Get the new widget and update our pointer
+    m_templateTree = m_inventoryManager->inventory(resInventory::ResourceType::Template);
+    m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
+    m_templateTree->setColumnHidden(2, true);  // Hide Category column
+    
+    // Reconnect signals
+    connect(m_templateTree, &resInventory::ResourceTreeWidget::itemSelectionChanged,
+            this, &MainWindow::onInventorySelectionChanged);
+    
+    // Re-add to layout
+    if (parentLayout) {
+        parentLayout->addWidget(m_templateTree);
     }
+}
+
+void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& item) {
+    m_prefixEdit->setText(item.name());
+
+    // Prefer structured parse via TemplateParser/JSON to extract body/description/source
+    QFile file(item.path());
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        const QByteArray data = file.readAll();
+        file.close();
+
+        QJsonParseError parseError;
+        QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+        if (parseError.error == QJsonParseError::NoError && doc.isObject()) {
+            QJsonObject root = doc.object();
+
+            // Legacy format: { "key": "...", "content": "..." }
+            if (root.contains("key") && root.contains("content")) {
+                QString key = root.value("key").toString();
+                QString content = root.value("content").toString();
+                // Unescape legacy markers
+                content.replace("\\n", "\n");
+                content.replace("^~^", "$0");
+                m_prefixEdit->setText(key);
+                m_bodyEdit->setPlainText(content);
+                m_descriptionEdit->setText(item.description());
+                m_sourceEdit->setText(QStringLiteral("legacy-converted"));
+            } else {
+                // Modern VSCode snippet format: { "name": { "prefix": ..., "body": [...], "description": ..., "_source": ... } }
+                // Choose the first entry or the one matching item.name()
+                QString selectedKey;
+                QJsonObject selectedObj;
+                for (auto it = root.begin(); it != root.end(); ++it) {
+                    if (it.key().startsWith('_')) continue; // skip metadata at root
+                    if (!it.value().isObject()) continue;
+                    QJsonObject obj = it.value().toObject();
+                    QString prefix = obj.value("prefix").toString(it.key());
+                    if (prefix == item.name() || selectedKey.isEmpty()) {
+                        selectedKey = it.key();
+                        selectedObj = obj;
+                    }
+                }
+
+                if (!selectedObj.isEmpty()) {
+                    // Body can be array or string
+                    QString bodyText;
+                    if (selectedObj.value("body").isArray()) {
+                        QJsonArray arr = selectedObj.value("body").toArray();
+                        QStringList lines;
+                        for (const QJsonValue& v : arr) {
+                            lines << v.toString();
+                        }
+                        bodyText = lines.join('\n');
+                    } else {
+                        bodyText = selectedObj.value("body").toString();
+                    }
+
+                    QString prefix = selectedObj.value("prefix").toString(selectedKey);
+                    QString desc = selectedObj.value("description").toString(item.description());
+                    QString sourceTag = selectedObj.value("_source").toString(item.sourceLocationKey());
+
+                    m_prefixEdit->setText(prefix);
+                    m_bodyEdit->setPlainText(bodyText);
+                    m_descriptionEdit->setText(desc);
+                    m_sourceEdit->setText(sourceTag);
+                } else {
+                    // Fallback: treat as plain text
+                    m_bodyEdit->setPlainText(QString::fromUtf8(data));
+                    m_descriptionEdit->setText(item.description());
+                    m_sourceEdit->setText(item.sourceLocationKey());
+                }
+            }
+        } else {
+            // Non-JSON: treat as plain text template
+            m_bodyEdit->setPlainText(QString::fromUtf8(data));
+            m_descriptionEdit->setText(item.description());
+            m_sourceEdit->setText(item.sourceLocationKey());
+        }
+    } else {
+        m_bodyEdit->setPlainText("");
+        m_descriptionEdit->setText(item.description());
+        m_sourceEdit->setText(item.sourceLocationKey());
+    }
+
+    updateTemplateButtons();
+}
+
+QString MainWindow::userTemplatesRoot() const {
+    return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + 
+           QStringLiteral("/ScadTemplates");
+}
+
+bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl) {
+    // TODO: Implement save to user templates
+    return true;
+}
+
+void MainWindow::applyFilterToTree(const QString& text) {
+    // TODO: Filter tree based on search text
+}
+
+void MainWindow::updateTemplateButtons() {
+    bool hasSelection = !m_selectedItem.path().isEmpty();
+    bool isEditing = m_editMode;
+    
+    m_newBtn->setEnabled(!isEditing);
+    m_deleteBtn->setEnabled(!isEditing && hasSelection);
+    m_copyBtn->setEnabled(!isEditing && hasSelection);
+    m_editBtn->setEnabled(!isEditing && hasSelection);
+    m_saveBtn->setEnabled(isEditing);
+    m_cancelBtn->setEnabled(isEditing);
+    
+    // Update tooltips
+    m_saveBtn->setToolTip(isEditing ? tr("Save changes") : tr("Save only active in Edit mode"));
+    m_cancelBtn->setToolTip(isEditing ? tr("Cancel changes") : tr("Cancel only active in Edit mode"));
 }
 
 void MainWindow::onPreferences() {

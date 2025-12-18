@@ -22,11 +22,12 @@ enum class ResourceTier {
  */
 enum class ResourceType {
     Unknown,
-    ColorScheme,    ///< Color scheme file (.json)
+    RenderColors,   ///< Render color scheme (.json)
+    EditorColors,   ///< Editor color scheme (.json)
     Font,           ///< Font file (.ttf, .otf)
     Library,        ///< OpenSCAD library (folder with .scad files)
-    Example,        ///< Example script (.scad with optional attachments)
-    Test,           ///< Test script (like example, for library testing)
+    Example,        ///< Example script (.scad) with optional attachments (.png, .jpg, .jpeg, .svg, .gif, .json, .txt, .csv, .stl, .off, .dxf, .dat)
+    Test,           ///< Test script (.scad) with optional attachments (.png, .jpg, .jpeg, .svg, .gif, .json, .txt, .csv, .stl, .off, .dxf, .dat)
     Template,       ///< User template (.scad, writable)
     Shader,         ///< Shader file
     Translation     ///< Translation file (.ts, .qm)
@@ -154,6 +155,45 @@ private:
 };
 
 /**
+ * @brief Resource representing a template
+ * 
+ * Extends ResourceItem with template-specific metadata
+ * including format, source tag, and version.
+ */
+class ResourceTemplate : public ResourceItem {
+public:
+    ResourceTemplate() = default;
+    explicit ResourceTemplate(const QString& path);
+    
+    // Template metadata
+    QString format() const { return m_format; }
+    void setFormat(const QString& format) { m_format = format; }
+    
+    QString source() const { return m_source; }
+    void setSource(const QString& source) { m_source = source; }
+    
+    QString version() const { return m_version; }
+    void setVersion(const QString& version) { m_version = version; }
+    
+    // Template content
+    QString body() const { return m_body; }
+    void setBody(const QString& body) { m_body = body; }
+    
+    // Raw legacy content (for imported templates)
+    QString rawText() const { return m_rawText; }
+    void setRawText(const QString& text) { m_rawText = text; }
+    
+    bool isValid() const override;
+    
+private:
+    QString m_format;       // MIME type, e.g., "text/scad.template"
+    QString m_source;       // Source tag: "legacy-converted", "cppsnippet-made", "openscad-made"
+    QString m_version;      // Version string
+    QString m_body;         // Assembled template body
+    QString m_rawText;      // Original legacy format text
+};
+
+/**
  * @brief String conversion utilities
  */
 QString resourceTypeToString(ResourceType type);
@@ -166,5 +206,6 @@ ResourceTier stringToResourceTier(const QString& str);
 
 Q_DECLARE_METATYPE(resInventory::ResourceItem)
 Q_DECLARE_METATYPE(resInventory::ResourceScript)
+Q_DECLARE_METATYPE(resInventory::ResourceTemplate)
 
 #endif // RESOURCEITEM_H

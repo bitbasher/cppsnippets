@@ -1,0 +1,13 @@
+{
+    "custom_list_strings": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "list = \"\"; // [\"\",\"$0\", \"\", \"\" ]",
+            ""
+        ],
+        "description": "Converted from legacy template (custom_list_strings.json)",
+        "prefix": "custom_list_strings"
+    }
+}

@@ -1,0 +1,731 @@
+OpenSCAD Version: 2025.10.21.nightly (git 9559b0f)
+System information: Linux 6.16.3-76061603-generic #202508231538~1759252525~24.04~c08ae99 SMP PREEMPT_DYNAMIC Tue S x86_64 Pop!_OS 24.04 LTS 16 CPUs 62.67 GB RAM
+User Agent: OpenSCAD/2025.10.21.nightly (git 9559b0f) (Linux x86_64; Pop!_OS 24.04 LTS)
+Compiler: GCC "13.2.0" 64bit
+MinGW build: No
+Debug build: No
+Boost version: 1_83
+Eigen version: 3.4.0
+CGAL version, kernels: 5.6, Cartesian<Gmpq>, Extended_cartesian<Gmpq>
+Python Version: Python 3.12.3
+OpenCSG version: OpenCSG 1.8.1
+Clipper2 version: 1.5.2
+Manifold version: 3.2.1
+Qt version: 5.15.13
+QScintilla version: 2.14.1
+InputDrivers: 
+GLib version: 2.80.0
+lodepng version: 20230410
+libzip version: 1.7.3
+fontconfig version: 2.15.0
+freetype version: 2.13.2
+harfbuzz version: 8.3.0
+cairo version: 1.18.0
+lib3mf version: 1.8.1
+Features: roof*, input-driver-dbus*, lazy-union*, vertex-object-renderers-indexing*, textmetrics*, import-function*, object-function, predictible-output*, python-engine
+Application Path: /usr/bin
+Documents Path: /home/.../.local/share
+User Documents Path: /home/.../Documents
+Resource Path: /usr/share/openscad-nightly
+User Library Path: /home/.../.local/share/OpenSCAD/libraries
+User Examples Path: /home/.../.local/share/OpenSCAD/examples
+User Config Path: /home/.../.config/OpenSCAD
+Backup Path: /home/.../.local/share/OpenSCAD/backups
+OPENSCADPATH: /home/.../.local/lib/OpenSCAD
+OpenSCAD library path:
+/home/.../.local/lib/OpenSCAD
+/home/.../.local/share/OpenSCAD/libraries
+/usr/share/openscad-nightly/libraries
+
+OPENSCAD_FONT_PATH: <not set>
+OpenSCAD font path:
+/home/.../.local/share/fonts
+/var/lib/flatpak/exports/share/fonts
+/usr/share/ubuntu/fonts
+/usr/share/gnome/fonts
+/home/.../.local/share/flatpak/exports/share/fonts
+/usr/local/share/fonts
+/usr/share/fonts
+/var/lib/snapd/desktop/fonts
+/home/.../.fonts
+/usr/share/texmf/fonts/opentype/public/lm
+/usr/share/texmf/fonts/opentype/public/lm-math
+/usr/share/texmf/fonts/opentype/public/tex-gyre-math
+/usr/share/texmf/fonts/opentype/public/tex-gyre
+/usr/X11/lib/X11/fonts
+/System/Library/Fonts
+/Library/Fonts
+/home/.../Library/Fonts
+/home/.../.local/share/fonts/3
+/home/.../.local/share/fonts/Adobe
+/home/.../.local/share/fonts/Google
+/home/.../.local/share/fonts/Macromedia 
+/home/.../.local/share/fonts/NerdFonts
+/home/.../.local/share/fonts/Omnitype
+/home/.../.local/share/fonts/PYRS Fontlab Ltd. 
+/home/.../.local/share/fonts/Typodermic
+/home/.../.local/share/fonts/Unknown Vendor
+/home/.../.local/share/fonts/Wei Huang
+/home/.../.local/share/fonts/a
+/home/.../.local/share/fonts/b
+/home/.../.local/share/fonts/c
+/home/.../.local/share/fonts/d
+/home/.../.local/share/fonts/e
+/home/.../.local/share/fonts/f
+/home/.../.local/share/fonts/g
+/home/.../.local/share/fonts/h
+/home/.../.local/share/fonts/i
+/home/.../.local/share/fonts/j
+/home/.../.local/share/fonts/k
+/home/.../.local/share/fonts/l
+/home/.../.local/share/fonts/m
+/home/.../.local/share/fonts/n
+/home/.../.local/share/fonts/o
+/home/.../.local/share/fonts/p
+/home/.../.local/share/fonts/r
+/home/.../.local/share/fonts/s
+/home/.../.local/share/fonts/t
+/home/.../.local/share/fonts/u
+/home/.../.local/share/fonts/x
+/home/.../.local/share/fonts/y
+/usr/share/fonts/X11
+/usr/share/fonts/cMap
+/usr/share/fonts/cmap
+/usr/share/fonts/fonts-go
+/usr/share/fonts/omfonts
+/usr/share/fonts/opentype
+/usr/share/fonts/truetype
+/usr/share/fonts/type1
+/usr/share/fonts/woff
+/usr/share/fonts/xscreensaver
+/home/.../.local/share/fonts/Adobe/OpenType
+/home/.../.local/share/fonts/Google/TrueType
+/home/.../.local/share/fonts/Macromedia / Made with Fontographer
+/home/.../.local/share/fonts/Omnitype/TrueType
+/home/.../.local/share/fonts/PYRS Fontlab Ltd. / Made with FontLab
+/home/.../.local/share/fonts/Typodermic/OpenType
+/home/.../.local/share/fonts/Unknown Vendor/OpenType
+/home/.../.local/share/fonts/Unknown Vendor/TrueType
+/home/.../.local/share/fonts/Wei Huang/TrueType
+/usr/share/fonts/X11/100dpi
+/usr/share/fonts/X11/Type1
+/usr/share/fonts/X11/encodings
+/usr/share/fonts/X11/misc
+/usr/share/fonts/X11/util
+/usr/share/fonts/cmap/adobe-cns1
+/usr/share/fonts/cmap/adobe-gb1
+/usr/share/fonts/cmap/adobe-japan1
+/usr/share/fonts/cmap/adobe-japan2
+/usr/share/fonts/cmap/adobe-korea1
+/usr/share/fonts/opentype/artemisia
+/usr/share/fonts/opentype/asana-math
+/usr/share/fonts/opentype/bodoni-classic
+/usr/share/fonts/opentype/cabin
+/usr/share/fonts/opentype/cantarell
+/usr/share/fonts/opentype/comic-neue
+/usr/share/fonts/opentype/complutum
+/usr/share/fonts/opentype/didot
+/usr/share/fonts/opentype/didot-classic
+/usr/share/fonts/opentype/ebgaramond
+/usr/share/fonts/opentype/fira
+/usr/share/fonts/opentype/font-awesome
+/usr/share/fonts/opentype/freefont
+/usr/share/fonts/opentype/gazis
+/usr/share/fonts/opentype/inter
+/usr/share/fonts/opentype/junicode
+/usr/share/fonts/opentype/jura
+/usr/share/fonts/opentype/league-spartan
+/usr/share/fonts/opentype/linux-libertine
+/usr/share/fonts/opentype/lobster
+/usr/share/fonts/opentype/lobstertwo
+/usr/share/fonts/opentype/malayalam
+/usr/share/fonts/opentype/mathjax
+/usr/share/fonts/opentype/neohellenic
+/usr/share/fonts/opentype/noto
+/usr/share/fonts/opentype/ocr-b
+/usr/share/fonts/opentype/olga
+/usr/share/fonts/opentype/porson
+/usr/share/fonts/opentype/radisnoir
+/usr/share/fonts/opentype/roboto
+/usr/share/fonts/opentype/solomos
+/usr/share/fonts/opentype/sortsmill
+/usr/share/fonts/opentype/stix
+/usr/share/fonts/opentype/stix-word
+/usr/share/fonts/opentype/theokritos
+/usr/share/fonts/opentype/unifont
+/usr/share/fonts/opentype/urw-base35
+/usr/share/fonts/opentype/xfree86-nonfree-syriac
+/usr/share/fonts/truetype/adf
+/usr/share/fonts/truetype/aenigma
+/usr/share/fonts/truetype/agave
+/usr/share/fonts/truetype/alee
+/usr/share/fonts/truetype/ancient-scripts
+/usr/share/fonts/truetype/andika
+/usr/share/fonts/truetype/arphic
+/usr/share/fonts/truetype/baskerville
+/usr/share/fonts/truetype/beteckna
+/usr/share/fonts/truetype/breip
+/usr/share/fonts/truetype/charis
+/usr/share/fonts/truetype/clear-sans
+/usr/share/fonts/truetype/comfortaa
+/usr/share/fonts/truetype/croscore
+/usr/share/fonts/truetype/crosextra
+/usr/share/fonts/truetype/dejavu
+/usr/share/fonts/truetype/denemo
+/usr/share/fonts/truetype/doulos
+/usr/share/fonts/truetype/droid
+/usr/share/fonts/truetype/dustin
+/usr/share/fonts/truetype/ebgaramond
+/usr/share/fonts/truetype/ecolier-court
+/usr/share/fonts/truetype/ecolier-lignes-court
+/usr/share/fonts/truetype/elusive-icons
+/usr/share/fonts/truetype/engadget
+/usr/share/fonts/truetype/essays1743
+/usr/share/fonts/truetype/euterpe
+/usr/share/fonts/truetype/f500
+/usr/share/fonts/truetype/fanwood
+/usr/share/fonts/truetype/fifthhorseman
+/usr/share/fonts/truetype/font-awesome
+/usr/share/fonts/truetype/fonts-atarismall
+/usr/share/fonts/truetype/fonts-bpg-georgian
+/usr/share/fonts/truetype/fonts-georgewilliams
+/usr/share/fonts/truetype/fonts-tiresias
+/usr/share/fonts/truetype/freefont
+/usr/share/fonts/truetype/gentium
+/usr/share/fonts/truetype/gentium-basic
+/usr/share/fonts/truetype/gentiumplus
+/usr/share/fonts/truetype/gentiumplus-compact
+/usr/share/fonts/truetype/glyphicons
+/usr/share/fonts/truetype/hack
+/usr/share/fonts/truetype/inconsolata
+/usr/share/fonts/truetype/isabella
+/usr/share/fonts/truetype/jsmath
+/usr/share/fonts/truetype/junicode
+/usr/share/fonts/truetype/klaudia-berenika
+/usr/share/fonts/truetype/larabie
+/usr/share/fonts/truetype/lato
+/usr/share/fonts/truetype/liberation
+/usr/share/fonts/truetype/liberation2
+/usr/share/fonts/truetype/libreoffice
+/usr/share/fonts/truetype/lindenhill
+/usr/share/fonts/truetype/linex
+/usr/share/fonts/truetype/lyx
+/usr/share/fonts/truetype/manchufont
+/usr/share/fonts/truetype/msttcorefonts
+/usr/share/fonts/truetype/noto
+/usr/share/fonts/truetype/ocr-a
+/usr/share/fonts/truetype/okolaks
+/usr/share/fonts/truetype/open-sans
+/usr/share/fonts/truetype/openoffice
+/usr/share/fonts/truetype/osifont
+/usr/share/fonts/truetype/paratype
+/usr/share/fonts/truetype/povray
+/usr/share/fonts/truetype/quicksand
+/usr/share/fonts/truetype/roboto
+/usr/share/fonts/truetype/roboto-slab
+/usr/share/fonts/truetype/sjfonts
+/usr/share/fonts/truetype/staypuft
+/usr/share/fonts/truetype/summersby
+/usr/share/fonts/truetype/tiresias
+/usr/share/fonts/truetype/tomsontalks
+/usr/share/fonts/truetype/ttf-bitstream-vera
+/usr/share/fonts/truetype/ttf-staypuft
+/usr/share/fonts/truetype/ttf-summersby
+/usr/share/fonts/truetype/ttf-xfree86-nonfree
+/usr/share/fonts/truetype/ttf-xfree86-nonfree-syriac
+/usr/share/fonts/truetype/tuffy
+/usr/share/fonts/truetype/ubuntu
+/usr/share/fonts/truetype/ubuntu-title
+/usr/share/fonts/truetype/unifont
+/usr/share/fonts/truetype/xfree86-nonfree
+/usr/share/fonts/type1/gsfonts
+/usr/share/fonts/type1/gsfonts-other
+/usr/share/fonts/type1/t1-xfree86-nonfree
+/usr/share/fonts/type1/texlive-fonts-recommended
+/usr/share/fonts/type1/urw-base35
+/usr/share/fonts/woff/ebgaramond
+/home/.../.local/share/fonts/Adobe/OpenType/Weston
+/home/.../.local/share/fonts/Google/TrueType/Great Vibes
+/home/.../.local/share/fonts/Macromedia / Made with Fontographer/TrueType
+/home/.../.local/share/fonts/Omnitype/TrueType/Chivo
+/home/.../.local/share/fonts/PYRS Fontlab Ltd. / Made with FontLab/OpenType
+/home/.../.local/share/fonts/PYRS Fontlab Ltd. / Made with FontLab/TrueType
+/home/.../.local/share/fonts/Typodermic/OpenType/Heavy Heap
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Cosmed Retro
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Enjoy Forest
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Fira Sans
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/KNOTS Zoo
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Roter Hoody Regular
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Soul Wave
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Super Vibes
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Unchained
+/home/.../.local/share/fonts/Unknown Vendor/OpenType/Weston
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Berkshire Swash
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Blow
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/D3 Euronism
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/D3 Euronism Bold
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/D3 Euronism Bold italic
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/D3 Euronism italic
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Fira Mono
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Font Awesome 5 Free
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/FreeMonoTengwar
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/FreeMonoTengwar-embedding
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Happy Times
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Lily Script One
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Noticia Text
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Pointilised
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Racoste
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Retro Groovy
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Rio Grande
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Rio Grande Striped
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Sacramento
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Saddlebag
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Star Vintage
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Super Woobly
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Syouwa Retro Pop
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Annatar
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Cursive
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Elfica
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Elfica A
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Noldor
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Noldor-1
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Noldor-2
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Noldor-A
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Quenya
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Quenya-1
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Quenya-2
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Quenya-A
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Sindarin
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Sindarin-1
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Sindarin-2
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Sindarin-A
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar Telcontar
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Tengwar-Gandalf
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Unchained
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Wantedo
+/home/.../.local/share/fonts/Unknown Vendor/TrueType/Yellowtail
+/home/.../.local/share/fonts/Wei Huang/TrueType/Work Sans
+/usr/share/fonts/X11/encodings/large
+/usr/share/fonts/opentype/roboto/slab
+/usr/share/fonts/truetype/roboto/unhinted
+/home/.../.local/share/fonts/Macromedia / Made with Fontographer/TrueType/Tengwar Formal
+/home/.../.local/share/fonts/Macromedia / Made with Fontographer/TrueType/Tengwar Parmaite
+/home/.../.local/share/fonts/PYRS Fontlab Ltd. / Made with FontLab/OpenType/Nautilus Pompilius
+/home/.../.local/share/fonts/PYRS Fontlab Ltd. / Made with FontLab/OpenType/ROYALLICE
+/home/.../.local/share/fonts/PYRS Fontlab Ltd. / Made with FontLab/TrueType/ROYALLICE
+/usr/share/fonts/truetype/roboto/unhinted/RobotoTTF
+GLAD version: 2.0.4
+OpenGL Version: 4.6.0 NVIDIA 580.82.09
+GL Renderer: NVIDIA GeForce RTX 3060 Laptop GPU/PCIe/SSE2
+GL Vendor: NVIDIA Corporation
+RGBA(8880), depth(24), stencil(0)
+GL_ARB_framebuffer_object: yes
+GL_EXT_framebuffer_object: yes
+GL_EXT_packed_depth_stencil: yes
+
+Qt graphics widget: QOpenGLWidget
+QSurfaceFormat: RGBA(8880), depth(24), stencil(0)
+
+GL Extensions:
+GL_AMD_multi_draw_indirect
+GL_AMD_seamless_cubemap_per_texture
+GL_AMD_vertex_shader_layer
+GL_AMD_vertex_shader_viewport_index
+GL_ARB_ES2_compatibility
+GL_ARB_ES3_1_compatibility
+GL_ARB_ES3_2_compatibility
+GL_ARB_ES3_compatibility
+GL_ARB_arrays_of_arrays
+GL_ARB_base_instance
+GL_ARB_bindless_texture
+GL_ARB_blend_func_extended
+GL_ARB_buffer_storage
+GL_ARB_clear_buffer_object
+GL_ARB_clear_texture
+GL_ARB_clip_control
+GL_ARB_color_buffer_float
+GL_ARB_compatibility
+GL_ARB_compressed_texture_pixel_storage
+GL_ARB_compute_shader
+GL_ARB_compute_variable_group_size
+GL_ARB_conditional_render_inverted
+GL_ARB_conservative_depth
+GL_ARB_copy_buffer
+GL_ARB_copy_image
+GL_ARB_cull_distance
+GL_ARB_debug_output
+GL_ARB_depth_buffer_float
+GL_ARB_depth_clamp
+GL_ARB_depth_texture
+GL_ARB_derivative_control
+GL_ARB_direct_state_access
+GL_ARB_draw_buffers
+GL_ARB_draw_buffers_blend
+GL_ARB_draw_elements_base_vertex
+GL_ARB_draw_indirect
+GL_ARB_draw_instanced
+GL_ARB_enhanced_layouts
+GL_ARB_explicit_attrib_location
+GL_ARB_explicit_uniform_location
+GL_ARB_fragment_coord_conventions
+GL_ARB_fragment_layer_viewport
+GL_ARB_fragment_program
+GL_ARB_fragment_program_shadow
+GL_ARB_fragment_shader
+GL_ARB_fragment_shader_interlock
+GL_ARB_framebuffer_no_attachments
+GL_ARB_framebuffer_object
+GL_ARB_framebuffer_sRGB
+GL_ARB_geometry_shader4
+GL_ARB_get_program_binary
+GL_ARB_get_texture_sub_image
+GL_ARB_gl_spirv
+GL_ARB_gpu_shader5
+GL_ARB_gpu_shader_fp64
+GL_ARB_gpu_shader_int64
+GL_ARB_half_float_pixel
+GL_ARB_half_float_vertex
+GL_ARB_imaging
+GL_ARB_indirect_parameters
+GL_ARB_instanced_arrays
+GL_ARB_internalformat_query
+GL_ARB_internalformat_query2
+GL_ARB_invalidate_subdata
+GL_ARB_map_buffer_alignment
+GL_ARB_map_buffer_range
+GL_ARB_multi_bind
+GL_ARB_multi_draw_indirect
+GL_ARB_multisample
+GL_ARB_multitexture
+GL_ARB_occlusion_query
+GL_ARB_occlusion_query2
+GL_ARB_parallel_shader_compile
+GL_ARB_pipeline_statistics_query
+GL_ARB_pixel_buffer_object
+GL_ARB_point_parameters
+GL_ARB_point_sprite
+GL_ARB_polygon_offset_clamp
+GL_ARB_post_depth_coverage
+GL_ARB_program_interface_query
+GL_ARB_provoking_vertex
+GL_ARB_query_buffer_object
+GL_ARB_robust_buffer_access_behavior
+GL_ARB_robustness
+GL_ARB_sample_locations
+GL_ARB_sample_shading
+GL_ARB_sampler_objects
+GL_ARB_seamless_cube_map
+GL_ARB_seamless_cubemap_per_texture
+GL_ARB_separate_shader_objects
+GL_ARB_shader_atomic_counter_ops
+GL_ARB_shader_atomic_counters
+GL_ARB_shader_ballot
+GL_ARB_shader_bit_encoding
+GL_ARB_shader_clock
+GL_ARB_shader_draw_parameters
+GL_ARB_shader_group_vote
+GL_ARB_shader_image_load_store
+GL_ARB_shader_image_size
+GL_ARB_shader_objects
+GL_ARB_shader_precision
+GL_ARB_shader_storage_buffer_object
+GL_ARB_shader_subroutine
+GL_ARB_shader_texture_image_samples
+GL_ARB_shader_texture_lod
+GL_ARB_shader_viewport_layer_array
+GL_ARB_shading_language_100
+GL_ARB_shading_language_420pack
+GL_ARB_shading_language_include
+GL_ARB_shading_language_packing
+GL_ARB_shadow
+GL_ARB_sparse_buffer
+GL_ARB_sparse_texture
+GL_ARB_sparse_texture2
+GL_ARB_sparse_texture_clamp
+GL_ARB_spirv_extensions
+GL_ARB_stencil_texturing
+GL_ARB_sync
+GL_ARB_tessellation_shader
+GL_ARB_texture_barrier
+GL_ARB_texture_border_clamp
+GL_ARB_texture_buffer_object
+GL_ARB_texture_buffer_object_rgb32
+GL_ARB_texture_buffer_range
+GL_ARB_texture_compression
+GL_ARB_texture_compression_bptc
+GL_ARB_texture_compression_rgtc
+GL_ARB_texture_cube_map
+GL_ARB_texture_cube_map_array
+GL_ARB_texture_env_add
+GL_ARB_texture_env_combine
+GL_ARB_texture_env_crossbar
+GL_ARB_texture_env_dot3
+GL_ARB_texture_filter_anisotropic
+GL_ARB_texture_filter_minmax
+GL_ARB_texture_float
+GL_ARB_texture_gather
+GL_ARB_texture_mirror_clamp_to_edge
+GL_ARB_texture_mirrored_repeat
+GL_ARB_texture_multisample
+GL_ARB_texture_non_power_of_two
+GL_ARB_texture_query_levels
+GL_ARB_texture_query_lod
+GL_ARB_texture_rectangle
+GL_ARB_texture_rg
+GL_ARB_texture_rgb10_a2ui
+GL_ARB_texture_stencil8
+GL_ARB_texture_storage
+GL_ARB_texture_storage_multisample
+GL_ARB_texture_swizzle
+GL_ARB_texture_view
+GL_ARB_timer_query
+GL_ARB_transform_feedback2
+GL_ARB_transform_feedback3
+GL_ARB_transform_feedback_instanced
+GL_ARB_transform_feedback_overflow_query
+GL_ARB_transpose_matrix
+GL_ARB_uniform_buffer_object
+GL_ARB_vertex_array_bgra
+GL_ARB_vertex_array_object
+GL_ARB_vertex_attrib_64bit
+GL_ARB_vertex_attrib_binding
+GL_ARB_vertex_buffer_object
+GL_ARB_vertex_program
+GL_ARB_vertex_shader
+GL_ARB_vertex_type_10f_11f_11f_rev
+GL_ARB_vertex_type_2_10_10_10_rev
+GL_ARB_viewport_array
+GL_ARB_window_pos
+GL_ATI_draw_buffers
+GL_ATI_texture_float
+GL_ATI_texture_mirror_once
+GL_EXTX_framebuffer_mixed_formats
+GL_EXT_Cg_shader
+GL_EXT_abgr
+GL_EXT_bgra
+GL_EXT_bindable_uniform
+GL_EXT_blend_color
+GL_EXT_blend_equation_separate
+GL_EXT_blend_func_separate
+GL_EXT_blend_minmax
+GL_EXT_blend_subtract
+GL_EXT_compiled_vertex_array
+GL_EXT_depth_bounds_test
+GL_EXT_direct_state_access
+GL_EXT_draw_buffers2
+GL_EXT_draw_instanced
+GL_EXT_draw_range_elements
+GL_EXT_fog_coord
+GL_EXT_framebuffer_blit
+GL_EXT_framebuffer_multisample
+GL_EXT_framebuffer_multisample_blit_scaled
+GL_EXT_framebuffer_object
+GL_EXT_framebuffer_sRGB
+GL_EXT_geometry_shader4
+GL_EXT_gpu_program_parameters
+GL_EXT_gpu_shader4
+GL_EXT_import_sync_object
+GL_EXT_memory_object
+GL_EXT_memory_object_fd
+GL_EXT_multi_draw_arrays
+GL_EXT_multiview_texture_multisample
+GL_EXT_multiview_timer_query
+GL_EXT_packed_depth_stencil
+GL_EXT_packed_float
+GL_EXT_packed_pixels
+GL_EXT_pixel_buffer_object
+GL_EXT_point_parameters
+GL_EXT_polygon_offset_clamp
+GL_EXT_post_depth_coverage
+GL_EXT_provoking_vertex
+GL_EXT_raster_multisample
+GL_EXT_rescale_normal
+GL_EXT_secondary_color
+GL_EXT_semaphore
+GL_EXT_semaphore_fd
+GL_EXT_separate_shader_objects
+GL_EXT_separate_specular_color
+GL_EXT_shader_image_load_formatted
+GL_EXT_shader_image_load_store
+GL_EXT_shader_integer_mix
+GL_EXT_shadow_funcs
+GL_EXT_sparse_texture2
+GL_EXT_stencil_two_side
+GL_EXT_stencil_wrap
+GL_EXT_texture3D
+GL_EXT_texture_array
+GL_EXT_texture_buffer_object
+GL_EXT_texture_compression_dxt1
+GL_EXT_texture_compression_latc
+GL_EXT_texture_compression_rgtc
+GL_EXT_texture_compression_s3tc
+GL_EXT_texture_cube_map
+GL_EXT_texture_edge_clamp
+GL_EXT_texture_env_add
+GL_EXT_texture_env_combine
+GL_EXT_texture_env_dot3
+GL_EXT_texture_filter_anisotropic
+GL_EXT_texture_filter_minmax
+GL_EXT_texture_integer
+GL_EXT_texture_lod
+GL_EXT_texture_lod_bias
+GL_EXT_texture_mirror_clamp
+GL_EXT_texture_object
+GL_EXT_texture_sRGB
+GL_EXT_texture_sRGB_R8
+GL_EXT_texture_sRGB_decode
+GL_EXT_texture_shadow_lod
+GL_EXT_texture_shared_exponent
+GL_EXT_texture_storage
+GL_EXT_texture_swizzle
+GL_EXT_timer_query
+GL_EXT_transform_feedback2
+GL_EXT_vertex_array
+GL_EXT_vertex_array_bgra
+GL_EXT_vertex_attrib_64bit
+GL_EXT_window_rectangles
+GL_EXT_x11_sync_object
+GL_IBM_rasterpos_clip
+GL_IBM_texture_mirrored_repeat
+GL_KHR_blend_equation_advanced
+GL_KHR_blend_equation_advanced_coherent
+GL_KHR_context_flush_control
+GL_KHR_debug
+GL_KHR_no_error
+GL_KHR_parallel_shader_compile
+GL_KHR_robust_buffer_access_behavior
+GL_KHR_robustness
+GL_KHR_shader_subgroup
+GL_KTX_buffer_region
+GL_NVX_blend_equation_advanced_multi_draw_buffers
+GL_NVX_conditional_render
+GL_NVX_gpu_memory_info
+GL_NVX_nvenc_interop
+GL_NVX_progress_fence
+GL_NV_ES1_1_compatibility
+GL_NV_ES3_1_compatibility
+GL_NV_alpha_to_coverage_dither_control
+GL_NV_bindless_multi_draw_indirect
+GL_NV_bindless_multi_draw_indirect_count
+GL_NV_bindless_texture
+GL_NV_blend_equation_advanced
+GL_NV_blend_equation_advanced_coherent
+GL_NV_blend_minmax_factor
+GL_NV_blend_square
+GL_NV_clip_space_w_scaling
+GL_NV_command_list
+GL_NV_compute_program5
+GL_NV_compute_shader_derivatives
+GL_NV_conditional_render
+GL_NV_conservative_raster
+GL_NV_conservative_raster_dilate
+GL_NV_conservative_raster_pre_snap
+GL_NV_conservative_raster_pre_snap_triangles
+GL_NV_conservative_raster_underestimation
+GL_NV_copy_depth_to_color
+GL_NV_copy_image
+GL_NV_depth_buffer_float
+GL_NV_depth_clamp
+GL_NV_draw_texture
+GL_NV_draw_vulkan_image
+GL_NV_explicit_multisample
+GL_NV_feature_query
+GL_NV_fence
+GL_NV_fill_rectangle
+GL_NV_float_buffer
+GL_NV_fog_distance
+GL_NV_fragment_coverage_to_color
+GL_NV_fragment_program
+GL_NV_fragment_program2
+GL_NV_fragment_program_option
+GL_NV_fragment_shader_barycentric
+GL_NV_fragment_shader_interlock
+GL_NV_framebuffer_mixed_samples
+GL_NV_framebuffer_multisample_coverage
+GL_NV_geometry_shader4
+GL_NV_geometry_shader_passthrough
+GL_NV_gpu_multicast
+GL_NV_gpu_program4
+GL_NV_gpu_program4_1
+GL_NV_gpu_program5
+GL_NV_gpu_program5_mem_extended
+GL_NV_gpu_program_fp64
+GL_NV_gpu_program_multiview
+GL_NV_gpu_shader5
+GL_NV_half_float
+GL_NV_internalformat_sample_query
+GL_NV_light_max_exponent
+GL_NV_memory_attachment
+GL_NV_memory_object_sparse
+GL_NV_mesh_shader
+GL_NV_multisample_coverage
+GL_NV_multisample_filter_hint
+GL_NV_occlusion_query
+GL_NV_packed_depth_stencil
+GL_NV_parameter_buffer_object
+GL_NV_parameter_buffer_object2
+GL_NV_path_rendering
+GL_NV_path_rendering_shared_edge
+GL_NV_pixel_data_range
+GL_NV_point_sprite
+GL_NV_primitive_restart
+GL_NV_primitive_shading_rate
+GL_NV_query_resource
+GL_NV_query_resource_tag
+GL_NV_register_combiners
+GL_NV_register_combiners2
+GL_NV_representative_fragment_test
+GL_NV_robustness_video_memory_purge
+GL_NV_sample_locations
+GL_NV_sample_mask_override_coverage
+GL_NV_scissor_exclusive
+GL_NV_shader_atomic_counters
+GL_NV_shader_atomic_float
+GL_NV_shader_atomic_float64
+GL_NV_shader_atomic_fp16_vector
+GL_NV_shader_atomic_int64
+GL_NV_shader_buffer_load
+GL_NV_shader_storage_buffer_object
+GL_NV_shader_subgroup_partitioned
+GL_NV_shader_texture_footprint
+GL_NV_shader_thread_group
+GL_NV_shader_thread_shuffle
+GL_NV_shading_rate_image
+GL_NV_stereo_view_rendering
+GL_NV_texgen_reflection
+GL_NV_texture_barrier
+GL_NV_texture_compression_vtc
+GL_NV_texture_dirty_tile_map
+GL_NV_texture_env_combine4
+GL_NV_texture_multisample
+GL_NV_texture_rectangle
+GL_NV_texture_rectangle_compressed
+GL_NV_texture_shader
+GL_NV_texture_shader2
+GL_NV_texture_shader3
+GL_NV_timeline_semaphore
+GL_NV_transform_feedback
+GL_NV_transform_feedback2
+GL_NV_uniform_buffer_std430_layout
+GL_NV_uniform_buffer_unified_memory
+GL_NV_vdpau_interop
+GL_NV_vdpau_interop2
+GL_NV_vertex_array_range
+GL_NV_vertex_array_range2
+GL_NV_vertex_attrib_integer_64bit
+GL_NV_vertex_buffer_unified_memory
+GL_NV_vertex_program
+GL_NV_vertex_program1_1
+GL_NV_vertex_program2
+GL_NV_vertex_program2_option
+GL_NV_vertex_program3
+GL_NV_viewport_array2
+GL_NV_viewport_swizzle
+GL_OVR_multiview
+GL_OVR_multiview2
+GL_S3_s3tc
+GL_SGIS_generate_mipmap
+GL_SGIS_texture_lod
+GL_SGIX_depth_texture
+GL_SGIX_shadow
+GL_SUN_slice_accum

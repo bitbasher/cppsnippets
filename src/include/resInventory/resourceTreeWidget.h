@@ -17,10 +17,10 @@ class ResourceTreeItem : public QTreeWidgetItem {
 public:
     // Column indices
     enum Column {
-        ColName = 0,
-        ColCategory = 1,
-        ColPath = 2,
-        ColTier = 3
+        ColTier = 0,
+        ColName = 1,
+        ColCategory = 2,
+        ColPath = 3
     };
     
     explicit ResourceTreeItem(QTreeWidget* parent = nullptr);
@@ -43,6 +43,9 @@ public:
     void setEnabled(bool enabled);
     
     bool exists() const { return m_item.exists(); }
+    
+    // Helper to compute shortened location path for display
+    static QString shortenedLocation(const QString& fullPath, ResourceTier tier);
     
 private:
     ResourceItem m_item;

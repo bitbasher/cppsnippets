@@ -1,0 +1,15 @@
+{
+    "for": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "for (i = [$0: : ]) {",
+            "\t",
+            "\t}",
+            ""
+        ],
+        "description": "Converted from legacy template (for.json)",
+        "prefix": "for"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "new_object": {
+        "_format": "vscode-snippet",
+        "_source": "legacy-converted",
+        "_version": 1,
+        "body": [
+            "",
+            "o = object( $0=\"\", b=12 );",
+            ""
+        ],
+        "description": "Converted from legacy template (new_object.json)",
+        "prefix": "new_object"
+    }
+}

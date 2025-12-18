@@ -1,0 +1,4 @@
+{
+    "key" : "function_check",
+    "content" : "function f(x) =\n\tis_undef(x) ?\n\t\tundef\n\t:\n\t\tx^~^\n\t;\n"
+}
