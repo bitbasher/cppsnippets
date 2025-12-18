@@ -6,6 +6,14 @@
 src/*.old
 src/*.org
 
+
+
+
+# Test fixture backups
+testFileStructure/**/backups/**
+# font files
+testFileStructure/**/ttf/**
+
 # CMake build directories
 build/
 /build*/
