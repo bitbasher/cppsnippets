@@ -416,10 +416,18 @@ if(BUILD_TESTS)
         tests/test_edittype.cpp
         tests/test_filesubtype.cpp
         tests/test_resource_discovery.cpp
+        # Resource inventory sources needed by discovery tests
+        src/resInventory/resourceScanner.cpp
+        src/resInventory/resourceItem.cpp
+        src/resInventory/resourceTreeWidget.cpp
+        src/include/resInventory/resourceScanner.h
+        src/include/resInventory/resourceItem.h
+        src/include/resInventory/resourceTreeWidget.h
     )
     
     target_link_libraries(scadtemplates_tests PRIVATE
         scadtemplates_lib
+        ${QT_LIBRARIES}
         GTest::gtest
         GTest::gtest_main
     )

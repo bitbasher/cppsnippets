@@ -169,6 +169,7 @@ TEST_F(ResourceDiscoveryTest, ScannerCanProcessInstallation) {
     testLoc.path = installPath;
     testLoc.displayName = installations[0];
     testLoc.hasResourceFolders = true;
+    testLoc.exists = true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -205,6 +206,7 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversRenderColors) {
     testLoc.path = installPath;
     testLoc.displayName = installations[0];
     testLoc.hasResourceFolders = true;
+    testLoc.exists = true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -236,6 +238,7 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversEditorColors) {
     testLoc.path = installPath;
     testLoc.displayName = installations[0];
     testLoc.hasResourceFolders = true;
+    testLoc.exists = true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -262,6 +265,7 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversExamplesWithCategories) {
     testLoc.path = installPath;
     testLoc.displayName = installations[0];
     testLoc.hasResourceFolders = true;
+    testLoc.exists = true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -306,6 +310,7 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversTemplates) {
     testLoc.path = installPath;
     testLoc.displayName = installations[0];
     testLoc.hasResourceFolders = true;
+    testLoc.exists = true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -326,7 +331,7 @@ TEST_F(ResourceDiscoveryTest, FontsScannerIsNoOp) {
     testLoc.path = installPath;
     testLoc.displayName = installations[0];
     testLoc.hasResourceFolders = true;
-
+    testLoc.exists = true;  // Must set exists = true for scanner to process
     
     ri::ResourceScanner scanner;
     auto items = scanner.scanLocation(testLoc, ri::ResourceType::Font, ri::ResourceTier::Installation);
@@ -347,6 +352,7 @@ TEST_F(ResourceDiscoveryTest, ResourceItemPropertiesPopulated) {
     testLoc.path = installPath;
     testLoc.displayName = installations[0];
     testLoc.hasResourceFolders = true;
+    testLoc.exists = true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
