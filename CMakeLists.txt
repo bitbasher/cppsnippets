@@ -203,6 +203,7 @@ set(LIB_SOURCES
     src/platformInfo.cpp
     src/resourcePaths.cpp
     src/resourceLocationManager.cpp
+    src/resInventory/resLocMap.cpp
 )
 
 set(LIB_HEADERS
@@ -220,6 +221,7 @@ set(LIB_HEADERS
     src/include/platformInfo/platformInfo.h
     src/include/platformInfo/resourcePaths.h
     src/include/platformInfo/resourceLocationManager.h
+    src/include/resInventory/resLocMap.h
 )
 
 # Build the shared/dynamic library
