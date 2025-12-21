@@ -286,7 +286,7 @@ QVariant TemplateTreeModel::headerData(int section, Qt::Orientation orientation,
         switch (section) {
         case 0: return tr("Name");
         case 1: return tr("Category");
-        case 2: return tr("Path");
+        case 2: return tr("Name");
         }
     }
     return QVariant();

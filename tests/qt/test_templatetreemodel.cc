@@ -279,7 +279,7 @@ private slots:
         
         QCOMPARE(model.headerData(0, Qt::Horizontal).toString(), QString("Name"));
         QCOMPARE(model.headerData(1, Qt::Horizontal).toString(), QString("Category"));
-        QCOMPARE(model.headerData(2, Qt::Horizontal).toString(), QString("Path"));
+        QCOMPARE(model.headerData(2, Qt::Horizontal).toString(), QString("Name"));
     }
     
     // ========================================================================
