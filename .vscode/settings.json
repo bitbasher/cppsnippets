@@ -90,5 +90,23 @@
     },
     "cmake.configureOnOpen": true,
     "cmake.generator": "Visual Studio 17 2022",
+    "cmake.buildType": "Debug",
+    "cmake.variants": {
+        "buildType": {
+            "default": "debug",
+            "choices": {
+                "debug": {
+                    "short": "Debug",
+                    "long": "Debug: Optimized for debugging",
+                    "buildType": "Debug"
+                },
+                "release": {
+                    "short": "Release",
+                    "long": "Release: Optimized for speed",
+                    "buildType": "Release"
+                }
+            }
+        }
+    },
     "C_Cpp.errorSquiggles": "enabled"
 }
