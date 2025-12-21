@@ -15,7 +15,7 @@
 #include <QStandardPaths>
 #include <QCoreApplication>
 
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 #include <shlobj.h>
 #include <windows.h>
 #endif
@@ -97,10 +97,10 @@ bool ResourceLocationManager::isValidInstallation(const QString& path) {
     // Linux: openscad executable
     bool hasExecutable = false;
     
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
     hasExecutable = QFile::exists(dir.absoluteFilePath(QStringLiteral("openscad.com"))) ||
                     QFile::exists(dir.absoluteFilePath(QStringLiteral("openscad.exe")));
-#elif defined(Q_OS_MACOS)
+#elif defined(Q_OS_MACOS) || defined(__APPLE__)
     // For .app bundles, we might be pointing to the .app or inside it
     if (path.endsWith(QStringLiteral(".app"), Qt::CaseInsensitive)) {
         hasExecutable = QFile::exists(dir.absoluteFilePath(QStringLiteral("Contents/MacOS/OpenSCAD")));
@@ -114,18 +114,13 @@ bool ResourceLocationManager::isValidInstallation(const QString& path) {
     if (!hasExecutable) return false;
     
     // Check for at least one resource subdirectory
-    // These could be in the same dir or in a resources subdirectory
-    QStringList resourceSubdirs = {
-        QStringLiteral("examples"),
-        QStringLiteral("fonts"),
-        QStringLiteral("libraries"),
-        QStringLiteral("locale"),
-        QStringLiteral("color-schemes")
-    };
+    // Use the canonical list of top-level resource types from ResourcePaths
+    const QVector<ResourceType> topLevelTypes = ResourcePaths::allTopLevelResourceTypes();
     
     // Check in the directory itself
-    for (const QString& subdir : resourceSubdirs) {
-        if (dir.exists(subdir)) {
+    for (const ResourceType& type : topLevelTypes) {
+        QString subdir = ResourcePaths::resourceSubdirectory(type);
+        if (!subdir.isEmpty() && dir.exists(subdir)) {
             return true;
         }
     }
@@ -140,8 +135,9 @@ bool ResourceLocationManager::isValidInstallation(const QString& path) {
     for (const QString& resPath : resourcePaths) {
         QDir resDir(dir.absoluteFilePath(resPath));
         if (resDir.exists()) {
-            for (const QString& subdir : resourceSubdirs) {
-                if (resDir.exists(subdir)) {
+            for (const ResourceType& type : topLevelTypes) {
+                QString subdir = ResourcePaths::resourceSubdirectory(type);
+                if (!subdir.isEmpty() && resDir.exists(subdir)) {
                     return true;
                 }
             }
@@ -478,7 +474,7 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
             // Windows: C:/ProgramData/OpenSCAD
             // Uses CSIDL_COMMON_APPDATA
             QString programData;
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
             wchar_t path[MAX_PATH];
             if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, path))) {
                 programData = QString::fromWCharArray(path);
@@ -557,7 +553,7 @@ QString ResourceLocationManager::machineConfigFilePath() const {
     
     switch (m_osType) {
         case ExtnOSType::Windows: {
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
             wchar_t path[MAX_PATH];
             if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, path))) {
                 basePath = QString::fromWCharArray(path);
@@ -774,7 +770,7 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
     QString openscadPath = qEnvironmentVariable("OPENSCADPATH");
     if (!openscadPath.isEmpty()) {
         // Environment variable is set - add actual paths
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
         QChar separator = QLatin1Char(';');
 #else
         QChar separator = QLatin1Char(':');

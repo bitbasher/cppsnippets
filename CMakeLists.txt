@@ -274,6 +274,13 @@ if(BUILD_APP)
         src/include/resInventory/resourceTreeWidget.h
         src/resInventory/resourceScanner.cpp
         src/include/resInventory/resourceScanner.h
+        # New resource management classes
+        src/resInventory/resourceStore.cpp
+        src/include/resInventory/resourceStore.h
+        src/resInventory/resourceScannerDirListing.cpp
+        src/include/resInventory/resourceScannerDirListing.h
+        src/resInventory/templateTreeModel.cpp
+        src/include/resInventory/templateTreeModel.h
     )
     
     add_executable(scadtemplates_app ${APP_SOURCES})
@@ -339,6 +346,26 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF
     )
 
+    # Template tree demo app (GUI)
+    add_executable(template_tree_demo
+        src/app/template_tree_demo.cpp
+        # Resource model and store/scanner sources
+        src/resInventory/templateTreeModel.cpp
+        src/include/resInventory/templateTreeModel.h
+        src/resInventory/resourceStore.cpp
+        src/include/resInventory/resourceStore.h
+        src/resInventory/resourceScannerDirListing.cpp
+        src/include/resInventory/resourceScannerDirListing.h
+    )
+    target_link_libraries(template_tree_demo PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(template_tree_demo PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    )
+    set_target_properties(template_tree_demo PROPERTIES
+        OUTPUT_NAME template_tree_demo
+        WIN32_EXECUTABLE ON
+    )
+
     # Library discovery test app
     add_executable(library_discovery_test
         src/app/library_discovery_test.cpp
@@ -374,6 +401,14 @@ if(BUILD_APP)
                 "${Qt6_DIR}/../../../plugins/platforms"
                 "$<TARGET_FILE_DIR:scadtemplates_app>/platforms"
             COMMENT "Copying Qt platform plugins..."
+        )
+
+        # Also copy plugins for template_tree_demo
+        add_custom_command(TARGET template_tree_demo POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${Qt6_DIR}/../../../plugins/platforms"
+                "$<TARGET_FILE_DIR:template_tree_demo>/platforms"
+            COMMENT "Copying Qt platform plugins for template_tree_demo..."
         )
     endif()
 endif()
@@ -452,6 +487,139 @@ if(BUILD_TESTS)
     gtest_discover_tests(scadtemplates_tests
         DISCOVERY_MODE PRE_TEST
     )
+    
+    # =========================================================================
+    # Qt Test - New scanner tests using Qt Test framework
+    # =========================================================================
+    find_package(Qt6 COMPONENTS Test QUIET)
+    if(Qt6Test_FOUND)
+        message(STATUS "Found Qt6::Test - building Qt Test suite")
+        
+        # Qt Test for QDirListing scanner
+        add_executable(test_resourcescannerdirlisting
+            tests/qt/test_resourcescannerdirlisting.cc
+            src/resInventory/resourceScannerDirListing.cpp
+            src/include/resInventory/resourceScannerDirListing.h
+        )
+        
+        target_link_libraries(test_resourcescannerdirlisting PRIVATE
+            scadtemplates_lib
+            ${QT_LIBRARIES}
+            Qt6::Test
+        )
+        
+        target_include_directories(test_resourcescannerdirlisting PRIVATE
+            ${CMAKE_SOURCE_DIR}/src/include
+        )
+        
+        # Define SRCDIR for test to find testFileStructure
+        target_compile_definitions(test_resourcescannerdirlisting PRIVATE
+            SRCDIR="${CMAKE_SOURCE_DIR}"
+        )
+        
+        # Copy Qt DLLs for test executable
+        if(WIN32 AND BUILD_SHARED_LIBS)
+            add_custom_command(TARGET test_resourcescannerdirlisting POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_resourcescannerdirlisting>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test> $<TARGET_FILE_DIR:test_resourcescannerdirlisting>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_resourcescannerdirlisting>
+                COMMENT "Copy Qt and project DLLs for Qt Test executable")
+        endif()
+        
+        # Register with CTest
+        add_test(NAME test_resourcescannerdirlisting 
+                 COMMAND test_resourcescannerdirlisting)
+        
+        set_tests_properties(test_resourcescannerdirlisting PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
+        
+        # Qt Test for ResourceStore
+        add_executable(test_resourcestore
+            tests/qt/test_resourcestore.cc
+            src/resInventory/resourceStore.cpp
+            src/include/resInventory/resourceStore.h
+            src/resInventory/resourceScannerDirListing.cpp
+            src/include/resInventory/resourceScannerDirListing.h
+        )
+        
+        target_link_libraries(test_resourcestore PRIVATE
+            scadtemplates_lib
+            ${QT_LIBRARIES}
+            Qt6::Test
+        )
+        
+        target_include_directories(test_resourcestore PRIVATE
+            ${CMAKE_SOURCE_DIR}/src/include
+        )
+        
+        # Define SRCDIR for test to find testFileStructure
+        target_compile_definitions(test_resourcestore PRIVATE
+            SRCDIR="${CMAKE_SOURCE_DIR}"
+        )
+        
+        # Copy Qt DLLs for test executable
+        if(WIN32 AND BUILD_SHARED_LIBS)
+            add_custom_command(TARGET test_resourcestore POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_resourcestore>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test> $<TARGET_FILE_DIR:test_resourcestore>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_resourcestore>
+                COMMENT "Copy Qt and project DLLs for test_resourcestore")
+        endif()
+        
+        # Register with CTest
+        add_test(NAME test_resourcestore 
+                 COMMAND test_resourcestore)
+        
+        set_tests_properties(test_resourcestore PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
+        
+        # Qt Test for TemplateTreeModel
+        add_executable(test_templatetreemodel
+            tests/qt/test_templatetreemodel.cc
+            src/resInventory/templateTreeModel.cpp
+            src/include/resInventory/templateTreeModel.h
+            src/resInventory/resourceStore.cpp
+            src/include/resInventory/resourceStore.h
+            src/resInventory/resourceScannerDirListing.cpp
+            src/include/resInventory/resourceScannerDirListing.h
+        )
+        
+        target_link_libraries(test_templatetreemodel PRIVATE
+            scadtemplates_lib
+            ${QT_LIBRARIES}
+            Qt6::Test
+        )
+        
+        target_include_directories(test_templatetreemodel PRIVATE
+            ${CMAKE_SOURCE_DIR}/src/include
+        )
+        
+        # Define SRCDIR for test to find testFileStructure
+        target_compile_definitions(test_templatetreemodel PRIVATE
+            SRCDIR="${CMAKE_SOURCE_DIR}"
+        )
+        
+        # Copy Qt DLLs for test executable
+        if(WIN32 AND BUILD_SHARED_LIBS)
+            add_custom_command(TARGET test_templatetreemodel POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_templatetreemodel>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test> $<TARGET_FILE_DIR:test_templatetreemodel>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_templatetreemodel>
+                COMMENT "Copy Qt and project DLLs for test_templatetreemodel")
+        endif()
+        
+        # Register with CTest
+        add_test(NAME test_templatetreemodel 
+                 COMMAND test_templatetreemodel)
+        
+        set_tests_properties(test_templatetreemodel PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
+    else()
+        message(STATUS "Qt6::Test not found - Qt Test suite will not be built")
+    endif()
 endif()
 
 # Installation rules

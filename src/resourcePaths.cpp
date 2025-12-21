@@ -10,66 +10,101 @@
 #include <QStandardPaths>
 #include <QCoreApplication>
 
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 #include <shlobj.h>
 #include <windows.h>
 #endif
 
 namespace platformInfo {
 
+// All top-level resource types that can be discovered/scanned
+//   excludes EditorColors/RenderColors which are sub-resources)
+static const QVector<ResourceType> allTopLevelResTypes = {
+    ResourceType::Examples,
+    ResourceType::Tests,
+    ResourceType::Fonts,
+    ResourceType::ColorSchemes,
+    ResourceType::Shaders,
+    ResourceType::Templates,
+    ResourceType::Libraries,
+    ResourceType::Translations
+};
+
 // Static resource type definitions with file extensions
 static const QVector<ResourceTypeInfo> s_resourceTypes = {
     { ResourceType::Examples,     
       QStringLiteral("examples"),       
-      QStringLiteral("Example OpenSCAD scripts"),
+      QStringLiteral("Example scripts"),
+      {},  // no sub-resources
       { QStringLiteral(".scad") },
       { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") } },
       
     { ResourceType::Tests,        
       QStringLiteral("tests"),          
       QStringLiteral("Test OpenSCAD scripts"),
+      {},  // no sub-resources
       { QStringLiteral(".scad") },
       { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") } },
       
     { ResourceType::Fonts,        
       QStringLiteral("fonts"),          
       QStringLiteral("Font files (supplements OS fonts)"),
+      {},  // no sub-resources
       { QStringLiteral(".ttf"), QStringLiteral(".otf") },
       {} },
       
     { ResourceType::ColorSchemes, 
       QStringLiteral("color-schemes"),  
+      QStringLiteral("Color scheme definitions"),
+      { ResourceType::EditorColors, ResourceType::RenderColors },  // contains editor and render colors
+      {},  // no primary extensions (container only)
+      {} },
+      
+    { ResourceType::EditorColors, 
+      QStringLiteral("color-schemes"),  
       QStringLiteral("Editor color schemes"),
+      {},  // no sub-resources
+      { QStringLiteral(".json") },
+      {} },
+      
+    { ResourceType::RenderColors, 
+      QStringLiteral("color-schemes"),  
+      QStringLiteral("Render color schemes"),
+      {},  // no sub-resources
       { QStringLiteral(".json") },
       {} },
       
     { ResourceType::Shaders,      
       QStringLiteral("shaders"),        
       QStringLiteral("OpenGL shader files"),
+      {},  // no sub-resources
       { QStringLiteral(".frag"), QStringLiteral(".vert") },
       {} },
       
     { ResourceType::Templates,    
       QStringLiteral("templates"),      
       QStringLiteral("Template files"),
-      { QStringLiteral(".scad"), QStringLiteral(".json") },
+      {},  // no sub-resources
+      { QStringLiteral(".json") },
       {} },
       
     { ResourceType::Libraries,    
       QStringLiteral("libraries"),      
       QStringLiteral("OpenSCAD library scripts that extend features"),
+      allTopLevelResTypes,  // libraries can contain any top-level resource
       { QStringLiteral(".scad") },
       {} },
       
     { ResourceType::Translations, 
       QStringLiteral("locale"),         
       QStringLiteral("Translation files"),
+      {},  // no sub-resources
       { QStringLiteral(".qm"), QStringLiteral(".ts") },
       {} }
 };
 
 ResourcePaths::ResourcePaths()
-    : m_suffix()  // Empty suffix = release build
+    : m_suffix()  // Empty suffix = release build, otherwise "(Nightly)"
     , m_osType(ExtnOSType::Unknown)
 {
     detectOSType();
@@ -134,6 +169,10 @@ QStringList ResourcePaths::resourceExtensions(ResourceType type) {
     return info ? info->primaryExtensions : QStringList();
 }
 
+QVector<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
+    return allTopLevelResTypes;
+}
+
 // ============================================================================
 // Default Search Paths (Immutable, Compile-Time Constants)
 // ============================================================================
@@ -146,24 +185,24 @@ QStringList ResourcePaths::resourceExtensions(ResourceType type) {
 // These are the base paths without suffix applied.
 
 // Installation tier: relative to application executable
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 static const QStringList s_defaultInstallSearchPaths = {
     QStringLiteral("."),                        // Release location (same as exe)
-    QStringLiteral("../share/openscad"),        // MSYS2 style
+    QStringLiteral("../share/"),                // MSYS2 style Base share folder (append openscad + suffix)
     QStringLiteral("..")                        // Dev location
 };
-#elif defined(Q_OS_MACOS)
+#elif defined(Q_OS_MACOS) || defined(__APPLE__)
 static const QStringList s_defaultInstallSearchPaths = {
     QStringLiteral("../Resources"),             // Resources bundled in .app
     QStringLiteral("../../.."),                 // Dev location
     QStringLiteral("../../../.."),              // Test location (cmake)
     QStringLiteral(".."),                       // Test location
-    QStringLiteral("../share/openscad")         // Unix mode
+    QStringLiteral("../share/")                // Base share folder (append openscad + suffix)
 };
 #else  // Linux/BSD/POSIX
 static const QStringList s_defaultInstallSearchPaths = {
-    QStringLiteral("../share/openscad"),        // Standard install
-    QStringLiteral("../../share/openscad"),     // Alternate install
+    QStringLiteral("../share/"),                // Standard install (append openscad + suffix)
+    QStringLiteral("../../share/"),             // Alternate install (append openscad + suffix) 
     QStringLiteral("."),                        // Build directory
     QStringLiteral(".."),                       // Up one
     QStringLiteral("../..")                     // Up two
@@ -171,27 +210,41 @@ static const QStringList s_defaultInstallSearchPaths = {
 #endif
 
 // Machine tier: system-wide locations for all users
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 static const QStringList s_defaultMachineSearchPaths = {
     QStringLiteral("C:/ProgramData/OpenSCAD")   // All users app data
 };
-#elif defined(Q_OS_MACOS)
+#elif defined(Q_OS_MACOS) || defined(__APPLE__)
 static const QStringList s_defaultMachineSearchPaths = {
-    QStringLiteral("/Library/Application Support/OpenSCAD")  // System-wide
+    QStringLiteral("/Library/Application Support/")  // System-wide
 };
 #else  // Linux/BSD/POSIX
 static const QStringList s_defaultMachineSearchPaths = {
-    QStringLiteral("/usr/share/openscad"),      // System packages
-    QStringLiteral("/usr/local/share/openscad"), // Local installs
+    QStringLiteral("/usr/share/"),      // System packages
+    QStringLiteral("/usr/local/share/"), // Local installs
     QStringLiteral("/opt/openscad/share")       // Opt installs
 };
 #endif
 
-// User tier: relative paths (resolved against userConfigBasePath/userDocumentsPath)
-// These are folder names to look for under the user's OpenSCAD directory
+// User tier: base directories where user resources can be located
+// Resolved using userConfigBasePath(), userDocumentsPath(), etc.
+// Paths ending with "/" have the app name + suffix appended; others are scanned directly
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 static const QStringList s_defaultUserSearchPaths = {
-    QStringLiteral(".")                         // The OpenSCAD folder itself (userOpenSCADPath)
+    QStringLiteral("."),                    // Current directory (userOpenSCADPath)
+    QStringLiteral("../")                   // User documents base (CSIDL_PERSONAL with suffix)
 };
+#elif defined(Q_OS_MACOS) || defined(__APPLE__)
+static const QStringList s_defaultUserSearchPaths = {
+    QStringLiteral("."),                    // Current directory (userOpenSCADPath)
+    QStringLiteral("../../Documents/")      // User documents (NSDocumentDirectory with suffix)
+};
+#else  // Linux/BSD/POSIX
+static const QStringList s_defaultUserSearchPaths = {
+    QStringLiteral("."),                    // Current directory (userOpenSCADPath)
+    QStringLiteral("../../.local/share/")   // User documents ($HOME/.local/share with suffix)
+};
+#endif
 
 const QStringList& ResourcePaths::defaultInstallSearchPaths() {
     return s_defaultInstallSearchPaths;
@@ -206,12 +259,19 @@ const QStringList& ResourcePaths::defaultUserSearchPaths() {
 }
 
 QStringList ResourcePaths::appSearchPaths() const {
-    // Apply suffix to paths that need it (share paths)
+    // Build concrete search paths from defaults, handling suffix rules:
+    // - Paths ending with "/" have app name + suffix appended
+    //   Example: "../share/" becomes "../share/openscad (Nightly)"
+    // - Paths without "/" are scanned directly without suffix
+    //   Example: "../.." is used as-is, not modified
     QStringList paths;
     for (const QString& path : s_defaultInstallSearchPaths) {
-        if (path.contains(QStringLiteral("share/openscad"))) {
-            paths << (path + m_suffix);
+        if (path.endsWith(QStringLiteral("/"))) {
+            // Path ends with "/" – append app name + suffix
+            // Use lowercase "openscad" + suffix
+            paths << QDir::cleanPath(path + QStringLiteral("openscad") + m_suffix);
         } else {
+            // Path does not end with "/" – scan directly without suffix
             paths << path;
         }
     }
@@ -305,7 +365,7 @@ QString ResourcePaths::userConfigBasePathForPlatform(ExtnOSType osType) {
     
     switch (osType) {
         case ExtnOSType::Windows: {
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
             // Windows: CSIDL_LOCAL_APPDATA for writable config
             // (This is different from documentsPath which uses CSIDL_PERSONAL)
             wchar_t appDataPath[MAX_PATH];
@@ -370,7 +430,7 @@ QString ResourcePaths::userDocumentsPathForPlatform(ExtnOSType osType) {
     
     switch (osType) {
         case ExtnOSType::Windows: {
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
             // Windows: CSIDL_PERSONAL (My Documents)
             wchar_t docPath[MAX_PATH];
             if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, docPath))) {

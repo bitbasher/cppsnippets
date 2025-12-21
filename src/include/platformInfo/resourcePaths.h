@@ -30,7 +30,9 @@ enum class ResourceType {
     Examples,       ///< Example .scad files ($RESOURCEDIR/examples)
     Tests,          ///< Test .scad files ($RESOURCEDIR/tests) - may have .json/.txt/.dat attachments
     Fonts,          ///< Font files - .ttf, .otf ($RESOURCEDIR/fonts)
-    ColorSchemes,   ///< Color scheme files - .json ($RESOURCEDIR/color-schemes)
+    ColorSchemes,   ///< Color scheme folder - no files ($RESOURCEDIR/color-schemes)
+    EditorColors,   ///< Color scheme files for the editor - .json ($RESOURCEDIR/color-schemes)
+    RenderColors,   ///< Color scheme files for 3D View - .json ($RESOURCEDIR/color-schemes)
     Shaders,        ///< Shader files - .frag, .vert ($RESOURCEDIR/shaders)
     Templates,      ///< Template files ($RESOURCEDIR/templates)
     Libraries,      ///< OpenSCAD library .scad scripts ($RESOURCEDIR/libraries) - extend OpenSCAD features
@@ -46,13 +48,16 @@ struct PLATFORMINFO_API ResourceTypeInfo {
     ResourceType type;              ///< The resource type enum
     QString subdirectory;           ///< Subdirectory name under resource dir
     QString description;            ///< Human-readable description
+    QVector<ResourceType> subResTypes; ///< Sub-resource types contained within this resource type
     QStringList primaryExtensions;  ///< Primary file extensions for this resource
     QStringList attachmentExtensions; ///< Optional attachment file extensions
     
     ResourceTypeInfo() = default;
     ResourceTypeInfo(ResourceType t, const QString& subdir, const QString& desc,
-                     const QStringList& primary, const QStringList& attachments = {})
-        : type(t), subdirectory(subdir), description(desc),
+                     const QVector<ResourceType>& subRes = {}, 
+                     const QStringList& primary = {},
+                     const QStringList& attachments = {})
+        : type(t), subdirectory(subdir), description(desc), subResTypes(subRes),
           primaryExtensions(primary), attachmentExtensions(attachments) {}
 };
 
@@ -189,6 +194,18 @@ public:
      * @return List of file extensions (e.g., {".scad"}, {".ttf", ".otf"})
      */
     static QStringList resourceExtensions(ResourceType type);
+    
+    /**
+     * @brief Get all top-level resource types
+     * @return Immutable vector of top-level resource types that can be discovered
+     * 
+     * Returns the list of resource types that can appear at the top level of
+     * resource directories and inside libraries. Excludes sub-resource types
+     * like EditorColors and RenderColors which are nested under ColorSchemes.
+     * 
+     * @note This list is read-only and cannot be modified.
+     */
+    static QVector<ResourceType> allTopLevelResourceTypes();
     
     // ========== Default Search Paths (Immutable) ==========
     //

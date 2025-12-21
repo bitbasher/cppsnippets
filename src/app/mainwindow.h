@@ -16,6 +16,7 @@ class QPlainTextEdit;
 class QSettings;
 class QPushButton;
 class QVBoxLayout;
+class QTreeView;
 
 namespace scadtemplates {
 class TemplateManager;
@@ -30,6 +31,9 @@ namespace resInventory {
 class ResourceInventoryManager;
 class ResourceTreeWidget;
 class ResourceItem;
+class ResourceStore;
+class ResourceScannerDirListing;
+class TemplateTreeModel;
 }
 
 /**
@@ -82,14 +86,20 @@ private:
     std::unique_ptr<resInventory::ResourceInventoryManager> m_inventoryManager;
     std::unique_ptr<QSettings> m_settings;
     
+    // New resource management
+    std::unique_ptr<resInventory::ResourceStore> m_resourceStore;
+    std::unique_ptr<resInventory::ResourceScannerDirListing> m_scanner;
+    
     // Template panel
     QVBoxLayout* m_inventoryLayout;
-    resInventory::ResourceTreeWidget* m_templateTree;
+    QTreeView* m_templateTree;
+    resInventory::TemplateTreeModel* m_templateModel;
     QLineEdit* m_prefixEdit;
     QTextEdit* m_bodyEdit;
     QTextEdit* m_descriptionEdit;
     QLineEdit* m_searchEdit;
     QLineEdit* m_sourceEdit; // non-editable provenance field
+    QLineEdit* m_versionEdit; // non-editable version field
     QPushButton* m_newBtn;
     QPushButton* m_deleteBtn;
     QPushButton* m_copyBtn;
