@@ -264,6 +264,11 @@ QStringList ResourcePaths::appSearchPaths() const {
     //   Example: "../share/" becomes "../share/openscad (Nightly)"
     // - Paths without "/" are scanned directly without suffix
     //   Example: "../.." is used as-is, not modified
+    //
+    // AGENT NOTE: Suffix indicator pattern (trailing "/") is intentional design.
+    // Do not refactor to use contains() or endsWith() for specific paths.
+    // This simple rule prevents cross-platform path bugs.
+    // See DEVELOPMENT.md section 6 for resource path configuration details.
     QStringList paths;
     for (const QString& path : s_defaultInstallSearchPaths) {
         if (path.endsWith(QStringLiteral("/"))) {
