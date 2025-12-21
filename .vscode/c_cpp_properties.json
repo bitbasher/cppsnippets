@@ -11,12 +11,11 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "windowsSdkVersion": "10.0.26100.0",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64",
-            "configurationProvider": "go2sh.cmake-integration"
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4
