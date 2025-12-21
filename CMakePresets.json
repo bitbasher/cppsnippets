@@ -50,6 +50,15 @@
       "output": {
         "outputOnFailure": true
       }
+    },
+    {
+      "name": "vs2022-release",
+      "displayName": "CTest Release (VS 2022)",
+      "configurePreset": "vs2022",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }
