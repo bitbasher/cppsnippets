@@ -94,6 +94,7 @@ With `ms-vscode.cmake-tools`, these are sufficient; no need to manually list eve
 2. Avoid Unix utilities (head, tail, grep, wc, etc.)
 3. Use `Select-Object -Last N` for showing output tails
 4. Use `Select-Object -First N` for showing output heads
+5. The ^ line continuation does not work in powershell - no multi-line commands
 
 **Agent Instruction:** "This is a PowerShell environment. Avoid Unix commands; use native PowerShell cmdlets instead."
 
@@ -112,6 +113,200 @@ With `ms-vscode.cmake-tools`, these are sufficient; no need to manually list eve
 1. Rebuild the project: `cmake --build .`
 2. Reload VS Code window (Ctrl+K Ctrl+R or F1 → "Developer: Reload Window")
 3. Check that `cmake-tools` extension is installed and active
+
+---
+
+## 5.5 Qt C++ Required Coding Practice
+
+now i am going to paste some example code here so you can see how we need to change the existing GUI app .. this is code to make an 
+
+### Example TabDialog
+
+```cpp
+TabDialog::TabDialog(const QString &fileName, QWidget *parent)
+    : QDialog(parent)
+{
+    QFileInfo fileInfo(fileName);
+
+    tabWidget = new QTabWidget;
+    tabWidget->addTab(new GeneralTab(fileInfo), tr("General"));
+    tabWidget->addTab(new PermissionsTab(fileInfo), tr("Permissions"));
+    tabWidget->addTab(new ApplicationsTab(fileInfo), tr("Applications"));
+
+buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                     | QDialogButtonBox::Cancel);
+
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+     QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(tabWidget);
+    mainLayout->addWidget(buttonBox);
+    setLayout(mainLayout);
+
+     setWindowTitle(tr("Tab Dialog"));
+}
+
+class GeneralTab : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit GeneralTab(const QFileInfo &fileInfo, QWidget *parent = nullptr);
+};
+```
+### GeneralTab Class Implementation
+
+The GeneralTab widget simply displays some information about the file passed by the TabDialog. Various widgets for this purpose, and these are arranged within a vertical layout:
+```cpp
+GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
+    : QWidget(parent)
+{
+    QLabel *fileNameLabel = new QLabel(tr("File Name:"));
+    QLineEdit *fileNameEdit = new QLineEdit(fileInfo.fileName());
+
+    QLabel *pathLabel = new QLabel(tr("Path:"));
+    QLabel *pathValueLabel = new QLabel(fileInfo.absoluteFilePath());
+    pathValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
+    QLabel *sizeLabel = new QLabel(tr("Size:"));
+    qlonglong size = fileInfo.size()/1024;
+    QLabel *sizeValueLabel = new QLabel(tr("%1 K").arg(size));
+    sizeValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
+    QLabel *lastReadLabel = new QLabel(tr("Last Read:"));
+    QLabel *lastReadValueLabel = new QLabel(fileInfo.lastRead().toString());
+    lastReadValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
+    QLabel *lastModLabel = new QLabel(tr("Last Modified:"));
+    QLabel *lastModValueLabel = new QLabel(fileInfo.lastModified().toString());
+    lastModValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(fileNameLabel);
+    mainLayout->addWidget(fileNameEdit);
+    mainLayout->addWidget(pathLabel);
+    mainLayout->addWidget(pathValueLabel);
+    mainLayout->addWidget(sizeLabel);
+    mainLayout->addWidget(sizeValueLabel);
+    mainLayout->addWidget(lastReadLabel);
+    mainLayout->addWidget(lastReadValueLabel);
+    mainLayout->addWidget(lastModLabel);
+    mainLayout->addWidget(lastModValueLabel);
+    mainLayout->addStretch(1);
+    setLayout(mainLayout);
+}
+```
+### PermissionsTab Class Definition
+
+Like the GeneralTab, the PermissionsTab is just used as a placeholder widget for its children:
+```cpp
+class PermissionsTab : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit PermissionsTab(const QFileInfo &fileInfo, QWidget *parent = nullptr);
+};
+```
+### PermissionsTab Class Implementation
+
+The PermissionsTab shows information about the file's access information, displaying details of the file permissions and owner in widgets that are arranged in nested layouts:
+```cpp
+PermissionsTab::PermissionsTab(const QFileInfo &fileInfo, QWidget *parent)
+    : QWidget(parent)
+{
+    QGroupBox *permissionsGroup = new QGroupBox(tr("Permissions"));
+
+    QCheckBox *readable = new QCheckBox(tr("Readable"));
+    if (fileInfo.isReadable())
+        readable->setChecked(true);
+
+    QCheckBox *writable = new QCheckBox(tr("Writable"));
+    if ( fileInfo.isWritable() )
+        writable->setChecked(true);
+
+    QCheckBox *executable = new QCheckBox(tr("Executable"));
+    if ( fileInfo.isExecutable() )
+        executable->setChecked(true);
+
+    QGroupBox *ownerGroup = new QGroupBox(tr("Ownership"));
+
+    QLabel *ownerLabel = new QLabel(tr("Owner"));
+    QLabel *ownerValueLabel = new QLabel(fileInfo.owner());
+    ownerValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
+    QLabel *groupLabel = new QLabel(tr("Group"));
+    QLabel *groupValueLabel = new QLabel(fileInfo.group());
+    groupValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
+    QVBoxLayout *permissionsLayout = new QVBoxLayout;
+    permissionsLayout->addWidget(readable);
+    permissionsLayout->addWidget(writable);
+    permissionsLayout->addWidget(executable);
+    permissionsGroup->setLayout(permissionsLayout);
+
+    QVBoxLayout *ownerLayout = new QVBoxLayout;
+    ownerLayout->addWidget(ownerLabel);
+    ownerLayout->addWidget(ownerValueLabel);
+    ownerLayout->addWidget(groupLabel);
+    ownerLayout->addWidget(groupValueLabel);
+    ownerGroup->setLayout(ownerLayout);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(permissionsGroup);
+    mainLayout->addWidget(ownerGroup);
+    mainLayout->addStretch(1);
+    setLayout(mainLayout);
+}
+```
+### ApplicationsTab
+
+The ApplicationsTab is another placeholder widget that is mostly cosmetic:
+```cpp
+class ApplicationsTab : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit ApplicationsTab(const QFileInfo &fileInfo, QWidget *parent = nullptr);
+};
+```
+### ApplicationsTab Class Implementation
+
+The ApplicationsTab does not show any useful information, but could be used as a template for a more complicated example:
+```cpp
+ApplicationsTab::ApplicationsTab(const QFileInfo &fileInfo, QWidget *parent)
+    : QWidget(parent)
+{
+    QLabel *topLabel = new QLabel(tr("Open with:"));
+
+    QListWidget *applicationsListBox = new QListWidget;
+    QStringList applications;
+
+    for (int i = 1; i <= 30; ++i)
+        applications.append(tr("Application %1").arg(i));
+    applicationsListBox->insertItems(0, applications);
+
+    QCheckBox *alwaysCheckBox;
+
+    if (fileInfo.suffix().isEmpty())
+        alwaysCheckBox = new QCheckBox(tr("Always use this application to "
+            "open this type of file"));
+    else
+        alwaysCheckBox = new QCheckBox(tr("Always use this application to "
+            "open files with the extension '%1'").arg(fileInfo.suffix()));
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(topLabel);
+    layout->addWidget(applicationsListBox);
+    layout->addWidget(alwaysCheckBox);
+    setLayout(layout);
+}
+```
+you see how the layouts are applied last ?
+
+that is how our app needs to it
 
 ---
 
@@ -152,17 +347,20 @@ QStringLiteral("../../.local/share/")   // $HOME/.local/share with suffix
 **Three columns in TemplateTreeModel:**
 | Column | Header | Content |
 |--------|--------|---------|
-| 0 | "Name" | Display name (tier/location/template) |
-| 1 | "Category" | Template category |
+| 0 | "Tier" | Display name |
+| 1 | "Location" | resource location |
 | 2 | "Name" | Template name from JSON object |
 
-**Not "Path"!** Column 2 shows the template name from the JSON, not a filesystem path.
+**Not "Path"!** Column 2 shows the name of the JSON object, not the content of prefix.
 
 ---
 
 ## 8. Test Suite
 
-**All Tests:** 85/85 passing
+there is an ongoing issue with test discovery reporting problems .. the ctest section of the cmakelists is looking for tests that have not yet been built
+
+The build now succeeds with Ninja. The fix was using `DISCOVERY_MODE PRE_TEST` which defers test discovery until `ctest` runs instead of during the build.
+
 
 **Run Tests:**
 ```powershell

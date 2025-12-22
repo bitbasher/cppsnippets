@@ -32,7 +32,7 @@ class ResourceTreeWidget;
  * - templates/       -> Template .scad files (subfolders = categories)
  * - locale/          -> Translation files
  */
-class PLATFORMINFO_API ResourceScanner : public QObject {
+class RESOURCEMGMT_API ResourceScanner : public QObject {
     Q_OBJECT
 
 public:
@@ -138,7 +138,7 @@ private:
  * High-level manager that coordinates scanning across all tiers
  * and maintains separate inventories for each resource type.
  */
-class PLATFORMINFO_API ResourceInventoryManager : public QObject {
+class RESOURCEMGMT_API ResourceInventoryManager : public QObject {
     Q_OBJECT
 
 public:

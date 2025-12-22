@@ -14,14 +14,14 @@
 
 #if defined(_WIN32) || defined(_WIN64)
     #ifdef RESOURCEMGMT_EXPORTS
-        #define PLATFORMINFO_API __declspec(dllexport)
+        #define RESOURCEMGMT_API __declspec(dllexport)
     #else
-        #define PLATFORMINFO_API __declspec(dllimport)
+        #define RESOURCEMGMT_API __declspec(dllimport)
     #endif
 #else
     #if defined(__GNUC__) && __GNUC__ >= 4
-        #define PLATFORMINFO_API __attribute__((visibility("default")))
+        #define RESOURCEMGMT_API __attribute__((visibility("default")))
     #else
-        #define PLATFORMINFO_API
+        #define RESOURCEMGMT_API
     #endif
 #endif

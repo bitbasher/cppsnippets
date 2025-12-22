@@ -1,17 +1,18 @@
 #include "resInventory/resourceScanner.h"
 #include "resInventory/resourceTreeWidget.h"
 #include <platformInfo/resourceLocationManager.h>
+
 #include <QDir>
 #include <QFileInfo>
 #include <QDirIterator>
 
 // Allowed attachments for script-like resources (examples/tests/templates)
 static const QStringList kScriptAttachmentFilters = {
-    QStringLiteral("*.png"), QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
-    QStringLiteral("*.svg"), QStringLiteral("*.gif"),
-    QStringLiteral("*.json"), QStringLiteral("*.txt"), QStringLiteral("*.csv"),
-    QStringLiteral("*.stl"), QStringLiteral("*.off"), QStringLiteral("*.dxf"),
-    QStringLiteral("*.dat")
+    QStringLiteral("*.png"),  QStringLiteral("*.jpg"),  QStringLiteral("*.jpeg"),
+    QStringLiteral("*.svg"),  QStringLiteral("*.gif"),
+    QStringLiteral("*.json"), QStringLiteral("*.txt"),  QStringLiteral("*.csv"),
+    QStringLiteral("*.stl"),  QStringLiteral("*.off"),  QStringLiteral("*.dxf"),
+    QStringLiteral("*.dat"),  QStringLiteral("*.csg")
 };
 
 namespace resInventory {

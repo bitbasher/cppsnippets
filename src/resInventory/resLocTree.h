@@ -13,7 +13,7 @@
  * Extends QTreeWidgetItem to store ResourceLocation data alongside
  * the standard tree item properties.
  */
-class PLATFORMINFO_API ResLocTreeItem : public QTreeWidgetItem {
+class RESOURCEMGMT_API ResLocTreeItem : public QTreeWidgetItem {
 public:
     // Column indices
     enum Column {
@@ -46,7 +46,7 @@ private:
  * in a tree structure. Suitable for libraries with examples, tests,
  * and other nested resources.
  */
-class PLATFORMINFO_API ResLocTree : public QTreeWidget {
+class RESOURCEMGMT_API ResLocTree : public QTreeWidget {
     Q_OBJECT
 
 public:

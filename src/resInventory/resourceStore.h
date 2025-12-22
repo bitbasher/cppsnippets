@@ -56,7 +56,7 @@ namespace resInventory {
  * auto userFonts = store.resourcesOfType(ResourceType::Font, ResourceTier::User);
  * @endcode
  */
-class PLATFORMINFO_API ResourceStore : public QObject
+class RESOURCEMGMT_API ResourceStore : public QObject
 {
     Q_OBJECT
 

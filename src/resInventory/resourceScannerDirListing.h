@@ -73,7 +73,7 @@ struct DiscoveredResource {
  *                      });
  * @endcode
  */
-class PLATFORMINFO_API ResourceScannerDirListing : public QObject {
+class RESOURCEMGMT_API ResourceScannerDirListing : public QObject {
     Q_OBJECT
 
 public:

@@ -37,7 +37,7 @@ enum class ExtnOSType {
  * Provides detailed information about operating systems including
  * company, title, and identifier strings.
  */
-class PLATFORMINFO_API ExtnOSVersRef {
+class RESOURCEMGMT_API ExtnOSVersRef {
 public:
     /**
      * @brief Default constructor - creates Unknown OS reference

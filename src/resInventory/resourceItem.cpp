@@ -73,6 +73,7 @@ QString resourceTypeToString(ResourceType type)
         case ResourceType::Example:     return QStringLiteral("Example");
         case ResourceType::Test:        return QStringLiteral("Test");
         case ResourceType::Template:    return QStringLiteral("Template");
+        case ResourceType::Group:       return QStringLiteral("Group");
         case ResourceType::Shader:      return QStringLiteral("Shader");
         case ResourceType::Translation: return QStringLiteral("Translation");
         case ResourceType::ColorSchemes: return QStringLiteral("ColorSchemes");
@@ -82,16 +83,17 @@ QString resourceTypeToString(ResourceType type)
 
 ResourceType stringToResourceType(const QString& str)
 {
-    if (str == QLatin1String("RenderColors")) return ResourceType::RenderColors;
-    if (str == QLatin1String("EditorColors")) return ResourceType::EditorColors;
-    if (str == QLatin1String("Font"))        return ResourceType::Font;
-    if (str == QLatin1String("Library"))     return ResourceType::Library;
-    if (str == QLatin1String("Example"))     return ResourceType::Example;
-    if (str == QLatin1String("Test"))        return ResourceType::Test;
-    if (str == QLatin1String("Template"))    return ResourceType::Template;
-    if (str == QLatin1String("Shader"))      return ResourceType::Shader;
-    if (str == QLatin1String("Translation")) return ResourceType::Translation;
-    if (str == QLatin1String("ColorSchemes")) return ResourceType::ColorSchemes;
+    if (str == QStringLiteral("RenderColors")) return ResourceType::RenderColors;
+    if (str == QStringLiteral("EditorColors")) return ResourceType::EditorColors;
+    if (str == QStringLiteral("Font"))        return ResourceType::Font;
+    if (str == QStringLiteral("Library"))     return ResourceType::Library;
+    if (str == QStringLiteral("Example"))     return ResourceType::Example;
+    if (str == QStringLiteral("Test"))        return ResourceType::Test;
+    if (str == QStringLiteral("Template"))    return ResourceType::Template;
+    if (str == QStringLiteral("Group"))       return ResourceType::Group;
+    if (str == QStringLiteral("Shader"))      return ResourceType::Shader;
+    if (str == QStringLiteral("Translation")) return ResourceType::Translation;
+    if (str == QStringLiteral("ColorSchemes")) return ResourceType::ColorSchemes;
     return ResourceType::Unknown;
 }
 
@@ -107,9 +109,9 @@ QString resourceTierToString(ResourceTier tier)
 
 ResourceTier stringToResourceTier(const QString& str)
 {
-    if (str == QLatin1String("Installation")) return ResourceTier::Installation;
-    if (str == QLatin1String("Machine"))      return ResourceTier::Machine;
-    if (str == QLatin1String("User"))         return ResourceTier::User;
+    if (str == QStringLiteral("Installation")) return ResourceTier::Installation;
+    if (str == QStringLiteral("Machine"))      return ResourceTier::Machine;
+    if (str == QStringLiteral("User"))         return ResourceTier::User;
     return ResourceTier::User;
 }
 

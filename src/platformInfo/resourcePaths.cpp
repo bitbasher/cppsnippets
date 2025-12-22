@@ -30,21 +30,45 @@ static const QVector<ResourceType> allTopLevelResTypes = {
     ResourceType::Translations
 };
 
+// sub level resource types under Examples
+static const QVector<ResourceType> exampleSubResTypes = {
+    ResourceType::Group,
+    ResourceType::Templates
+};
+
+static const QStringList attachmentsList = 
+    { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat"),
+      QStringLiteral(".png"),  QStringLiteral(".jpg"), QStringLiteral(".jpeg"),
+      QStringLiteral(".svg"),  QStringLiteral(".gif"), QStringLiteral(".csv"),
+      QStringLiteral(".stl"),  QStringLiteral(".off"), QStringLiteral(".dxf") };
+
+// sub level resource types under Tests
+static const QVector<ResourceType> testSubResTypes = {
+    ResourceType::Templates
+};
+
 // Static resource type definitions with file extensions
 static const QVector<ResourceTypeInfo> s_resourceTypes = {
-    { ResourceType::Examples,     
+    { ResourceType::Examples, // container, but may contain resources directly
       QStringLiteral("examples"),       
       QStringLiteral("Example scripts"),
+      exampleSubResTypes,     // groups are just folder with .scad files in them
+      { QStringLiteral(".scad") },
+      attachmentsList },
+      
+    { ResourceType::Group,    // container of resources
+      groupNameCapture,  
+      QStringLiteral("Editor Categories"),
       {},  // no sub-resources
       { QStringLiteral(".scad") },
-      { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") } },
+      attachmentsList },
       
-    { ResourceType::Tests,        
+    { ResourceType::Tests,    // container, but may contain resources directly 
       QStringLiteral("tests"),          
       QStringLiteral("Test OpenSCAD scripts"),
-      {},  // no sub-resources
+      testSubResTypes,  // might have templates
       { QStringLiteral(".scad") },
-      { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") } },
+      attachmentsList },
       
     { ResourceType::Fonts,        
       QStringLiteral("fonts"),          
@@ -53,22 +77,22 @@ static const QVector<ResourceTypeInfo> s_resourceTypes = {
       { QStringLiteral(".ttf"), QStringLiteral(".otf") },
       {} },
       
-    { ResourceType::ColorSchemes, 
+    { ResourceType::ColorSchemes,  // container only
       QStringLiteral("color-schemes"),  
       QStringLiteral("Color scheme definitions"),
       { ResourceType::EditorColors, ResourceType::RenderColors },  // contains editor and render colors
       {},  // no primary extensions (container only)
       {} },
       
-    { ResourceType::EditorColors, 
-      QStringLiteral("color-schemes"),  
+    { ResourceType::EditorColors,   // scheme definitions
+      QStringLiteral("editor"),  
       QStringLiteral("Editor color schemes"),
       {},  // no sub-resources
       { QStringLiteral(".json") },
       {} },
       
-    { ResourceType::RenderColors, 
-      QStringLiteral("color-schemes"),  
+    { ResourceType::RenderColors,   // scheme definitions
+      QStringLiteral("render"),  
       QStringLiteral("Render color schemes"),
       {},  // no sub-resources
       { QStringLiteral(".json") },

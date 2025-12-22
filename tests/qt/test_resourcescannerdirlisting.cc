@@ -276,6 +276,7 @@ private slots:
         // testFileStructure/inst/OpenSCAD/templates/ contains:
         //   - inst_template_basic_cube.json (valid)
         //   - inst_template_sphere_param.json (valid)
+        //   - unicode_multilingual_template.json (valid)
         //   - fakemodel.scad (should be ignored)
         //   - fakephoto.jpeg (should be ignored)
         
@@ -292,9 +293,9 @@ private slots:
                 results.append(res);
             });
         
-        // Should find only the 2 JSON templates, not the .scad or .jpeg files
-        QCOMPARE(count, 2);
-        QCOMPARE(results.size(), 2);
+        // Should find only the 3 JSON templates, not the .scad or .jpeg files
+        QCOMPARE(count, 3);
+        QCOMPARE(results.size(), 3);
         
         // No errors should have been emitted for ignored files
         QCOMPARE(errorSpy.count(), 0);

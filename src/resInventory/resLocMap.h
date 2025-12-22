@@ -12,7 +12,7 @@
  * Provides three QMap<QString, ResourceLocation> members for 
  * installation, machine, and user tiers.
  */
-class PLATFORMINFO_API ResLocMap {
+class RESOURCEMGMT_API ResLocMap {
 public:
     ResLocMap();
     

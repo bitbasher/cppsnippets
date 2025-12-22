@@ -6,17 +6,12 @@
 #include <QDateTime>
 #include <QVariant>
 #include "platformInfo/export.h"
+#include "resInventory/ResourceLocation.h"  // For ResourceTier enum
 
 namespace resInventory {
 
-/**
- * @brief Tier where a resource was found
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in with application
-    Machine,        ///< System-wide (all users)
-    User            ///< User-specific (personal)
-};
+// Import ResourceTier from platformInfo namespace
+using platformInfo::ResourceTier;
 
 /**
  * @brief Type of resource
@@ -31,6 +26,7 @@ enum class ResourceType {
     Example,        ///< Example script (.scad) with optional attachments (.png, .jpg, .jpeg, .svg, .gif, .json, .txt, .csv, .stl, .off, .dxf, .dat)
     Test,           ///< Test script (.scad) with optional attachments (.png, .jpg, .jpeg, .svg, .gif, .json, .txt, .csv, .stl, .off, .dxf, .dat)
     Template,       ///< User template (.scad, writable)
+    Group,          ///< Category folder containing Examples (folder name captured as display name)
     Shader,         ///< Shader file
     Translation     ///< Translation file (.ts, .qm)
 };
@@ -49,7 +45,7 @@ enum class ResourceAccess {
  * Represents a single resource with its location, metadata, and state.
  * Can be used directly for simple resources or subclassed for complex ones.
  */
-class PLATFORMINFO_API ResourceItem {
+class RESOURCEMGMT_API ResourceItem {
 public:
     ResourceItem() = default;
     explicit ResourceItem(const QString& path);
@@ -134,7 +130,7 @@ protected:
  * Represents a script that may have associated files like
  * images, JSON data, or text files.
  */
-class PLATFORMINFO_API ResourceScript : public ResourceItem {
+class RESOURCEMGMT_API ResourceScript : public ResourceItem {
 public:
     ResourceScript() = default;
     explicit ResourceScript(const QString& path);
@@ -162,7 +158,7 @@ private:
  * Extends ResourceItem with template-specific metadata
  * including format, source tag, and version.
  */
-class PLATFORMINFO_API ResourceTemplate : public ResourceItem {
+class RESOURCEMGMT_API ResourceTemplate : public ResourceItem {
 public:
     ResourceTemplate() = default;
     explicit ResourceTemplate(const QString& path);
@@ -198,11 +194,11 @@ private:
 /**
  * @brief String conversion utilities
  */
-PLATFORMINFO_API QString resourceTypeToString(ResourceType type);
-PLATFORMINFO_API ResourceType stringToResourceType(const QString& str);
+RESOURCEMGMT_API QString resourceTypeToString(ResourceType type);
+RESOURCEMGMT_API ResourceType stringToResourceType(const QString& str);
 
-PLATFORMINFO_API QString resourceTierToString(ResourceTier tier);
-PLATFORMINFO_API ResourceTier stringToResourceTier(const QString& str);
+RESOURCEMGMT_API QString resourceTierToString(ResourceTier tier);
+RESOURCEMGMT_API ResourceTier stringToResourceTier(const QString& str);
 
 } // namespace resInventory
 

@@ -4,7 +4,21 @@
 
 namespace platformInfo {
 
-class PLATFORMINFO_API ResourceLocation {
+/**
+ * @brief Resource location tier/level
+ * 
+ * Resources are organized into three tiers based on their scope and accessibility:
+ * - Installation: Built-in resources from the application installation (read-only)
+ * - Machine: System-wide resources available to all users (admin-managed)
+ * - User: Personal resources in the user's home directory (user-managed)
+ */
+enum class ResourceTier {
+    Installation,   ///< Built-in application resources (read-only, hardcoded)
+    Machine,        ///< System-wide resources for all users (admin-managed)
+    User            ///< Per-user resources (user-managed)
+};
+
+class RESOURCEMGMT_API ResourceLocation {
 public:
     QString path;
     QString displayName;

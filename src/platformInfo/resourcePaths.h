@@ -28,6 +28,7 @@ namespace platformInfo {
  */
 enum class ResourceType {
     Examples,       ///< Example .scad files ($RESOURCEDIR/examples)
+    Group,          ///< Grouping type - not an actual resource - names to be captured
     Tests,          ///< Test .scad files ($RESOURCEDIR/tests) - may have .json/.txt/.dat attachments
     Fonts,          ///< Font files - .ttf, .otf ($RESOURCEDIR/fonts)
     ColorSchemes,   ///< Color scheme folder - no files ($RESOURCEDIR/color-schemes)
@@ -39,12 +40,15 @@ enum class ResourceType {
     Translations    ///< Translation/locale files ($RESOURCEDIR/locale)
 };
 
+static const QString groupNameCapture = QStringLiteral("__capture__");
+
+
 /**
  * @brief Resource type metadata
  * 
  * Contains the subdirectory name, description, and file extensions for a resource type.
  */
-struct PLATFORMINFO_API ResourceTypeInfo {
+struct RESOURCEMGMT_API ResourceTypeInfo {
     ResourceType type;              ///< The resource type enum
     QString subdirectory;           ///< Subdirectory name under resource dir
     QString description;            ///< Human-readable description
@@ -106,7 +110,7 @@ struct PLATFORMINFO_API ResourceTypeInfo {
  * This class provides the search path logic and resource type definitions
  * that can be used alongside PlatformUtils.
  */
-class PLATFORMINFO_API ResourcePaths {
+class RESOURCEMGMT_API ResourcePaths {
 public:
     /**
      * @brief Default constructor

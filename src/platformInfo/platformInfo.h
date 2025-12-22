@@ -22,7 +22,7 @@ namespace platformInfo {
  * Wraps Qt's QSysInfo to provide convenient access to system
  * information including OS details, CPU architecture, and screen info.
  */
-class PLATFORMINFO_API PlatformInfo {
+class RESOURCEMGMT_API PlatformInfo {
 public:
     /**
      * @brief Default constructor

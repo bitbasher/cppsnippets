@@ -29,16 +29,6 @@
 namespace platformInfo {
 
 /**
- * @brief Resource location tier/level
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in application resources (read-only, hardcoded)
-    Machine,        ///< System-wide resources for all users (admin-managed)
-    User            ///< Per-user resources (user-managed)
-};
-
-
-/**
  * @brief Manages three-tier resource locations with QSettings persistence
  * 
  * ## Architecture
@@ -84,7 +74,7 @@ enum class ResourceTier {
  * - Machine: "Resources/MachinePaths" (QStringList of enabled paths)
  * - User: "Resources/UserPaths" (QStringList of enabled paths)
  */
-class PLATFORMINFO_API ResourceLocationManager {
+class RESOURCEMGMT_API ResourceLocationManager {
 public:
     /**
      * @brief Construct with optional settings

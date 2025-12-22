@@ -30,7 +30,7 @@ namespace resInventory {
  * - A location/library node - level 1
  * - A template resource (leaf) - level 2
  */
-class PLATFORMINFO_API TemplateTreeNode
+class RESOURCEMGMT_API TemplateTreeNode
 {
 public:
     enum class NodeType {
@@ -107,7 +107,7 @@ private:
  *   view->setModel(&model);
  * @endcode
  */
-class PLATFORMINFO_API TemplateTreeModel : public QAbstractItemModel
+class RESOURCEMGMT_API TemplateTreeModel : public QAbstractItemModel
 {
     Q_OBJECT
 

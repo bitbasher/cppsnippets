@@ -10,22 +10,12 @@
 #include "platformInfo/resourcePaths.h"
 #include "resInventory/resLocMap.h"
 #include "resInventory/resLocTree.h"
+#include "resInventory/ResourceLocation.h"  // For ResourceTier enum
 
 namespace resInventory {
 
-/**
- * @brief Enumeration of resource tiers
- * 
- * Resources are organized into three tiers based on their scope and accessibility:
- * - Installation: Built-in resources from the application installation
- * - Machine: System-wide resources available to all users
- * - User: Personal resources in the user's home directory
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in resources from application installation
-    Machine,        ///< System-wide resources for all users
-    User            ///< Personal user resources
-};
+// Import ResourceTier from platformInfo namespace
+using platformInfo::ResourceTier;
 
 /**
  * @brief Abstract base class for resource iterators
@@ -39,7 +29,7 @@ enum class ResourceTier {
  * @see ResourceIteratorFlat for simple resources (fonts, color-schemes, etc.)
  * @see ResourceIteratorTree for hierarchical resources (libraries with examples/tests)
  */
-class PLATFORMINFO_API ResourceIteratorBase {
+class RESOURCEMGMT_API ResourceIteratorBase {
 public:
     /**
      * @brief Virtual destructor for proper cleanup of derived classes
@@ -124,7 +114,7 @@ protected:
  * }
  * @endcode
  */
-class PLATFORMINFO_API ResourceIteratorFlat : public ResourceIteratorBase {
+class RESOURCEMGMT_API ResourceIteratorFlat : public ResourceIteratorBase {
 public:
     /**
      * @brief Construct a flat resource iterator
@@ -206,7 +196,7 @@ private:
  * }
  * @endcode
  */
-class PLATFORMINFO_API ResourceIteratorTree : public ResourceIteratorBase {
+class RESOURCEMGMT_API ResourceIteratorTree : public ResourceIteratorBase {
 public:
     /**
      * @brief Construct a hierarchical resource iterator
@@ -347,7 +337,7 @@ private:
  * }
  * @endcode
  */
-class PLATFORMINFO_API ResourceIteratorFactory {
+class RESOURCEMGMT_API ResourceIteratorFactory {
 public:
     /**
      * @brief Create an appropriate iterator for the given resource types
