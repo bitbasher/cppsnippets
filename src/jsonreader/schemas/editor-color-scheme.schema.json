@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Editor Color Scheme",
+  "description": "OpenSCAD editor color scheme definition",
+  "type": "object",
+  "required": ["name", "colors"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name of the color scheme"
+    },
+    "index": {
+      "type": "integer",
+      "description": "Sorting index"
+    },
+    "paper": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "Background color as hex code"
+    },
+    "text": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "Default text color as hex code"
+    },
+    "caret": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "foreground": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "line-background": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "description": "Named color palette",
+      "properties": {
+        "keyword1": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "keyword2": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "keyword3": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "commentline": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "commentdoc": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "commentdockeyword": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "comment": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "number": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "string": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "operator": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "variables": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "keywords": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "transformations": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "booleans": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "functions": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "models": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "special-variables": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "whitespace-foreground": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "selection-foreground": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "selection-background": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "margin-background": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "margin-foreground": { "type": "string" },
+        "matched-brace-background": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "matched-brace-foreground": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "unmatched-brace-background": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "unmatched-brace-foreground": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "error-marker": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "error-indicator": { "type": "string" },
+        "error-indicator-outline": { "type": "string" },
+        "edge": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      },
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

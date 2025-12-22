@@ -627,6 +627,8 @@ if(BUILD_TESTS)
         set_tests_properties(test_templatetreemodel PROPERTIES
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         )
+
+        # JsonReader file tests now live in subproject (jsonreader_files_qttest)
     else()
         message(STATUS "Qt6::Test not found - Qt Test suite will not be built")
     endif()

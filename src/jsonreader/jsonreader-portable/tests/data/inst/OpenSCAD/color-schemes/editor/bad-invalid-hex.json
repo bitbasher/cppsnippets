@@ -1,0 +1,13 @@
+{
+    "name" : "Bad Colors - Invalid Hex",
+    "index" : 1901,
+    "paper" : "#000000",
+    "text" : "#ffffff",
+    "colors" : {
+        "keyword1" : "#gggggg",
+        "keyword2" : "#ff7aaf",
+        "number" : "#999999",
+        "string" : "#e6db74",
+        "operator" : "#ZZZ"
+    }
+}

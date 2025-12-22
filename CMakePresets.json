@@ -20,6 +20,7 @@
       "architecture": {
         "value": "x64"
       },
+      "toolchainFile": "C:/bin/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
         "BUILD_APP": "ON",
         "BUILD_TESTS": "ON",

@@ -1,0 +1,13 @@
+{
+    "name" : "Bad Colors - Negative Values",
+    "index" : 1900,
+    "paper" : "#000000",
+    "text" : "#ffffff",
+    "colors" : {
+        "keyword1" : "#ff7aaf",
+        "keyword2" : "#ff7aaf",
+        "number" : "-1",
+        "string" : "#e6db74",
+        "operator" : "#e8b609"
+    }
+}

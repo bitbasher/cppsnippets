@@ -1,0 +1,29 @@
+{
+  "unicode_multilingual_template": {
+    "prefix": "unicode_test",
+    "description": "Test Unicode handling in template bodies",
+    "body": [
+      "// English: The quick red fox jumped over the lazy brown dog",
+      "// Amharic: ፈጣኑ ቀይ ቀበሮ ሰነፍ ቡናማ ውሻ ላይ ዘለለ",
+      "// Bulgarian: Бързата червена лисица прескочи мързеливото кафяво куче",
+      "// Czech: Rychlý červený lišák přeskočil líného hnědého psa",
+      "// Polish: Szybki czerwony lis przeskoczył przez leniwego brązowego psa",
+      "",
+      "module unicode_test() {",
+      "    // Accented characters in comments",
+      "    // Español: El rápido zorro rojo saltó sobre el perro marrón perezoso",
+      "    // Français: Le rapide renard rouge a sauté par-dessus le chien brun paresseux",
+      "    // Português: A rápida raposa vermelha pulou sobre o cão marrom preguiçoso",
+      "    // Ελληνικά: Η γρήγορη κόκκινη αλεπού πήδηξε πάνω από το τεμπέλικο καφέ σκυλί",
+      "    ",
+      "    echo(\"Unicode strings: ✓ ✗ → ← ↑ ↓ ∞ ≈ ≠ ≤ ≥\");",
+      "    echo(\"Mathematical: ∑ ∏ √ ∂ ∇ ∫ ∀ ∃ ∧ ∨\");",
+      "    echo(\"Currency: € £ ¥ ₹ ₽ ₩\");",
+      "    echo(\"Emoji: 🔴 🟢 🔵 ⚙️ 🔧\");",
+      "}",
+      "",
+      "unicode_test();",
+      "$0"
+    ]
+  }
+}
