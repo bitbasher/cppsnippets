@@ -145,20 +145,65 @@ Relative to application executable:
 
 ## File Structure
 
+> **NOTE:** This structure was refactored to match the OpenSCAD coding standard where 
+> headers (.h) are co-located with their source files (.cpp) in the same directory.
+> The original project using this module will need to be updated to reflect this change.
+
+**Current structure (headers alongside sources):**
+
 ```
 src/
-├── include/platformInfo/
-│   ├── resourcePaths.h           # Path definitions and resource types
+├── platformInfo/
+│   ├── export.h                  # DLL export macros
+│   ├── extnOSVersRef.h           # OS version reference
+│   ├── extnOSVersRef.cpp
+│   ├── platformInfo.h            # Platform detection
+│   ├── platformInfo.cpp
 │   ├── ResourceLocation.h        # ResourceLocation struct
 │   ├── resourceLocationManager.h # High-level location management
-│   ├── platformInfo.h            # Platform detection
-│   └── export.h                  # DLL export macros
-└── platformInfo/ (or src/)
-    ├── resourcePaths.cpp
-    ├── ResourceLocation.cpp
-    ├── resourceLocationManager.cpp
-    ├── platformInfo.cpp
-    └── README.md                 # This file
+│   ├── resourceLocationManager.cpp
+│   ├── resourcePaths.h           # Path definitions and resource types
+│   ├── resourcePaths.cpp
+│   └── README.md                 # This file
+├── resInventory/
+│   ├── resLocMap.h/.cpp          # Flat location storage
+│   ├── resLocTree.h/.cpp         # Hierarchical location storage
+│   ├── resourceItem.h/.cpp       # Resource item representation
+│   ├── resourceIterator.h/.cpp   # Directory scanning iterator
+│   ├── resourceScanner.h/.cpp    # Resource scanning logic
+│   ├── resourceScannerDirListing.h/.cpp  # QDirListing-based scanner
+│   ├── resourceStore.h/.cpp      # Resource storage
+│   ├── resourceTreeWidget.h/.cpp # Tree widget for resources
+│   └── templateTreeModel.h/.cpp  # Tree model for templates
+├── scadtemplates/
+│   ├── export.h                  # DLL export macros
+│   ├── template.h/.cpp           # Template class
+│   ├── template_parser.h/.cpp    # Template parsing
+│   ├── template_manager.h/.cpp   # Template management
+│   └── ...
+└── gui/
+    ├── preferencesdialog.h/.cpp  # Preferences dialog
+    ├── machineTab.hpp/.cpp       # Machine tier tab
+    ├── userTab.hpp/.cpp          # User tier tab
+    └── ...
+```
+
+**Previous structure (separate include directory - deprecated):**
+
+```
+src/
+├── include/
+│   ├── platformInfo/
+│   │   ├── resourcePaths.h
+│   │   ├── ResourceLocation.h
+│   │   └── ...
+│   ├── resInventory/
+│   │   └── ...
+│   └── scadtemplates/
+│       └── ...
+├── platformInfo.cpp
+├── resourcePaths.cpp
+└── ...
 ```
 
 ## Usage Example

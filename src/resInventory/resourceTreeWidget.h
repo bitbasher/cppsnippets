@@ -2,6 +2,7 @@
 #define RESOURCETREEITEM_H
 
 #include <QTreeWidgetItem>
+#include "platformInfo/export.h"
 #include "resInventory/resourceItem.h"
 
 namespace resInventory {
@@ -13,7 +14,7 @@ namespace resInventory {
  * the standard tree item properties. Used for hierarchical display
  * of libraries, examples, and other nested resources.
  */
-class ResourceTreeItem : public QTreeWidgetItem {
+class PLATFORMINFO_API ResourceTreeItem : public QTreeWidgetItem {
 public:
     // Column indices
     enum Column {
@@ -61,7 +62,7 @@ private:
  * - Category grouping (for templates)
  * - Visual indicators for tier, state, and access
  */
-class ResourceTreeWidget : public QTreeWidget {
+class PLATFORMINFO_API ResourceTreeWidget : public QTreeWidget {
     Q_OBJECT
 
 public:

@@ -113,7 +113,7 @@ message(STATUS "Found Qt6::Core at ${Qt6_DIR}")
 message(STATUS "Found Qt6::Gui at ${Qt6Gui_DIR}")
 
 # JsonReaderPortable integration (static library for JSON file reading with error reporting)
-add_subdirectory(src/jsonreader-portable)
+add_subdirectory(src/jsonreader/jsonreader-portable)
 
 # Find Qt6 Widgets for application (optional)
 if(BUILD_APP)
@@ -179,7 +179,7 @@ endif(CLANG_TIDY)
 
 
 # Include directories
-include_directories(${CMAKE_SOURCE_DIR}/src/include)
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Generate version source file from template
 configure_file(
@@ -188,55 +188,105 @@ configure_file(
     @ONLY
 )
 
-# Library source files
+# ============================================================================
+# resourceMgmt_lib - Platform info and resource inventory management
+# This library is designed to be portable and dropped into OpenSCAD
+# ============================================================================
+set(RESOURCEMGMT_SOURCES
+    # platformInfo - OS detection, path resolution, defaults
+    src/platformInfo/extnOSVersRef.cpp
+    src/platformInfo/platformInfo.cpp
+    src/platformInfo/resourcePaths.cpp
+    src/platformInfo/resourceLocationManager.cpp
+    # resInventory - location storage, scanning, UI widgets
+    src/resInventory/resLocMap.cpp
+    src/resInventory/resLocTree.cpp
+    src/resInventory/resourceItem.cpp
+    src/resInventory/resourceIterator.cpp
+    src/resInventory/resourceScanner.cpp
+    src/resInventory/resourceScannerDirListing.cpp
+    src/resInventory/resourceStore.cpp
+    src/resInventory/resourceTreeWidget.cpp
+    src/resInventory/templateTreeModel.cpp
+)
+
+set(RESOURCEMGMT_HEADERS
+    # platformInfo headers
+    src/platformInfo/export.h
+    src/platformInfo/extnOSVersRef.h
+    src/platformInfo/platformInfo.h
+    src/platformInfo/resourcePaths.h
+    src/platformInfo/resourceLocationManager.h
+    # resInventory headers
+    src/resInventory/ResourceLocation.h
+    src/resInventory/resLocMap.h
+    src/resInventory/resLocTree.h
+    src/resInventory/resourceItem.h
+    src/resInventory/resourceIterator.h
+    src/resInventory/resourceScanner.h
+    src/resInventory/resourceScannerDirListing.h
+    src/resInventory/resourceStore.h
+    src/resInventory/resourceTreeWidget.h
+    src/resInventory/templateTreeModel.h
+)
+
+add_library(resourceMgmt_lib ${RESOURCEMGMT_SOURCES} ${RESOURCEMGMT_HEADERS})
+target_include_directories(resourceMgmt_lib PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(resourceMgmt_lib PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
+
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(resourceMgmt_lib PRIVATE RESOURCEMGMT_EXPORTS)
+endif()
+
+set_target_properties(resourceMgmt_lib PROPERTIES
+    OUTPUT_NAME resourceMgmt
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+)
+
+# ============================================================================
+# scadtemplates_lib - Template management for the GUI app
+# ============================================================================
 set(LIB_SOURCES
     ${CMAKE_BINARY_DIR}/generated/scadtemplates_version.cpp
-    src/template.cpp
-    src/template_parser.cpp
-    src/template_manager.cpp
-    src/legacy_template_converter.cpp
-    src/scad_template_session.cpp
-    src/editsubtype.cpp
-    src/edittype.cpp
-    src/filesubtype.cpp
-    src/extnOSVersRef.cpp
-    src/platformInfo.cpp
-    src/resourcePaths.cpp
-    src/resourceLocationManager.cpp
-    src/resInventory/resLocMap.cpp
+    src/scadtemplates/template.cpp
+    src/scadtemplates/template_parser.cpp
+    src/scadtemplates/template_manager.cpp
+    src/scadtemplates/legacy_template_converter.cpp
+    src/scadtemplates/scad_template_session.cpp
+    src/scadtemplates/editsubtype.cpp
+    src/scadtemplates/edittype.cpp
+    src/scadtemplates/filesubtype.cpp
 )
 
 set(LIB_HEADERS
-    src/include/scadtemplates/scadtemplates.h
-    src/include/scadtemplates/template.h
-    src/include/scadtemplates/template_parser.h
-    src/include/scadtemplates/template_manager.h
-    src/include/scadtemplates/scad_template_session.h
-    src/include/scadtemplates/export.h
-    src/include/scadtemplates/editsubtype.h
-    src/include/scadtemplates/edittype.h
-    src/include/scadtemplates/filesubtype.h
-    src/include/platformInfo/export.h
-    src/include/platformInfo/extnOSVersRef.h
-    src/include/platformInfo/platformInfo.h
-    src/include/platformInfo/resourcePaths.h
-    src/include/platformInfo/resourceLocationManager.h
-    src/include/resInventory/resLocMap.h
+    src/scadtemplates/scadtemplates.h
+    src/scadtemplates/template.h
+    src/scadtemplates/template_parser.h
+    src/scadtemplates/template_manager.h
+    src/scadtemplates/scad_template_session.h
+    src/scadtemplates/export.h
+    src/scadtemplates/editsubtype.h
+    src/scadtemplates/edittype.h
+    src/scadtemplates/filesubtype.h
 )
 
 # Build the shared/dynamic library
 add_library(scadtemplates_lib ${LIB_SOURCES} ${LIB_HEADERS})
 target_include_directories(scadtemplates_lib PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
 
-# Link Qt6::Core and Qt6::Gui for QString, QVector, QSysInfo, QScreen support in library
-target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui JsonReaderPortable)
+# Link to resourceMgmt_lib and other dependencies
+target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui JsonReaderPortable resourceMgmt_lib)
 
 # Set library properties for Windows DLL export
 if(BUILD_SHARED_LIBS)
-    target_compile_definitions(scadtemplates_lib PRIVATE SCADTEMPLATES_EXPORTS PLATFORMINFO_EXPORTS)
+    target_compile_definitions(scadtemplates_lib PRIVATE SCADTEMPLATES_EXPORTS)
 endif()
 
 # Set output name and versioning
@@ -253,45 +303,32 @@ if(BUILD_APP)
         src/app/mainwindow.cpp
         src/app/mainwindow.h
         src/gui/preferencesdialog.cpp
-        src/include/gui/preferencesdialog.h
+        src/gui/preferencesdialog.h
         src/gui/resourcelocationwidget.cpp
-        src/include/gui/resourceLocationWidget.hpp
+        src/gui/resourceLocationWidget.hpp
         src/gui/locationInputWidget.cpp
-        src/include/gui/locationInputWidget.hpp
+        src/gui/locationInputWidget.hpp
         src/gui/platformInfoWidget.cpp
-        src/include/gui/platformInfoWidget.hpp
+        src/gui/platformInfoWidget.hpp
         src/gui/dialogButtonBar.cpp
-        src/include/gui/dialogButtonBar.hpp
+        src/gui/dialogButtonBar.hpp
         src/gui/installationTab.cpp
-        src/include/gui/installationTab.hpp
+        src/gui/installationTab.hpp
         src/gui/machineTab.cpp
-        src/include/gui/machineTab.hpp
+        src/gui/machineTab.hpp
         src/gui/userTab.cpp
-        src/include/gui/userTab.hpp
+        src/gui/userTab.hpp
         src/gui/aboutDialog.cpp
-        src/include/gui/aboutDialog.h
+        src/gui/aboutDialog.h
         src/gui/sysInfoDialog.cpp
-        src/include/gui/sysInfoDialog.h
-        # Resource inventory classes
-        src/resInventory/resourceItem.cpp
-        src/include/resInventory/resourceItem.h
-        src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceTreeWidget.h
-        src/resInventory/resourceScanner.cpp
-        src/include/resInventory/resourceScanner.h
-        # New resource management classes
-        src/resInventory/resourceStore.cpp
-        src/include/resInventory/resourceStore.h
-        src/resInventory/resourceScannerDirListing.cpp
-        src/include/resInventory/resourceScannerDirListing.h
-        src/resInventory/templateTreeModel.cpp
-        src/include/resInventory/templateTreeModel.h
+        src/gui/sysInfoDialog.h
+        # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
     
     add_executable(scadtemplates_app ${APP_SOURCES})
     target_link_libraries(scadtemplates_app PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(scadtemplates_app PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(scadtemplates_app PROPERTIES
         OUTPUT_NAME scadtemplates
@@ -303,26 +340,20 @@ if(BUILD_APP)
         src/app/inventory_test.cpp
         # GUI classes needed for env var helpers
         src/gui/machineTab.cpp
-        src/include/gui/machineTab.hpp
+        src/gui/machineTab.hpp
         src/gui/userTab.cpp
-        src/include/gui/userTab.hpp
+        src/gui/userTab.hpp
         src/gui/resourcelocationwidget.cpp
-        src/include/gui/resourceLocationWidget.hpp
+        src/gui/resourceLocationWidget.hpp
         src/gui/locationInputWidget.cpp
-        src/include/gui/locationInputWidget.hpp
-        # Resource inventory classes
-        src/resInventory/resourceItem.cpp
-        src/include/resInventory/resourceItem.h
-        src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceTreeWidget.h
-        src/resInventory/resourceScanner.cpp
-        src/include/resInventory/resourceScanner.h
+        src/gui/locationInputWidget.hpp
+        # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
     
     add_executable(inventory_test ${INVENTORY_TEST_SOURCES})
     target_link_libraries(inventory_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(inventory_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(inventory_test PROPERTIES
         OUTPUT_NAME inventory_test
@@ -333,7 +364,7 @@ if(BUILD_APP)
     add_executable(convert_templates_test src/app/convert_templates_test.cpp)
     target_link_libraries(convert_templates_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(convert_templates_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(convert_templates_test PROPERTIES
         OUTPUT_NAME convert_templates_test
@@ -344,7 +375,7 @@ if(BUILD_APP)
     add_executable(template_discovery_test src/app/template_discovery_test.cpp)
     target_link_libraries(template_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(template_discovery_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(template_discovery_test PROPERTIES
         OUTPUT_NAME template_discovery_test
@@ -354,17 +385,11 @@ if(BUILD_APP)
     # Template tree demo app (GUI)
     add_executable(template_tree_demo
         src/app/template_tree_demo.cpp
-        # Resource model and store/scanner sources
-        src/resInventory/templateTreeModel.cpp
-        src/include/resInventory/templateTreeModel.h
-        src/resInventory/resourceStore.cpp
-        src/include/resInventory/resourceStore.h
-        src/resInventory/resourceScannerDirListing.cpp
-        src/include/resInventory/resourceScannerDirListing.h
+        # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
     target_link_libraries(template_tree_demo PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(template_tree_demo PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(template_tree_demo PROPERTIES
         OUTPUT_NAME template_tree_demo
@@ -374,16 +399,11 @@ if(BUILD_APP)
     # Library discovery test app
     add_executable(library_discovery_test
         src/app/library_discovery_test.cpp
-        src/resInventory/resourceScanner.cpp
-        src/resInventory/resourceItem.cpp
-        src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceScanner.h
-        src/include/resInventory/resourceItem.h
-        src/include/resInventory/resourceTreeWidget.h
+        # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
     target_link_libraries(library_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(library_discovery_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(library_discovery_test PROPERTIES
         OUTPUT_NAME library_discovery_test
@@ -456,13 +476,7 @@ if(BUILD_TESTS)
         tests/test_edittype.cpp
         tests/test_filesubtype.cpp
         tests/test_resource_discovery.cpp
-        # Resource inventory sources needed by discovery tests
-        src/resInventory/resourceScanner.cpp
-        src/resInventory/resourceItem.cpp
-        src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceScanner.h
-        src/include/resInventory/resourceItem.h
-        src/include/resInventory/resourceTreeWidget.h
+        # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
     
     target_link_libraries(scadtemplates_tests PRIVATE
@@ -503,8 +517,7 @@ if(BUILD_TESTS)
         # Qt Test for QDirListing scanner
         add_executable(test_resourcescannerdirlisting
             tests/qt/test_resourcescannerdirlisting.cc
-            src/resInventory/resourceScannerDirListing.cpp
-            src/include/resInventory/resourceScannerDirListing.h
+            # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
         )
         
         target_link_libraries(test_resourcescannerdirlisting PRIVATE
@@ -514,7 +527,7 @@ if(BUILD_TESTS)
         )
         
         target_include_directories(test_resourcescannerdirlisting PRIVATE
-            ${CMAKE_SOURCE_DIR}/src/include
+            ${CMAKE_SOURCE_DIR}/src
         )
         
         # Define SRCDIR for test to find testFileStructure
@@ -542,10 +555,7 @@ if(BUILD_TESTS)
         # Qt Test for ResourceStore
         add_executable(test_resourcestore
             tests/qt/test_resourcestore.cc
-            src/resInventory/resourceStore.cpp
-            src/include/resInventory/resourceStore.h
-            src/resInventory/resourceScannerDirListing.cpp
-            src/include/resInventory/resourceScannerDirListing.h
+            # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
         )
         
         target_link_libraries(test_resourcestore PRIVATE
@@ -555,7 +565,7 @@ if(BUILD_TESTS)
         )
         
         target_include_directories(test_resourcestore PRIVATE
-            ${CMAKE_SOURCE_DIR}/src/include
+            ${CMAKE_SOURCE_DIR}/src
         )
         
         # Define SRCDIR for test to find testFileStructure
@@ -583,12 +593,7 @@ if(BUILD_TESTS)
         # Qt Test for TemplateTreeModel
         add_executable(test_templatetreemodel
             tests/qt/test_templatetreemodel.cc
-            src/resInventory/templateTreeModel.cpp
-            src/include/resInventory/templateTreeModel.h
-            src/resInventory/resourceStore.cpp
-            src/include/resInventory/resourceStore.h
-            src/resInventory/resourceScannerDirListing.cpp
-            src/include/resInventory/resourceScannerDirListing.h
+            # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
         )
         
         target_link_libraries(test_templatetreemodel PRIVATE
@@ -598,7 +603,7 @@ if(BUILD_TESTS)
         )
         
         target_include_directories(test_templatetreemodel PRIVATE
-            ${CMAKE_SOURCE_DIR}/src/include
+            ${CMAKE_SOURCE_DIR}/src
         )
         
         # Define SRCDIR for test to find testFileStructure
@@ -630,6 +635,19 @@ endif()
 # Installation rules
 include(GNUInstallDirs)
 
+# Install resourceMgmt_lib (the combined platformInfo + resInventory library)
+install(TARGETS resourceMgmt_lib
+    EXPORT scadtemplates-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(DIRECTORY src/platformInfo src/resInventory
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
 install(TARGETS scadtemplates_lib
     EXPORT scadtemplates-targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -637,8 +655,9 @@ install(TARGETS scadtemplates_lib
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(DIRECTORY src/include/scadtemplates
+install(DIRECTORY src/scadtemplates
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
 )
 
 if(BUILD_APP)

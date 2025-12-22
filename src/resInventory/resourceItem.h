@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QVariant>
+#include "platformInfo/export.h"
 
 namespace resInventory {
 
@@ -48,7 +49,7 @@ enum class ResourceAccess {
  * Represents a single resource with its location, metadata, and state.
  * Can be used directly for simple resources or subclassed for complex ones.
  */
-class ResourceItem {
+class PLATFORMINFO_API ResourceItem {
 public:
     ResourceItem() = default;
     explicit ResourceItem(const QString& path);
@@ -133,7 +134,7 @@ protected:
  * Represents a script that may have associated files like
  * images, JSON data, or text files.
  */
-class ResourceScript : public ResourceItem {
+class PLATFORMINFO_API ResourceScript : public ResourceItem {
 public:
     ResourceScript() = default;
     explicit ResourceScript(const QString& path);
@@ -161,7 +162,7 @@ private:
  * Extends ResourceItem with template-specific metadata
  * including format, source tag, and version.
  */
-class ResourceTemplate : public ResourceItem {
+class PLATFORMINFO_API ResourceTemplate : public ResourceItem {
 public:
     ResourceTemplate() = default;
     explicit ResourceTemplate(const QString& path);
@@ -197,11 +198,11 @@ private:
 /**
  * @brief String conversion utilities
  */
-QString resourceTypeToString(ResourceType type);
-ResourceType stringToResourceType(const QString& str);
+PLATFORMINFO_API QString resourceTypeToString(ResourceType type);
+PLATFORMINFO_API ResourceType stringToResourceType(const QString& str);
 
-QString resourceTierToString(ResourceTier tier);
-ResourceTier stringToResourceTier(const QString& str);
+PLATFORMINFO_API QString resourceTierToString(ResourceTier tier);
+PLATFORMINFO_API ResourceTier stringToResourceTier(const QString& str);
 
 } // namespace resInventory
 

@@ -19,6 +19,7 @@
 #include <QDateTime>
 #include <functional>
 
+#include "platformInfo/export.h"
 #include "resInventory/resourceItem.h"  // For ResourceType, ResourceTier enums
 
 namespace resInventory {
@@ -72,7 +73,7 @@ struct DiscoveredResource {
  *                      });
  * @endcode
  */
-class ResourceScannerDirListing : public QObject {
+class PLATFORMINFO_API ResourceScannerDirListing : public QObject {
     Q_OBJECT
 
 public:

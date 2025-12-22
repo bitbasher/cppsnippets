@@ -1,15 +1,19 @@
 /**
  * @file export.h
- * @brief Platform-specific export/import macros for the platformInfo library
+ * @brief Platform-specific export/import macros for the resourceMgmt library
  * 
  * This header defines macros for proper symbol visibility when building
- * or consuming the platformInfo library as a shared/dynamic library.
+ * or consuming the resourceMgmt library as a shared/dynamic library.
+ * 
+ * The resourceMgmt library combines:
+ * - platformInfo: OS detection, path resolution, defaults
+ * - resInventory: Location storage, scanning, UI widgets
  */
 
 #pragma once
 
 #if defined(_WIN32) || defined(_WIN64)
-    #ifdef PLATFORMINFO_EXPORTS
+    #ifdef RESOURCEMGMT_EXPORTS
         #define PLATFORMINFO_API __declspec(dllexport)
     #else
         #define PLATFORMINFO_API __declspec(dllimport)

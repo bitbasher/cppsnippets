@@ -3,7 +3,8 @@
 
 #include <QMap>
 #include <QString>
-#include "platformInfo/ResourceLocation.h"
+#include "platformInfo/export.h"
+#include "resInventory/ResourceLocation.h"
 
 /**
  * @brief Storage class for resource locations organized by tier
@@ -11,7 +12,7 @@
  * Provides three QMap<QString, ResourceLocation> members for 
  * installation, machine, and user tiers.
  */
-class ResLocMap {
+class PLATFORMINFO_API ResLocMap {
 public:
     ResLocMap();
     

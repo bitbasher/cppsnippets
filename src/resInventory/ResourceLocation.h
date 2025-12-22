@@ -1,9 +1,10 @@
 #pragma once
 #include <QString>
+#include "platformInfo/export.h"
 
 namespace platformInfo {
 
-class ResourceLocation {
+class PLATFORMINFO_API ResourceLocation {
 public:
     QString path;
     QString displayName;

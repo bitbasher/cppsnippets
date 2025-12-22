@@ -4,7 +4,7 @@
  */
 
 #include "platformInfo/resourceLocationManager.h"
-#include "platformInfo/ResourceLocation.h"
+#include "resInventory/ResourceLocation.h"
 #include "platformInfo/platformInfo.h"
 #include <QDir>
 #include <QFile>

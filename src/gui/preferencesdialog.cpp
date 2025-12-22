@@ -13,7 +13,7 @@
 #include "gui/userTab.hpp"
 #include "gui/resourceLocationWidget.hpp"
 #include "platformInfo/resourceLocationManager.h"
-#include "platformInfo/ResourceLocation.h"
+#include "resInventory/ResourceLocation.h"
 #include "platformInfo/platformInfo.h"
 
 #include <QTabWidget>

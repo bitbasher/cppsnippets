@@ -457,15 +457,46 @@ if (libIter->isHierarchical()) {
 
 ## File Structure
 
+> **NOTE:** This structure was refactored to match the OpenSCAD coding standard where 
+> headers (.h) are co-located with their source files (.cpp) in the same directory.
+> The original project using this module will need to be updated to reflect this change.
+
+**Current structure (headers alongside sources):**
+
+```
+src/resInventory/
+├── resLocMap.h               # Flat storage (QMap-based)
+├── resLocMap.cpp
+├── resLocTree.h              # Hierarchical storage (QTreeWidget-based)
+├── resLocTree.cpp
+├── resourceIterator.h        # Iterator classes and factory
+├── resourceIterator.cpp
+├── resourceItem.h            # ResourceItem, ResourceScript base classes
+├── resourceItem.cpp
+├── resourceScanner.h         # Scanner and inventory manager
+├── resourceScanner.cpp
+├── resourceScannerDirListing.h  # QDirListing-based scanner
+├── resourceScannerDirListing.cpp
+├── resourceStore.h           # Resource storage
+├── resourceStore.cpp
+├── resourceTreeWidget.h      # Qt tree widget for resources
+├── resourceTreeWidget.cpp
+├── templateTreeModel.h       # Qt model for template trees
+├── templateTreeModel.cpp
+└── README.md                 # This file
+```
+
+**Previous structure (separate include directory - deprecated):**
+
 ```
 src/
 ├── include/resInventory/
-│   ├── resLocMap.h           # Flat storage (QMap-based)
-│   ├── resLocTree.h          # Hierarchical storage (QTreeWidget-based)
-│   ├── resourceIterator.h    # Iterator classes and factory
-│   ├── resourceItem.h        # ResourceItem, ResourceScript base classes
-│   ├── resourceTreeWidget.h  # Qt tree widget for resources
-│   └── resourceScanner.h     # Scanner and inventory manager
+│   ├── resLocMap.h
+│   ├── resLocTree.h
+│   ├── resourceIterator.h
+│   ├── resourceItem.h
+│   ├── resourceTreeWidget.h
+│   └── resourceScanner.h
 └── resInventory/
     ├── resLocMap.cpp
     ├── resLocTree.cpp
@@ -473,7 +504,7 @@ src/
     ├── resourceItem.cpp
     ├── resourceTreeWidget.cpp
     ├── resourceScanner.cpp
-    └── README.md             # This file
+    └── README.md
 ```
 
 ---

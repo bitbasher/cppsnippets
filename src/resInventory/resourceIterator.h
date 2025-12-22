@@ -6,6 +6,7 @@
 #include <QVector>
 #include <memory>
 
+#include "platformInfo/export.h"
 #include "platformInfo/resourcePaths.h"
 #include "resInventory/resLocMap.h"
 #include "resInventory/resLocTree.h"
@@ -38,7 +39,7 @@ enum class ResourceTier {
  * @see ResourceIteratorFlat for simple resources (fonts, color-schemes, etc.)
  * @see ResourceIteratorTree for hierarchical resources (libraries with examples/tests)
  */
-class ResourceIteratorBase {
+class PLATFORMINFO_API ResourceIteratorBase {
 public:
     /**
      * @brief Virtual destructor for proper cleanup of derived classes
@@ -123,7 +124,7 @@ protected:
  * }
  * @endcode
  */
-class ResourceIteratorFlat : public ResourceIteratorBase {
+class PLATFORMINFO_API ResourceIteratorFlat : public ResourceIteratorBase {
 public:
     /**
      * @brief Construct a flat resource iterator
@@ -205,7 +206,7 @@ private:
  * }
  * @endcode
  */
-class ResourceIteratorTree : public ResourceIteratorBase {
+class PLATFORMINFO_API ResourceIteratorTree : public ResourceIteratorBase {
 public:
     /**
      * @brief Construct a hierarchical resource iterator
@@ -346,7 +347,7 @@ private:
  * }
  * @endcode
  */
-class ResourceIteratorFactory {
+class PLATFORMINFO_API ResourceIteratorFactory {
 public:
     /**
      * @brief Create an appropriate iterator for the given resource types

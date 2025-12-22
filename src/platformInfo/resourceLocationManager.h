@@ -24,7 +24,7 @@
 #include <QVector>
 #include <QSettings>
 
-#include "platformInfo/ResourceLocation.h"
+#include "resInventory/ResourceLocation.h"
 
 namespace platformInfo {
 

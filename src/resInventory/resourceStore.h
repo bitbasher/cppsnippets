@@ -21,6 +21,7 @@
 #include <QHash>
 #include <QReadWriteLock>
 
+#include "platformInfo/export.h"
 #include "resInventory/resourceScannerDirListing.h"
 
 namespace resInventory {
@@ -55,7 +56,7 @@ namespace resInventory {
  * auto userFonts = store.resourcesOfType(ResourceType::Font, ResourceTier::User);
  * @endcode
  */
-class ResourceStore : public QObject
+class PLATFORMINFO_API ResourceStore : public QObject
 {
     Q_OBJECT
 

@@ -6,8 +6,9 @@
 #include <QVector>
 #include <QMap>
 #include <functional>
+#include "platformInfo/export.h"
 #include "resInventory/resourceItem.h"
-#include "platformInfo/ResourceLocation.h"
+#include "resInventory/ResourceLocation.h"
 
 namespace platformInfo {
 class ResourceLocationManager;
@@ -31,7 +32,7 @@ class ResourceTreeWidget;
  * - templates/       -> Template .scad files (subfolders = categories)
  * - locale/          -> Translation files
  */
-class ResourceScanner : public QObject {
+class PLATFORMINFO_API ResourceScanner : public QObject {
     Q_OBJECT
 
 public:
@@ -137,7 +138,7 @@ private:
  * High-level manager that coordinates scanning across all tiers
  * and maintains separate inventories for each resource type.
  */
-class ResourceInventoryManager : public QObject {
+class PLATFORMINFO_API ResourceInventoryManager : public QObject {
     Q_OBJECT
 
 public:

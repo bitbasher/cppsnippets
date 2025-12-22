@@ -2,7 +2,7 @@
 #define MACHINETAB_HPP
 
 #include <QWidget>
-#include <platformInfo/ResourceLocation.h>
+#include <resInventory/ResourceLocation.h>
 
 class ResourceLocationWidget;
 

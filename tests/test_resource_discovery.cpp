@@ -8,7 +8,7 @@
 #include "resInventory/resourceScanner.h"
 #include "resInventory/resourceItem.h"
 #include "platformInfo/resourceLocationManager.h"
-#include "platformInfo/ResourceLocation.h"
+#include "resInventory/ResourceLocation.h"
 
 // Use explicit namespace prefixes to avoid conflicts
 namespace ri = resInventory;

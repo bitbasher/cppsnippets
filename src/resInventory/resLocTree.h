@@ -4,7 +4,8 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QString>
-#include "platformInfo/ResourceLocation.h"
+#include "platformInfo/export.h"
+#include "resInventory/ResourceLocation.h"
 
 /**
  * @brief Custom tree widget item that holds a ResourceLocation
@@ -12,7 +13,7 @@
  * Extends QTreeWidgetItem to store ResourceLocation data alongside
  * the standard tree item properties.
  */
-class ResLocTreeItem : public QTreeWidgetItem {
+class PLATFORMINFO_API ResLocTreeItem : public QTreeWidgetItem {
 public:
     // Column indices
     enum Column {
@@ -45,7 +46,7 @@ private:
  * in a tree structure. Suitable for libraries with examples, tests,
  * and other nested resources.
  */
-class ResLocTree : public QTreeWidget {
+class PLATFORMINFO_API ResLocTree : public QTreeWidget {
     Q_OBJECT
 
 public:

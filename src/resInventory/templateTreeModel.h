@@ -17,6 +17,7 @@
 #include <QVector>
 #include <memory>
 
+#include "platformInfo/export.h"
 #include "resInventory/resourceStore.h"
 
 namespace resInventory {
@@ -29,7 +30,7 @@ namespace resInventory {
  * - A location/library node - level 1
  * - A template resource (leaf) - level 2
  */
-class TemplateTreeNode
+class PLATFORMINFO_API TemplateTreeNode
 {
 public:
     enum class NodeType {
@@ -106,7 +107,7 @@ private:
  *   view->setModel(&model);
  * @endcode
  */
-class TemplateTreeModel : public QAbstractItemModel
+class PLATFORMINFO_API TemplateTreeModel : public QAbstractItemModel
 {
     Q_OBJECT
 
