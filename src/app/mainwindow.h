@@ -78,7 +78,8 @@ private:
     void refreshInventory();
     void populateEditorFromSelection(const resInventory::ResourceItem& item);
     QString userTemplatesRoot() const;
-    bool saveTemplateToUser(const scadtemplates::Template& tmpl);
+    bool saveTemplateToUser(const scadtemplates::Template& tmpl, const QString& version);
+    QString incrementVersion(const QString& version) const;
     void applyFilterToTree(const QString& text);
     
     std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;

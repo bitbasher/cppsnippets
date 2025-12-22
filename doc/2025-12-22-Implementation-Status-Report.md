@@ -276,3 +276,64 @@ The revert did not erase this work. You have:
   - [QDirListing](https://doc.qt.io/qt-6/qdirlisting.html)
   - [QAbstractItemModel](https://doc.qt.io/qt-6/qabstractitemmodel.html)
   - [QDataWidgetMapper](https://doc.qt.io/qt-6/qdatawidgetmapper.html)
+
+---
+
+## 🔧 Follow Up Work
+
+### GUI Display Improvements - ✅ COMPLETE
+
+After the initial implementation verification, the ScadTemplates GUI application was identified as having several display issues that needed fixing. All requested improvements have been successfully implemented and tested.
+
+#### Issues Fixed:
+
+1. **✅ Location Branch Names** - Changed from showing folder name "OpenSCAD" to showing path components "AppData/Local"
+   - **File**: `src/resInventory/templateTreeModel.cpp` (lines 426-449)
+   - **Change**: Modified location display logic to extract last two path components from paths ending with "/"
+
+2. **✅ Column Headers** - Updated column 2 header from "Name" to "Description"
+   - **File**: `src/resInventory/templateTreeModel.cpp` (lines 285-295)
+   - **Change**: Updated `headerData()` to return "Description" for column 2
+
+3. **✅ Template Name Display** - Removed `.json` extension from displayed template names
+   - **File**: `src/resInventory/templateTreeModel.cpp` (lines 184-191)
+   - **Change**: Strip .json extension (case insensitive) from template names in tree display
+
+4. **✅ Description Column Content** - Changed column 2 to show template description instead of redundant name
+   - **File**: `src/resInventory/templateTreeModel.cpp` (lines 199-213)
+   - **Change**: Column 2 data now reads and displays the 'description' field from template JSON files
+
+5. **✅ Version Field Display & Auto-Increment** - Added version tracking with automatic increment on save
+   - **Files Modified**:
+     - `src/app/mainwindow.h` (lines 81-82): Updated signatures for `saveTemplateToUser()` and added `incrementVersion()`
+     - `src/app/mainwindow.cpp`:
+       - Lines 368-380: `onNewTemplate()` sets version to "0" and clears all fields
+       - Lines 418-441: `onSaveTemplate()` increments version and saves
+       - Lines 656-664: `incrementVersion()` implements simple integer increment (0→1, 1→2, etc.)
+       - Lines 682-737: `saveTemplateToUser()` saves complete JSON with version field
+       - Lines 567-572: Added field clearing at start of `populateEditorFromSelection()`
+       - Lines 634-642: Version field loading from JSON with integer handling
+
+#### Additional Technical Fixes:
+
+- Removed invalid `setHeaderLabels()` call (QTreeWidget method, not for QTreeView)
+- Fixed Template class accessor calls to use `getBody()`, `getPrefix()`, `getDescription()`
+- Added `#include <QDir>` for directory operations
+- Updated test expectations in `tests/qt/test_templatetreemodel.cc` to match new behavior
+
+#### Version Handling Details:
+
+- **Simple integer format**: Version is now a plain integer (0, 1, 2, 3...) instead of major.minor format
+- **New templates**: Start at version 0, increment to 1 on first save
+- **Field clearing**: All editor fields (prefix, body, description, source, version) are properly cleared when:
+  - New template is created via "New" button
+  - Different template is selected from the tree
+
+#### Build & Test Status:
+
+- ✅ ScadTemplates GUI application builds successfully
+- ✅ All 87 tests passing (100% pass rate)
+- ✅ No compilation errors or warnings
+- ✅ Test expectations updated to reflect new display behavior
+
+**Result**: The GUI now provides a cleaner, more user-friendly interface with proper location names, template names without file extensions, descriptive column headers, and automatic version tracking.

@@ -180,8 +180,14 @@ QVariant TemplateTreeModel::data(const QModelIndex& index, int role) const
                 return tierDisplayName(node->tier());
             case TemplateTreeNode::NodeType::Location:
                 return node->displayName();
-            case TemplateTreeNode::NodeType::Template:
-                return node->resource().name;
+            case TemplateTreeNode::NodeType::Template: {
+                // Strip .json extension from display name
+                QString name = node->resource().name;
+                if (name.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive)) {
+                    name.chop(5);
+                }
+                return name;
+            }
             default:
                 return QVariant();
             }
@@ -190,26 +196,22 @@ QVariant TemplateTreeModel::data(const QModelIndex& index, int role) const
                 return node->resource().category;
             }
             return QVariant();
-        case 2:  // Name column (was Path)
+        case 2:  // Description column
             if (node->nodeType() == TemplateTreeNode::NodeType::Template) {
-                // Show JSON 'name' field if present, else filename
+                // Show JSON 'description' field if present
                 const QString path = node->resource().path;
                 QFile f(path);
                 if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
                     const auto doc = QJsonDocument::fromJson(f.readAll());
                     if (doc.isObject()) {
                         const auto obj = doc.object();
-                        const auto nameVal = obj.value(QStringLiteral("name"));
-                        if (nameVal.isString()) {
-                            return nameVal.toString();
+                        const auto descVal = obj.value(QStringLiteral("description"));
+                        if (descVal.isString()) {
+                            return descVal.toString();
                         }
                     }
                 }
-                // Fallback to filename with extension
-                return QFileInfo(path).fileName();
-            } else if (node->nodeType() == TemplateTreeNode::NodeType::Location) {
-                // For location rows, show the key
-                return node->locationKey();
+                return QString();  // No description
             }
             return QVariant();
         }
@@ -286,7 +288,7 @@ QVariant TemplateTreeModel::headerData(int section, Qt::Orientation orientation,
         switch (section) {
         case 0: return tr("Name");
         case 1: return tr("Category");
-        case 2: return tr("Name");
+        case 2: return tr("Description");
         }
     }
     return QVariant();
@@ -429,10 +431,26 @@ void TemplateTreeModel::buildTree()
         if (isLib) {
             locationDisplay = extractLibraryName(tmpl.path);
         } else {
-            // Use location key, possibly shortened
-            locationDisplay = QFileInfo(tmpl.locationKey).fileName();
-            if (locationDisplay.isEmpty()) {
-                locationDisplay = tmpl.locationKey;
+            // For user paths ending with '/', show the two folders after HOME
+            // e.g., "~/AppData/Local/" -> "AppData/Local"
+            QString locKey = tmpl.locationKey;
+            if (locKey.endsWith(QLatin1Char('/'))) {
+                // This is a path like ~/AppData/Local/
+                // Extract the two directory components before the trailing slash
+                QStringList parts = locKey.split(QLatin1Char('/'), Qt::SkipEmptyParts);
+                if (parts.size() >= 2) {
+                    locationDisplay = parts.at(parts.size() - 2) + QLatin1Char('/') + parts.at(parts.size() - 1);
+                } else if (!parts.isEmpty()) {
+                    locationDisplay = parts.last();
+                } else {
+                    locationDisplay = locKey;
+                }
+            } else {
+                // Use the last component of the path
+                locationDisplay = QFileInfo(locKey).fileName();
+                if (locationDisplay.isEmpty()) {
+                    locationDisplay = locKey;
+                }
             }
         }
         

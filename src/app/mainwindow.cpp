@@ -37,6 +37,7 @@
 #include <QFontDatabase>
 #include <QStandardPaths>
 #include <QFile>
+#include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -113,9 +114,9 @@ void MainWindow::setupUi() {
     m_templateTree->setUniformRowHeights(true);
     m_templateTree->setAnimated(true);
     m_templateTree->header()->setStretchLastSection(false);
-        m_templateTree->header()->setSectionResizeMode(0, QHeaderView::Stretch); // Group (tier/location)
+        m_templateTree->header()->setSectionResizeMode(0, QHeaderView::Interactive); // Name
         m_templateTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents); // Category
-        m_templateTree->header()->setSectionResizeMode(2, QHeaderView::Stretch); // Name
+        m_templateTree->header()->setSectionResizeMode(2, QHeaderView::Stretch); // Description
         // Hide Category for now (templates don't use it yet)
         m_templateTree->setColumnHidden(1, true);
     connect(m_templateTree->selectionModel(), &QItemSelectionModel::selectionChanged,
@@ -370,6 +371,7 @@ void MainWindow::onNewTemplate() {
     m_bodyEdit->clear();
     m_descriptionEdit->clear();
     m_sourceEdit->setText(QStringLiteral("cppsnippet-made"));  // Source tag for new templates
+    m_versionEdit->setText(QStringLiteral("0"));  // New templates start at version 0
     m_prefixEdit->setFocus();
     m_templateTree->clearSelection();
     m_prefixEdit->setReadOnly(false);
@@ -425,14 +427,19 @@ void MainWindow::onSaveTemplate() {
         return;
     }
     
+    // Increment version
+    QString currentVersion = m_versionEdit->text();
+    QString newVersion = incrementVersion(currentVersion);
+    m_versionEdit->setText(newVersion);
+    
     scadtemplates::Template tmpl(prefix.toStdString(), 
                                   body.toStdString(),
                                   description.toStdString());
     
-    if (saveTemplateToUser(tmpl)) {
+    if (saveTemplateToUser(tmpl, newVersion)) {
         m_editMode = false;
         refreshInventory();
-        statusBar()->showMessage(tr("Saved template: %1").arg(prefix));
+        statusBar()->showMessage(tr("Saved template: %1 (version %2)").arg(prefix).arg(newVersion));
         updateTemplateButtons();
     }
 }
@@ -559,6 +566,13 @@ void MainWindow::refreshInventory() {
 }
 
 void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& item) {
+    // Clear all fields first to ensure clean state
+    m_prefixEdit->clear();
+    m_bodyEdit->clear();
+    m_descriptionEdit->clear();
+    m_sourceEdit->clear();
+    m_versionEdit->clear();
+    
     m_prefixEdit->setText(item.name());
 
     // Prefer structured parse via TemplateParser/JSON to extract body/description/source
@@ -621,10 +635,15 @@ void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& i
                     m_bodyEdit->setPlainText(bodyText);
                     m_descriptionEdit->setText(desc);
                     m_sourceEdit->setText(sourceTag);
-                        // Version
-                        const auto verVal = selectedObj.value(QStringLiteral("version"));
-                        if (verVal.isString()) m_versionEdit->setText(verVal.toString());
-                        else if (verVal.isDouble()) m_versionEdit->setText(QString::number(verVal.toDouble()));
+                    // Version (simple integer)
+                    const auto verVal = selectedObj.value(QStringLiteral("version"));
+                    if (verVal.isDouble()) {
+                        m_versionEdit->setText(QString::number(static_cast<int>(verVal.toDouble())));
+                    } else if (verVal.isString()) {
+                        m_versionEdit->setText(verVal.toString());
+                    } else {
+                        m_versionEdit->setText(QStringLiteral("0"));
+                    }
                 } else {
                     // Fallback: treat as plain text
                     m_bodyEdit->setPlainText(QString::fromUtf8(data));
@@ -647,13 +666,75 @@ void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& i
     updateTemplateButtons();
 }
 
+QString MainWindow::incrementVersion(const QString& version) const {
+    // Version is a simple integer (0, 1, 2, etc.)
+    bool ok;
+    int currentVersion = version.toInt(&ok);
+    if (!ok) {
+        // If not a valid integer, default to 0
+        currentVersion = 0;
+    }
+    return QString::number(currentVersion + 1);
+}
+
 QString MainWindow::userTemplatesRoot() const {
     return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + 
            QStringLiteral("/ScadTemplates");
 }
 
-bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl) {
-    // TODO: Implement save to user templates
+bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl, const QString& version) {
+    // Get user template location
+    auto userLocs = m_resourceManager->availableUserLocations();
+    if (userLocs.empty() || !userLocs[0].exists) {
+        QMessageBox::warning(this, tr("Error"),
+            tr("No user template location available."));
+        return false;
+    }
+    
+    QString targetDir = userLocs[0].path;
+    if (!QDir(targetDir).exists()) {
+        if (!QDir().mkpath(targetDir)) {
+            QMessageBox::warning(this, tr("Error"),
+                tr("Failed to create user template directory: %1").arg(targetDir));
+            return false;
+        }
+    }
+    
+    // Create JSON structure
+    QJsonObject snippetObj;
+    
+    // Body as array of lines
+    QStringList bodyLines = QString::fromStdString(tmpl.getBody()).split('\n');
+    QJsonArray bodyArray;
+    for (const QString& line : bodyLines) {
+        bodyArray.append(line);
+    }
+    
+    snippetObj["prefix"] = QString::fromStdString(tmpl.getPrefix());
+    snippetObj["body"] = bodyArray;
+    snippetObj["description"] = QString::fromStdString(tmpl.getDescription());
+    snippetObj["version"] = version;
+    snippetObj["_source"] = m_sourceEdit->text();
+    
+    // Wrap in named object
+    QJsonObject root;
+    root[QString::fromStdString(tmpl.getPrefix())] = snippetObj;
+    
+    // Save to file
+    QString fileName = QString::fromStdString(tmpl.getPrefix()) + ".json";
+    QString filePath = QDir(targetDir).filePath(fileName);
+    
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, tr("Error"),
+            tr("Failed to save template file: %1").arg(filePath));
+        return false;
+    }
+    
+    QJsonDocument doc(root);
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    
     return true;
 }
 

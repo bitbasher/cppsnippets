@@ -9,6 +9,8 @@
 #include "resInventory/resourceItem.h"
 #include "platformInfo/resourceLocationManager.h"
 #include "resInventory/ResourceLocation.h"
+#include "resInventory/resourceScannerDirListing.h"
+#include <iostream>
 
 // Use explicit namespace prefixes to avoid conflicts
 namespace ri = resInventory;
@@ -393,4 +395,147 @@ TEST_F(ResourceDiscoveryTest, InventoryManagerCanBeInstantiated) {
     // to point to testFileStructure instead of real system locations
     // For now just verify instantiation works
     EXPECT_TRUE(true);
+}
+
+// Utility: print an indented tree for discovered example resources in Personal tier
+TEST_F(ResourceDiscoveryTest, PrintPersonalExamplesIndented) {
+    using resInventory::DiscoveredResource;
+    using resInventory::ResourceScannerDirListing;
+
+    // Define attachment extensions to look for
+    const QStringList attachmentExtensions = {
+        QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat"),
+        QStringLiteral(".png"), QStringLiteral(".jpg"), QStringLiteral(".jpeg"),
+        QStringLiteral(".svg"), QStringLiteral(".gif"), QStringLiteral(".csv"),
+        QStringLiteral(".stl"), QStringLiteral(".off"), QStringLiteral(".dxf")
+    };
+
+    // Build list of Personal tier base paths to scan
+    QStringList personalBases;
+    const QString appdataOpenSCAD = QDir(persPath).absoluteFilePath("appdata/local/openscad");
+    if (QDir(appdataOpenSCAD).exists()) {
+        personalBases << appdataOpenSCAD;
+    }
+
+    // Discover user Documents/OpenSCAD roots under Personal tier
+    QDir persDir(persPath);
+    const QStringList users = persDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString &user : users) {
+        if (user.compare(QStringLiteral("appdata"), Qt::CaseInsensitive) == 0) {
+            continue;
+        }
+        const QString docOpenSCAD = persDir.absoluteFilePath(user + "/Documents/OpenSCAD");
+        if (QDir(docOpenSCAD).exists()) {
+            personalBases << docOpenSCAD;
+        }
+    }
+
+    ASSERT_FALSE(personalBases.isEmpty()) << "No Personal tier OpenSCAD bases found";
+
+    ResourceScannerDirListing scanner;
+
+    // For each base, scan Examples and print an indented list with attachments
+    for (const QString &base : personalBases) {
+        std::cout << "\n[Personal] Base: " << base.toStdString() << std::endl;
+
+        QVector<DiscoveredResource> results;
+        const int count = scanner.scanLocationForType(
+            base,
+            ri::ResourceType::Example,
+            ri::ResourceTier::User,
+            QStringLiteral("personal"),
+            [&results](const DiscoveredResource& res) {
+                results.append(res);
+            }
+        );
+
+        if (count == 0) {
+            std::cout << "  (no examples found)" << std::endl;
+            continue;
+        }
+
+        // Group by category path
+        QMap<QString, QStringList> byCategory;
+        QMap<QString, QString> filePaths;  // Store full paths for attachment lookup
+        for (const auto &res : results) {
+            const QString cat = res.category;
+            byCategory[cat].append(res.name);
+            filePaths[res.name] = res.path;  // Map filename to full path
+        }
+
+        // Stable output: sort categories and items
+        QStringList categories = byCategory.keys();
+        std::sort(categories.begin(), categories.end());
+        for (QString &cat : categories) {
+            QStringList &items = byCategory[cat];
+            std::sort(items.begin(), items.end());
+
+            // Compute indentation from category depth
+            if (cat.isEmpty()) {
+                std::cout << "  (root)" << std::endl;
+            } else {
+                const QStringList segments = cat.split('/', Qt::SkipEmptyParts);
+                // Print the full category path as a single line
+                std::cout << "  " << cat.toStdString() << std::endl;
+            }
+
+            // Print items and their attachments
+            for (const QString &name : items) {
+                std::cout << "    - " << name.toStdString() << std::endl;
+
+                // Find attachments for this file
+                const QString fullPath = filePaths[name];
+                if (!fullPath.isEmpty()) {
+                    QFileInfo fileInfo(fullPath);
+                    QDir fileDir = fileInfo.dir();
+                    const QString baseName = fileInfo.baseName();
+
+                    // Look for attachments with same base name (but different extension)
+                    const QStringList allFiles = fileDir.entryList(QDir::Files);
+                    QStringList attachments;
+                    for (const QString &file : allFiles) {
+                        QFileInfo attachInfo(fileDir.absoluteFilePath(file));
+                        
+                        // Must have same base name to be an attachment
+                        if (attachInfo.baseName() != baseName) {
+                            continue;
+                        }
+                        
+                        const QString suffix = attachInfo.suffix().toLower();
+                        
+                        // Skip the .scad file itself
+                        if (suffix == QStringLiteral("scad")) {
+                            continue;
+                        }
+                        
+                        // Check if it's a recognized attachment extension
+                        bool isAttachment = false;
+                        for (const QString &ext : attachmentExtensions) {
+                            if (attachInfo.fileName().endsWith(ext, Qt::CaseInsensitive)) {
+                                isAttachment = true;
+                                break;
+                            }
+                        }
+                        
+                        if (isAttachment) {
+                            attachments.append(file);
+                        }
+                    }
+
+                    // Print attachments indented under the .scad file
+                    std::sort(attachments.begin(), attachments.end());
+                    for (const QString &attach : attachments) {
+                        std::cout << "      • " << attach.toStdString() << std::endl;
+                    }
+                }
+            }
+        }
+
+        // Sanity: the scanned count should match grouped item total
+        size_t totalItems = 0;
+        for (const auto &it : byCategory) {
+            totalItems += static_cast<size_t>(it.size());
+        }
+        EXPECT_EQ(static_cast<size_t>(count), totalItems);
+    }
 }

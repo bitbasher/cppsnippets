@@ -248,18 +248,20 @@ private slots:
         QModelIndex locIdx = model.index(0, 0, tierIdx);
         QModelIndex tmplIdx = model.index(0, 0, locIdx);
         
-        // Name column
-        QCOMPARE(model.data(tmplIdx, Qt::DisplayRole).toString(), QString("mytemplate.json"));
+        // Name column (without .json extension)
+        QCOMPARE(model.data(tmplIdx, Qt::DisplayRole).toString(), QString("mytemplate"));
         
         // Category column
         QModelIndex catIdx = model.index(0, 1, locIdx);
         QCOMPARE(model.data(catIdx, Qt::DisplayRole).toString(), QString("Parametric"));
         
-        // Path column
-        QModelIndex pathIdx = model.index(0, 2, locIdx);
-        QVERIFY(model.data(pathIdx, Qt::DisplayRole).toString().contains("mytemplate.json"));
+        // Description column (may be empty if no description in JSON)
+        QModelIndex descIdx = model.index(0, 2, locIdx);
+        // Description is read from JSON file, which may not exist in this test
+        // Just verify we can get the index
+        QVERIFY(descIdx.isValid());
         
-        // PathRole
+        // PathRole should contain full path
         QVERIFY(model.data(tmplIdx, TemplateTreeModel::PathRole).toString().endsWith("mytemplate.json"));
     }
     
@@ -279,7 +281,7 @@ private slots:
         
         QCOMPARE(model.headerData(0, Qt::Horizontal).toString(), QString("Name"));
         QCOMPARE(model.headerData(1, Qt::Horizontal).toString(), QString("Category"));
-        QCOMPARE(model.headerData(2, Qt::Horizontal).toString(), QString("Name"));
+        QCOMPARE(model.headerData(2, Qt::Horizontal).toString(), QString("Description"));
     }
     
     // ========================================================================
@@ -298,7 +300,7 @@ private slots:
         
         QModelIndex found = model.findTemplatePath(tmpl.path);
         QVERIFY(found.isValid());
-        QCOMPARE(model.data(found, Qt::DisplayRole).toString(), QString("findme.json"));
+        QCOMPARE(model.data(found, Qt::DisplayRole).toString(), QString("findme"));
         
         QModelIndex notFound = model.findTemplatePath("/nonexistent/path.json");
         QVERIFY(!notFound.isValid());

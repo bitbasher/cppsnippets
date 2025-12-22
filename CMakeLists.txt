@@ -475,7 +475,7 @@ if(BUILD_TESTS)
         tests/test_editsubtype.cpp
         tests/test_edittype.cpp
         tests/test_filesubtype.cpp
-        tests/test_resource_discovery.cpp
+        tests/qt/test_resource_discovery.cc
         # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
     
