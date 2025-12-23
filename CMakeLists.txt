@@ -115,6 +115,9 @@ message(STATUS "Found Qt6::Gui at ${Qt6Gui_DIR}")
 # JsonReaderPortable integration (static library for JSON file reading with error reporting)
 add_subdirectory(src/jsonreader/jsonreader-portable)
 
+# JsonWriterPortable integration (static library for JSON file writing with error reporting)
+add_subdirectory(src/jsonwriter/jsonwriter-portable)
+
 # Find Qt6 Widgets for application (optional)
 if(BUILD_APP)
     find_package(Qt6 COMPONENTS Widgets QUIET)
@@ -326,7 +329,12 @@ if(BUILD_APP)
     )
     
     add_executable(scadtemplates_app ${APP_SOURCES})
-    target_link_libraries(scadtemplates_app PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_link_libraries(scadtemplates_app PRIVATE 
+        scadtemplates_lib 
+        ${QT_LIBRARIES}
+        JsonReaderPortable
+        JsonWriterPortable
+    )
     target_include_directories(scadtemplates_app PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )

@@ -337,3 +337,121 @@ After the initial implementation verification, the ScadTemplates GUI application
 - ✅ Test expectations updated to reflect new display behavior
 
 **Result**: The GUI now provides a cleaner, more user-friendly interface with proper location names, template names without file extensions, descriptive column headers, and automatic version tracking.
+
+
+---
+
+## 6. **JsonWriter Library & Atomic File Operations** - ✅ COMPLETE
+
+### Overview
+
+A companion library to JsonReader for writing JSON template files with schema validation. Implements atomic writes using Qt's `QSaveFile` (creates temporary file, renames on success to prevent data corruption).
+
+### Architecture
+
+**JsonWriter is a standalone portable library** mirroring JsonReader's structure:
+- **Location**: `src/jsonwriter/jsonwriter-portable/`
+- **Pattern**: Identical folder layout and CMake configuration to JsonReader
+- **Portability**: Self-contained with only Qt Core dependency for library; schema validator is test-only
+
+**Files**:
+- `include/JsonWriter/JsonWriter.h` - Public API
+- `src/JsonWriter.cc` - Implementation
+- `CMakeLists.txt` - Build configuration with conditional validator support
+- `cmake/JsonWriterPortableConfig.cmake.in` - Package config for `find_package()`
+- `tests/jsonwriter_qttest.cpp` - Basic unit tests (8 tests)
+- `tests/test_jsonwriter_files.cpp` - File I/O tests (5 tests)
+- `tests/test_jsonwriter_validator.cpp` - Schema validation tests (6 tests)
+- `README.md` - Complete documentation
+
+### Key Features
+
+**Atomic Writes**:
+- Uses `QSaveFile` for safe file operations: creates temporary file → writes all content → commits (atomic rename)
+- Prevents corruption if write fails or application crashes mid-write
+- Suitable for critical template data
+
+**Format Control**:
+- `FormatStyle::Compact` - Single-line JSON (whitespace minimized)
+- `FormatStyle::Indented` - Pretty-printed with 4-space indentation
+
+**Error Reporting**:
+- `JsonWriteErrorInfo` struct with filename, message, and `hasError()` predicate
+- `formatError()` method for user-friendly error messages
+
+### Integration Points
+
+**In ScadTemplates Application**:
+- `src/app/mainwindow.cpp` uses JsonWriter for template persistence
+- Replaces previous direct `QFile::write()` with atomic `QSaveFile` operations
+- Lines 682-737: `saveTemplateToUser()` implementation:
+  - Detects modification vs. new template
+  - New templates: QFileDialog for save location
+  - Modified templates: Silent overwrite
+  - Stores version as integer and adds `_format: "vscode-snippet"`
+
+**In Build System**:
+- `CMakeLists.txt` (main): `add_subdirectory(src/jsonwriter/jsonwriter-portable)`
+- Linked to `scadtemplates_app` target
+
+### Test Coverage
+
+**Test Suite**: 3 executables, 19 tests total
+
+1. **jsonwriter_qttest** (8 tests)
+   - `writesValidObject()` - Write QJsonObject to file
+   - `writesValidArray()` - Write QJsonArray to file
+   - `handlesCompactFormat()` - Compact format produces single-line JSON
+   - `handlesIndentedFormat()` - Indented format produces pretty-printed JSON
+   - `reportsWriteErrors()` - Error handling for invalid paths
+   - `overwritesExistingFile()` - QSaveFile correctly replaces existing files
+
+2. **jsonwriter_files_qttest** (5 tests)
+   - `roundTripObject()` - Write object → read back → verify
+   - `roundTripArray()` - Write array → read back → verify
+   - `writesUnicodeCorrectly()` - UTF-8 multilingual content
+   - `createsDirectoriesIfNeeded()` - Directory creation via `std::filesystem`
+   - Optional: Schema validation tests (with HAS_SCHEMA_VALIDATOR)
+
+3. **jsonwriter_validator_qttest** (6 tests) - NEW
+   - `validatorWorksWithGoodJSON()` - Validator accepts known-good template
+   - `validatorRejectsBadJSON()` - Validator detects malformed JSON
+   - `writtenTemplatePassesSchemaValidation()` - JsonWriter output validates against modern-template.schema.json
+   - `writtenVSCodeSnippetPassesValidation()` - Full VSCode snippet format is valid
+   - `compactFormatIsStillValid()` - Compact format produces schema-conforming JSON
+
+**Test Results**: 
+- ✅ All 19 JsonWriter tests passing
+- ✅ Full test suite: 90/90 passing (87 original + 3 JsonWriter executables)
+
+### Schema Validation Architecture
+
+**Validator Location**: The validator is **NOT in a common library** — it's independently implemented in each module's test suite:
+
+- **JsonReader**: `src/jsonreader/jsonreader-portable/tests/test_jsonreader_files.cpp`
+  - Optional dependency: `nlohmann_json_schema_validator`
+  - Enabled via: `find_package(nlohmann_json_schema_validator CONFIG QUIET)`
+  - Test target: `jsonreader_files_qttest`
+
+- **JsonWriter**: `src/jsonwriter/jsonwriter-portable/tests/test_jsonwriter_validator.cpp`
+  - Optional dependency: `nlohmann_json_schema_validator` (same external library)
+  - Enabled via: `find_package(nlohmann_json_schema_validator CONFIG QUIET)`
+  - Test target: `jsonwriter_validator_qttest`
+
+**Build Pattern**:
+
+```cmake
+# In both CMakeLists.txt files:
+find_package(nlohmann_json CONFIG QUIET)
+find_package(nlohmann_json_schema_validator CONFIG QUIET)
+
+if(nlohmann_json_FOUND AND nlohmann_json_schema_validator_FOUND)
+  target_link_libraries(test_target PRIVATE 
+    nlohmann_json::nlohmann_json
+    nlohmann_json_schema_validator::validator)
+  target_compile_definitions(test_target PRIVATE HAS_SCHEMA_VALIDATOR)
+else()
+  # Tests still run without validator (reduced scope)
+endif()
+```
+

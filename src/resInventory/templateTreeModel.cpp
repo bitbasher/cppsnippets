@@ -7,6 +7,7 @@
 #include <QIcon>
 #include <QFileInfo>
 #include <QFile>
+#include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -426,33 +427,7 @@ void TemplateTreeModel::buildTree()
         
         // Determine if this is inside a library
         bool isLib = isLibraryPath(tmpl.path, tmpl.locationKey);
-        QString locationDisplay;
-        
-        if (isLib) {
-            locationDisplay = extractLibraryName(tmpl.path);
-        } else {
-            // For user paths ending with '/', show the two folders after HOME
-            // e.g., "~/AppData/Local/" -> "AppData/Local"
-            QString locKey = tmpl.locationKey;
-            if (locKey.endsWith(QLatin1Char('/'))) {
-                // This is a path like ~/AppData/Local/
-                // Extract the two directory components before the trailing slash
-                QStringList parts = locKey.split(QLatin1Char('/'), Qt::SkipEmptyParts);
-                if (parts.size() >= 2) {
-                    locationDisplay = parts.at(parts.size() - 2) + QLatin1Char('/') + parts.at(parts.size() - 1);
-                } else if (!parts.isEmpty()) {
-                    locationDisplay = parts.last();
-                } else {
-                    locationDisplay = locKey;
-                }
-            } else {
-                // Use the last component of the path
-                locationDisplay = QFileInfo(locKey).fileName();
-                if (locationDisplay.isEmpty()) {
-                    locationDisplay = locKey;
-                }
-            }
-        }
+        QString locationDisplay = extractLocationDisplayName(tmpl.tier, tmpl.locationKey, isLib, tmpl.path);
         
         // Find or create location node
         QString locationKey = isLib ? extractLibraryName(tmpl.path) : tmpl.locationKey;
@@ -558,6 +533,82 @@ QString TemplateTreeModel::tierDisplayName(ResourceTier tier)
         return tr("User");
     }
     return QString();
+}
+
+QString TemplateTreeModel::extractLocationDisplayName(ResourceTier tier, const QString& locationKey,
+                                                      bool isLibrary, const QString& templatePath)
+{
+    if (isLibrary) {
+        return extractLibraryName(templatePath);
+    }
+
+    QString normalized = locationKey;
+    normalized.replace(QLatin1Char('\\'), QLatin1Char('/'));
+    while (normalized.endsWith(QLatin1Char('/'))) {
+        normalized.chop(1);
+    }
+
+    switch (tier) {
+    case ResourceTier::Installation: {
+        // Use the installation folder name (e.g., "OpenSCAD" or "OpenSCAD (Nightly)")
+        return QFileInfo(normalized).fileName();
+    }
+
+    case ResourceTier::Machine: {
+        // Show path up to but excluding "openscad" (case-insensitive)
+        QString display = normalized;
+        int idx = display.lastIndexOf(QLatin1String("/openscad"), -1, Qt::CaseInsensitive);
+        if (idx >= 0) {
+            display = display.left(idx);
+        }
+        while (display.endsWith(QLatin1Char('/'))) {
+            display.chop(1);
+        }
+        if (!display.endsWith(QLatin1Char('/'))) {
+            display += QLatin1Char('/');
+        }
+        return display;
+    }
+
+    case ResourceTier::User: {
+        // Remove home prefix and "openscad", then show first two folders
+        QString display = normalized;
+
+        QString home = QDir::homePath();
+        QString normHome = home;
+        normHome.replace(QLatin1Char('\\'), QLatin1Char('/'));
+        while (normHome.endsWith(QLatin1Char('/'))) {
+            normHome.chop(1);
+        }
+
+        if (display.startsWith(normHome, Qt::CaseInsensitive)) {
+            display = display.mid(normHome.length());
+        }
+        while (display.startsWith(QLatin1Char('/'))) {
+            display.remove(0, 1);
+        }
+
+        QStringList parts = display.split(QLatin1Char('/'), Qt::SkipEmptyParts);
+        QStringList filtered;
+        for (const auto& part : parts) {
+            if (part.compare(QLatin1String("openscad"), Qt::CaseInsensitive) == 0) {
+                continue;
+            }
+            if (filtered.size() < 2) {
+                filtered.append(part);
+            }
+        }
+
+        if (!filtered.isEmpty()) {
+            return filtered.join(QLatin1Char('/'));
+        }
+
+        // Fallback: show the last component
+        return QFileInfo(normalized).fileName();
+    }
+    }
+
+    return normalized;
 }
 
 } // namespace resInventory

@@ -174,6 +174,10 @@ private:
     
     // Tier display names
     static QString tierDisplayName(ResourceTier tier);
+
+    // Extract display name for location based on tier
+    static QString extractLocationDisplayName(ResourceTier tier, const QString& locationKey,
+                                               bool isLibrary, const QString& templatePath);
 };
 
 } // namespace resInventory
