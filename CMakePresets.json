@@ -22,6 +22,7 @@
       },
       "toolchainFile": "C:/bin/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "C:/bin/Qt/6.10.1/msvc2022_64",
         "BUILD_APP": "ON",
         "BUILD_TESTS": "ON",
         "BUILD_SHARED_LIBS": "ON"

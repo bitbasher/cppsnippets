@@ -91,9 +91,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Auto-detect Qt6 path based on compiler
 if(NOT DEFINED CMAKE_PREFIX_PATH OR CMAKE_PREFIX_PATH STREQUAL "")
     if(MSVC)
-        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/msvc2022_64")
+        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.1/msvc2022_64")
     elseif(MINGW)
-        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/mingw_64")
+        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.1/mingw_64")
     else()
         set(QT6_DEFAULT_PATH "")
     endif()
@@ -358,7 +358,7 @@ if(BUILD_APP)
         # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
     
-    add_executable(inventory_test ${INVENTORY_TEST_SOURCES})
+    add_executable(inventory_test EXCLUDE_FROM_ALL ${INVENTORY_TEST_SOURCES})
     target_link_libraries(inventory_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(inventory_test PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
@@ -369,7 +369,7 @@ if(BUILD_APP)
     )
     
     # Template converter test app
-    add_executable(convert_templates_test src/app/convert_templates_test.cpp)
+    add_executable(convert_templates_test EXCLUDE_FROM_ALL src/app/convert_templates_test.cpp)
     target_link_libraries(convert_templates_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(convert_templates_test PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
@@ -380,7 +380,7 @@ if(BUILD_APP)
     )
 
     # Template discovery test app
-    add_executable(template_discovery_test src/app/template_discovery_test.cpp)
+    add_executable(template_discovery_test EXCLUDE_FROM_ALL src/app/template_discovery_test.cpp)
     target_link_libraries(template_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(template_discovery_test PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
@@ -391,7 +391,7 @@ if(BUILD_APP)
     )
 
     # Template tree demo app (GUI)
-    add_executable(template_tree_demo
+    add_executable(template_tree_demo EXCLUDE_FROM_ALL
         src/app/template_tree_demo.cpp
         # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
@@ -405,7 +405,7 @@ if(BUILD_APP)
     )
 
     # Library discovery test app
-    add_executable(library_discovery_test
+    add_executable(library_discovery_test EXCLUDE_FROM_ALL
         src/app/library_discovery_test.cpp
         # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
@@ -436,7 +436,7 @@ if(BUILD_APP)
             COMMENT "Copying Qt platform plugins..."
         )
 
-        # Also copy plugins for template_tree_demo
+        # Also copy plugins for template_tree_demo when built
         add_custom_command(TARGET template_tree_demo POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "${Qt6_DIR}/../../../plugins/platforms"
@@ -474,7 +474,7 @@ if(BUILD_TESTS)
     include(GoogleTest)
     
     # Test executable
-    add_executable(scadtemplates_tests
+    add_executable(scadtemplates_tests EXCLUDE_FROM_ALL
         tests/test_main.cpp
         tests/test_template.cpp
         tests/test_template_parser.cpp
@@ -483,6 +483,7 @@ if(BUILD_TESTS)
         tests/test_editsubtype.cpp
         tests/test_edittype.cpp
         tests/test_filesubtype.cpp
+        tests/test_resource_paths.cpp
         tests/qt/test_resource_discovery.cc
         # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
     )
@@ -504,7 +505,10 @@ if(BUILD_TESTS)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest> $<TARGET_FILE_DIR:scadtemplates_tests>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest_main> $<TARGET_FILE_DIR:scadtemplates_tests>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:scadtemplates_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:resourceMgmt_lib> $<TARGET_FILE_DIR:scadtemplates_tests>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:scadtemplates_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Gui> $<TARGET_FILE_DIR:scadtemplates_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Widgets> $<TARGET_FILE_DIR:scadtemplates_tests>
         COMMENT "Copy GTest, Qt, and project DLLs to test binary directory")
     endif()
 
@@ -513,6 +517,7 @@ if(BUILD_TESTS)
     # avoiding DLL loading issues during build when using Ninja generator
     gtest_discover_tests(scadtemplates_tests
         DISCOVERY_MODE PRE_TEST
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
     
     # =========================================================================
@@ -523,7 +528,7 @@ if(BUILD_TESTS)
         message(STATUS "Found Qt6::Test - building Qt Test suite")
         
         # Qt Test for QDirListing scanner
-        add_executable(test_resourcescannerdirlisting
+        add_executable(test_resourcescannerdirlisting EXCLUDE_FROM_ALL
             tests/qt/test_resourcescannerdirlisting.cc
             # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
         )
@@ -561,7 +566,7 @@ if(BUILD_TESTS)
         )
         
         # Qt Test for ResourceStore
-        add_executable(test_resourcestore
+        add_executable(test_resourcestore EXCLUDE_FROM_ALL
             tests/qt/test_resourcestore.cc
             # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
         )
@@ -599,7 +604,7 @@ if(BUILD_TESTS)
         )
         
         # Qt Test for TemplateTreeModel
-        add_executable(test_templatetreemodel
+        add_executable(test_templatetreemodel EXCLUDE_FROM_ALL
             tests/qt/test_templatetreemodel.cc
             # resInventory classes are now in resourceMgmt_lib (linked via scadtemplates_lib)
         )
@@ -640,6 +645,33 @@ if(BUILD_TESTS)
     else()
         message(STATUS "Qt6::Test not found - Qt Test suite will not be built")
     endif()
+endif()
+
+# Aggregate custom targets for convenience
+if(TARGET template_tree_demo OR TARGET convert_templates_test OR TARGET template_discovery_test)
+    add_custom_target(demos ALL
+        DEPENDS
+            template_tree_demo
+            convert_templates_test
+            template_discovery_test
+    )
+    # Note: EXCLUDE_FROM_ALL prevents these from building unless explicitly requested
+    set_target_properties(demos PROPERTIES EXCLUDE_FROM_ALL TRUE)
+endif()
+
+if(BUILD_TESTS)
+    add_custom_target(tests ALL
+        DEPENDS
+            scadtemplates_tests
+            inventory_test
+            library_discovery_test
+            convert_templates_test
+            template_discovery_test
+            test_resourcescannerdirlisting
+            test_resourcestore
+            test_templatetreemodel
+    )
+    set_target_properties(tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()
 
 # Installation rules

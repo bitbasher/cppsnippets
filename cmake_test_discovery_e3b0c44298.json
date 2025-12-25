@@ -1,0 +1,485 @@
+{
+  "tests": 85,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "TemplateTest",
+      "tests": 11,
+      "testsuite": [
+        {
+          "name": "DefaultConstructor",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 11
+        },
+        {
+          "name": "ParameterizedConstructor",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 20
+        },
+        {
+          "name": "ConstructorWithEmptyDescription",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 28
+        },
+        {
+          "name": "SetPrefix",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 35
+        },
+        {
+          "name": "SetBody",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 41
+        },
+        {
+          "name": "SetDescription",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 47
+        },
+        {
+          "name": "AddScope",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 53
+        },
+        {
+          "name": "ClearScopes",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 64
+        },
+        {
+          "name": "IsValidWithPrefixOnly",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 73
+        },
+        {
+          "name": "IsValidWithBodyOnly",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 79
+        },
+        {
+          "name": "IsValidWithBoth",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template.cpp",
+          "line": 85
+        }
+      ]
+    },
+    {
+      "name": "TemplateParserTest",
+      "tests": 6,
+      "testsuite": [
+        {
+          "name": "ParseEmptyJson",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_parser.cpp",
+          "line": 11
+        },
+        {
+          "name": "ParseValidJson",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_parser.cpp",
+          "line": 19
+        },
+        {
+          "name": "ParseNonExistentFile",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_parser.cpp",
+          "line": 39
+        },
+        {
+          "name": "ToJsonSingleTemplate",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_parser.cpp",
+          "line": 47
+        },
+        {
+          "name": "ToJsonMultipleTemplates",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_parser.cpp",
+          "line": 59
+        },
+        {
+          "name": "ToJsonEmptyVector",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_parser.cpp",
+          "line": 71
+        }
+      ]
+    },
+    {
+      "name": "TemplateManagerTest",
+      "tests": 12,
+      "testsuite": [
+        {
+          "name": "InitiallyEmpty",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 20
+        },
+        {
+          "name": "AddTemplate",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 25
+        },
+        {
+          "name": "AddInvalidTemplate",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 31
+        },
+        {
+          "name": "AddDuplicateTemplate",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 37
+        },
+        {
+          "name": "RemoveTemplate",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 51
+        },
+        {
+          "name": "RemoveNonExistentTemplate",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 59
+        },
+        {
+          "name": "FindByPrefix",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 63
+        },
+        {
+          "name": "FindByPrefixNotFound",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 73
+        },
+        {
+          "name": "FindByScope",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 78
+        },
+        {
+          "name": "Search",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 99
+        },
+        {
+          "name": "Clear",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 111
+        },
+        {
+          "name": "GetAllTemplates",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_template_manager.cpp",
+          "line": 121
+        }
+      ]
+    },
+    {
+      "name": "TemplateSessionTest",
+      "tests": 7,
+      "testsuite": [
+        {
+          "name": "ParseSimplePlaceholders",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_scad_template_session.cpp",
+          "line": 39
+        },
+        {
+          "name": "ParsePlaceholdersWithDefaults",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_scad_template_session.cpp",
+          "line": 50
+        },
+        {
+          "name": "ParseMultiplePlaceholdersWithDefaults",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_scad_template_session.cpp",
+          "line": 58
+        },
+        {
+          "name": "NoPlaceholders",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_scad_template_session.cpp",
+          "line": 70
+        },
+        {
+          "name": "PlaceholderPositions",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_scad_template_session.cpp",
+          "line": 76
+        },
+        {
+          "name": "MixedPlaceholderStyles",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_scad_template_session.cpp",
+          "line": 86
+        },
+        {
+          "name": "NavigationSimulation",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_scad_template_session.cpp",
+          "line": 98
+        }
+      ]
+    },
+    {
+      "name": "EditSubtypeTest",
+      "tests": 8,
+      "testsuite": [
+        {
+          "name": "GetExtension",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 13
+        },
+        {
+          "name": "GetTitle",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 26
+        },
+        {
+          "name": "GetMimeType",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 39
+        },
+        {
+          "name": "SubtypeFromExtensionNoDot",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 52
+        },
+        {
+          "name": "SubtypeFromExtensionWithDot",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 64
+        },
+        {
+          "name": "SubtypeFromExtensionCaseInsensitive",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 73
+        },
+        {
+          "name": "SubtypeFromExtensionUnknown",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 82
+        },
+        {
+          "name": "GetFilterPattern",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_editsubtype.cpp",
+          "line": 90
+        }
+      ]
+    },
+    {
+      "name": "EditTypeTest",
+      "tests": 15,
+      "testsuite": [
+        {
+          "name": "GetTitle",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 14
+        },
+        {
+          "name": "GetMimeType",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 23
+        },
+        {
+          "name": "GetSubtypesText",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 32
+        },
+        {
+          "name": "GetSubtypesMarkdown",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 42
+        },
+        {
+          "name": "GetSubtypesOpenSCAD",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 49
+        },
+        {
+          "name": "GetSubtypesJson",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 57
+        },
+        {
+          "name": "TypeFromSubtype",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 64
+        },
+        {
+          "name": "TypeFromExtension",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 77
+        },
+        {
+          "name": "GetFileDialogFilterText",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 88
+        },
+        {
+          "name": "GetFileDialogFilterMarkdown",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 94
+        },
+        {
+          "name": "GetFileDialogFilterOpenSCAD",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 100
+        },
+        {
+          "name": "GetFileDialogFilterJson",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 106
+        },
+        {
+          "name": "GetAllFileDialogFilters",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 112
+        },
+        {
+          "name": "GetAllTypes",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 135
+        },
+        {
+          "name": "FilterStringFormatForQt",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_edittype.cpp",
+          "line": 159
+        }
+      ]
+    },
+    {
+      "name": "FileSubtypeTest",
+      "tests": 9,
+      "testsuite": [
+        {
+          "name": "ConstexprConstruction",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 13
+        },
+        {
+          "name": "PredefinedSubtypes",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 21
+        },
+        {
+          "name": "DotExtension",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 36
+        },
+        {
+          "name": "GlobPattern",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 43
+        },
+        {
+          "name": "MatchesFilename",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 50
+        },
+        {
+          "name": "MatchesExtension",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 60
+        },
+        {
+          "name": "FindSubtypeByExtension",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 70
+        },
+        {
+          "name": "AllTextSubtypes",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 100
+        },
+        {
+          "name": "AllOpenSCADSubtypes",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_filesubtype.cpp",
+          "line": 108
+        }
+      ]
+    },
+    {
+      "name": "ResourcePathsEnvVars",
+      "tests": 3,
+      "testsuite": [
+        {
+          "name": "AddUpdateRemove",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 11
+        },
+        {
+          "name": "ExpandPlaceholdersAndMissing",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 27
+        },
+        {
+          "name": "OverridesSystemEnvironment",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 40
+        }
+      ]
+    },
+    {
+      "name": "ResourceDiscoveryTest",
+      "tests": 14,
+      "testsuite": [
+        {
+          "name": "TestStructureExists",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 44
+        },
+        {
+          "name": "InstallationTierStructure",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 51
+        },
+        {
+          "name": "PersonalTierStructure",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 80
+        },
+        {
+          "name": "ColorSchemeFolderStructure",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 104
+        },
+        {
+          "name": "ExamplesFolderStructure",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 136
+        },
+        {
+          "name": "ScannerCanProcessInstallation",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 162
+        },
+        {
+          "name": "ScannerDiscoversRenderColors",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 188
+        },
+        {
+          "name": "ScannerDiscoversEditorColors",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 220
+        },
+        {
+          "name": "ScannerDiscoversExamplesWithCategories",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 252
+        },
+        {
+          "name": "ScannerDiscoversTemplates",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 292
+        },
+        {
+          "name": "FontsScannerIsNoOp",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 324
+        },
+        {
+          "name": "ResourceItemPropertiesPopulated",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 345
+        },
+        {
+          "name": "InventoryManagerCanBeInstantiated",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 388
+        },
+        {
+          "name": "PrintPersonalExamplesIndented",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\qt\\test_resource_discovery.cc",
+          "line": 400
+        }
+      ]
+    }
+  ]
+}

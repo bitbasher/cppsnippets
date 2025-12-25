@@ -75,26 +75,10 @@ bool ResourceIteratorFlat::scan()
                 // Use path as key for uniqueness
                 QString key = loc.path;
                 
-                // Add to appropriate tier in results
-                switch (m_tier) {
-                    case ResourceTier::Installation:
-                        if (!m_results.hasInstallLocation(key)) {
-                            m_results.addInstallLocation(key, loc);
-                            foundAny = true;
-                        }
-                        break;
-                    case ResourceTier::Machine:
-                        if (!m_results.hasMachineLocation(key)) {
-                            m_results.addMachineLocation(key, loc);
-                            foundAny = true;
-                        }
-                        break;
-                    case ResourceTier::User:
-                        if (!m_results.hasUserLocation(key)) {
-                            m_results.addUserLocation(key, loc);
-                            foundAny = true;
-                        }
-                        break;
+                // Add to flat results (single map) using path as key
+                if (!m_results.hasLocation(key)) {
+                    m_results.addLocation(key, loc);
+                    foundAny = true;
                 }
             }
         }

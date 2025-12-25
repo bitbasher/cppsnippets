@@ -9,8 +9,7 @@
 /**
  * @brief Storage class for resource locations organized by tier
  * 
- * Provides three QMap<QString, ResourceLocation> members for 
- * installation, machine, and user tiers.
+ * Provides three QMap<QString, ResourceLocation> members.
  */
 class RESOURCEMGMT_API ResLocMap {
 public:
@@ -19,30 +18,14 @@ public:
     void clear();
     
     // Installation tier locations
-    void addInstallLocation(const QString& key, const platformInfo::ResourceLocation& loc);
-    void removeInstallLocation(const QString& key);
-    platformInfo::ResourceLocation installLocation(const QString& key) const;
-    QList<platformInfo::ResourceLocation> allInstallLocations() const;
-    bool hasInstallLocation(const QString& key) const;
-    
-    // Machine tier locations
-    void addMachineLocation(const QString& key, const platformInfo::ResourceLocation& loc);
-    void removeMachineLocation(const QString& key);
-    platformInfo::ResourceLocation machineLocation(const QString& key) const;
-    QList<platformInfo::ResourceLocation> allMachineLocations() const;
-    bool hasMachineLocation(const QString& key) const;
-    
-    // User tier locations
-    void addUserLocation(const QString& key, const platformInfo::ResourceLocation& loc);
-    void removeUserLocation(const QString& key);
-    platformInfo::ResourceLocation userLocation(const QString& key) const;
-    QList<platformInfo::ResourceLocation> allUserLocations() const;
-    bool hasUserLocation(const QString& key) const;
+    void addLocation(const QString& key, const platformInfo::ResourceLocation& loc);
+    void removeLocation(const QString& key);
+    platformInfo::ResourceLocation Location(const QString& key) const;
+    QList<platformInfo::ResourceLocation> allLocations() const;
+    bool hasLocation(const QString& key) const;
 
 private:
-    QMap<QString, platformInfo::ResourceLocation> m_installLocList;
-    QMap<QString, platformInfo::ResourceLocation> m_machineLocList;
-    QMap<QString, platformInfo::ResourceLocation> m_userLocList;
+    QMap<QString, platformInfo::ResourceLocation> m_LocList;
 };
 
 #endif // RESLOCMAP_H

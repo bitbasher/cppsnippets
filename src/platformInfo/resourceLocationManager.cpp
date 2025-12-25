@@ -413,6 +413,7 @@ QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPl
             QDir testDir(testPath);
             if (testDir.exists()) {
                 // Check if it looks like a valid resource directory
+                //FIXME need a better way to verify
                 if (testDir.exists(QStringLiteral("examples")) ||
                     testDir.exists(QStringLiteral("fonts")) ||
                     testDir.exists(QStringLiteral("locale")) ||
@@ -469,7 +470,7 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
     QString folder = QStringLiteral("OpenSCAD") + suffix;
     QString folderLower = QStringLiteral("openscad") + suffix.toLower();
     
-    switch (osType) {
+    switch (osType) { //FIXME there is no need for IFDEF here since osType is already determined
         case ExtnOSType::Windows: {
             // Windows: C:/ProgramData/OpenSCAD
             // Uses CSIDL_COMMON_APPDATA
@@ -492,7 +493,7 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
             break;
         }
         
-        case ExtnOSType::MacOS:
+        case ExtnOSType::MacOS: //FIXME this should be using the predefined constant for MacOS locations
             // macOS: /Library/Application Support/OpenSCAD
             locations.append(ResourceLocation(
                 QStringLiteral("/Library/Application Support/") + folder,
@@ -505,6 +506,7 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
         case ExtnOSType::BSD:
         case ExtnOSType::Solaris:
         default:
+            //FIXME this should be using the predefined constant for MacOS locations
             // Linux/POSIX: /usr/local/share/openscad, /opt/openscad
             // Note: lowercase for Unix convention
             locations.append(ResourceLocation(
@@ -518,6 +520,7 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
                 QStringLiteral("Resources in /opt directory")
             ));
             // XDG system data dirs
+            //FIXME this should be using the predefined constant for XDG_DATA_DIRS
             QString xdgDataDirs = qEnvironmentVariable("XDG_DATA_DIRS", 
                 QStringLiteral("/usr/local/share:/usr/share"));
             const QStringList dataDirs = xdgDataDirs.split(QLatin1Char(':'));

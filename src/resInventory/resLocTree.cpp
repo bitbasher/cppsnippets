@@ -33,6 +33,7 @@ void ResLocTreeItem::setLocation(const platformInfo::ResourceLocation& loc) {
     updateDisplay();
 }
 
+//FIXME move to resLocTree.h as inline .. the following also
 platformInfo::ResourceLocation ResLocTreeItem::location() const {
     return m_location;
 }

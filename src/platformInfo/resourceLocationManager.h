@@ -53,7 +53,7 @@ namespace platformInfo {
  * - Enabled locations stored in user-level QSettings
  * - Fully user-controllable
  * - Typical paths:
- *   - Windows: ~/AppData/Roaming/OpenSCAD, ~/Documents/OpenSCAD
+ *   - Windows: ~/AppData/Local/OpenSCAD, ~/AppData/Roaming/OpenSCAD, ~/Documents/OpenSCAD
  *   - macOS: ~/Library/Application Support/OpenSCAD, ~/Documents/OpenSCAD  
  *   - Linux: ~/.config/openscad, ~/.local/share/openscad
  * 

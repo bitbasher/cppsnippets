@@ -5,10 +5,14 @@
 
 #include "platformInfo/resourcePaths.h"
 #include "platformInfo/platformInfo.h"
+#include "resourceInfo/resourceTypes.h"
+#include "resourceInfo/resourceTier.h"
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QCoreApplication>
+#include <QProcessEnvironment>
+#include <QRegularExpression>
 
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 #include <shlobj.h>
@@ -17,115 +21,10 @@
 
 namespace platformInfo {
 
-// All top-level resource types that can be discovered/scanned
-//   excludes EditorColors/RenderColors which are sub-resources)
-static const QVector<ResourceType> allTopLevelResTypes = {
-    ResourceType::Examples,
-    ResourceType::Tests,
-    ResourceType::Fonts,
-    ResourceType::ColorSchemes,
-    ResourceType::Shaders,
-    ResourceType::Templates,
-    ResourceType::Libraries,
-    ResourceType::Translations
-};
-
-// sub level resource types under Examples
-static const QVector<ResourceType> exampleSubResTypes = {
-    ResourceType::Group,
-    ResourceType::Templates
-};
-
-static const QStringList attachmentsList = 
-    { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat"),
-      QStringLiteral(".png"),  QStringLiteral(".jpg"), QStringLiteral(".jpeg"),
-      QStringLiteral(".svg"),  QStringLiteral(".gif"), QStringLiteral(".csv"),
-      QStringLiteral(".stl"),  QStringLiteral(".off"), QStringLiteral(".dxf") };
-
-// sub level resource types under Tests
-static const QVector<ResourceType> testSubResTypes = {
-    ResourceType::Templates
-};
+// Constants moved to header as inline static members
 
 // Static resource type definitions with file extensions
-static const QVector<ResourceTypeInfo> s_resourceTypes = {
-    { ResourceType::Examples, // container, but may contain resources directly
-      QStringLiteral("examples"),       
-      QStringLiteral("Example scripts"),
-      exampleSubResTypes,     // groups are just folder with .scad files in them
-      { QStringLiteral(".scad") },
-      attachmentsList },
-      
-    { ResourceType::Group,    // container of resources
-      groupNameCapture,  
-      QStringLiteral("Editor Categories"),
-      {},  // no sub-resources
-      { QStringLiteral(".scad") },
-      attachmentsList },
-      
-    { ResourceType::Tests,    // container, but may contain resources directly 
-      QStringLiteral("tests"),          
-      QStringLiteral("Test OpenSCAD scripts"),
-      testSubResTypes,  // might have templates
-      { QStringLiteral(".scad") },
-      attachmentsList },
-      
-    { ResourceType::Fonts,        
-      QStringLiteral("fonts"),          
-      QStringLiteral("Font files (supplements OS fonts)"),
-      {},  // no sub-resources
-      { QStringLiteral(".ttf"), QStringLiteral(".otf") },
-      {} },
-      
-    { ResourceType::ColorSchemes,  // container only
-      QStringLiteral("color-schemes"),  
-      QStringLiteral("Color scheme definitions"),
-      { ResourceType::EditorColors, ResourceType::RenderColors },  // contains editor and render colors
-      {},  // no primary extensions (container only)
-      {} },
-      
-    { ResourceType::EditorColors,   // scheme definitions
-      QStringLiteral("editor"),  
-      QStringLiteral("Editor color schemes"),
-      {},  // no sub-resources
-      { QStringLiteral(".json") },
-      {} },
-      
-    { ResourceType::RenderColors,   // scheme definitions
-      QStringLiteral("render"),  
-      QStringLiteral("Render color schemes"),
-      {},  // no sub-resources
-      { QStringLiteral(".json") },
-      {} },
-      
-    { ResourceType::Shaders,      
-      QStringLiteral("shaders"),        
-      QStringLiteral("OpenGL shader files"),
-      {},  // no sub-resources
-      { QStringLiteral(".frag"), QStringLiteral(".vert") },
-      {} },
-      
-    { ResourceType::Templates,    
-      QStringLiteral("templates"),      
-      QStringLiteral("Template files"),
-      {},  // no sub-resources
-      { QStringLiteral(".json") },
-      {} },
-      
-    { ResourceType::Libraries,    
-      QStringLiteral("libraries"),      
-      QStringLiteral("OpenSCAD library scripts that extend features"),
-      allTopLevelResTypes,  // libraries can contain any top-level resource
-      { QStringLiteral(".scad") },
-      {} },
-      
-    { ResourceType::Translations, 
-      QStringLiteral("locale"),         
-      QStringLiteral("Translation files"),
-      {},  // no sub-resources
-      { QStringLiteral(".qm"), QStringLiteral(".ts") },
-      {} }
-};
+// s_resourceTypes moved to header as inline static member
 
 ResourcePaths::ResourcePaths()
     : m_suffix()  // Empty suffix = release build, otherwise "(Nightly)"
@@ -194,7 +93,7 @@ QStringList ResourcePaths::resourceExtensions(ResourceType type) {
 }
 
 QVector<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
-    return allTopLevelResTypes;
+    return s_allTopLevelResTypes;
 }
 
 // ============================================================================
@@ -208,68 +107,7 @@ QVector<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
 // Note: The suffix (e.g., " (Nightly)") is handled separately when resolving paths.
 // These are the base paths without suffix applied.
 
-// Installation tier: relative to application executable
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-static const QStringList s_defaultInstallSearchPaths = {
-    QStringLiteral("."),                        // Release location (same as exe)
-    QStringLiteral("../share/"),                // MSYS2 style Base share folder (append openscad + suffix)
-    QStringLiteral("..")                        // Dev location
-};
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-static const QStringList s_defaultInstallSearchPaths = {
-    QStringLiteral("../Resources"),             // Resources bundled in .app
-    QStringLiteral("../../.."),                 // Dev location
-    QStringLiteral("../../../.."),              // Test location (cmake)
-    QStringLiteral(".."),                       // Test location
-    QStringLiteral("../share/")                // Base share folder (append openscad + suffix)
-};
-#else  // Linux/BSD/POSIX
-static const QStringList s_defaultInstallSearchPaths = {
-    QStringLiteral("../share/"),                // Standard install (append openscad + suffix)
-    QStringLiteral("../../share/"),             // Alternate install (append openscad + suffix) 
-    QStringLiteral("."),                        // Build directory
-    QStringLiteral(".."),                       // Up one
-    QStringLiteral("../..")                     // Up two
-};
-#endif
-
-// Machine tier: system-wide locations for all users
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-static const QStringList s_defaultMachineSearchPaths = {
-    QStringLiteral("C:/ProgramData/OpenSCAD")   // All users app data
-};
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-static const QStringList s_defaultMachineSearchPaths = {
-    QStringLiteral("/Library/Application Support/")  // System-wide
-};
-#else  // Linux/BSD/POSIX
-static const QStringList s_defaultMachineSearchPaths = {
-    QStringLiteral("/usr/share/"),      // System packages
-    QStringLiteral("/usr/local/share/"), // Local installs
-    QStringLiteral("/opt/openscad/share")       // Opt installs
-};
-#endif
-
-// User tier: base directories where user resources can be located
-// Resolved using userConfigBasePath(), userDocumentsPath(), etc.
-// Paths ending with "/" have the app name + suffix appended; others are scanned directly
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-static const QStringList s_defaultUserSearchPaths = {
-    QStringLiteral("."),                    // Current directory (userOpenSCADPath)
-    QStringLiteral("../")                   // User documents base (CSIDL_PERSONAL with suffix)
-};
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-static const QStringList s_defaultUserSearchPaths = {
-    QStringLiteral("."),                    // Current directory (userOpenSCADPath)
-    QStringLiteral("../../Documents/")      // User documents (NSDocumentDirectory with suffix)
-};
-#else  // Linux/BSD/POSIX
-static const QStringList s_defaultUserSearchPaths = {
-    QStringLiteral("."),                    // Current directory (userOpenSCADPath)
-    QStringLiteral("../../.local/share/")   // User documents ($HOME/.local/share with suffix)
-};
-#endif
-
+// Constants moved to header as inline static members
 const QStringList& ResourcePaths::defaultInstallSearchPaths() {
     return s_defaultInstallSearchPaths;
 }
@@ -327,6 +165,7 @@ QString ResourcePaths::findAppResourceDirectory() const {
         // Check if this looks like a valid resource directory
         // by checking for at least one known subdirectory
         if (candidateDir.exists()) {
+            //FIXME need a better way to verify
             // Check for examples, fonts, or color-schemes subdirectory as validation
             if (candidateDir.exists(QStringLiteral("examples")) ||
                 candidateDir.exists(QStringLiteral("fonts")) ||
@@ -549,6 +388,97 @@ QStringList ResourcePaths::allResourcePaths(ResourceType type) const {
     }
     
     return paths;
+}
+
+// ========== Environment Variable Helpers ==========
+
+void ResourcePaths::addEnvVar(const QString& name, const QString& value) {
+    if (name.isEmpty()) {
+        return;
+    }
+
+    for (auto& entry : m_envVars) {
+        if (entry.name == name) {
+            entry.value = value;
+            return;
+        }
+    }
+
+    m_envVars.append({name, value});
+}
+
+void ResourcePaths::removeEnvVar(const QString& name) {
+    if (name.isEmpty()) {
+        return;
+    }
+
+    for (int i = m_envVars.size() - 1; i >= 0; --i) {
+        if (m_envVars.at(i).name == name) {
+            m_envVars.removeAt(i);
+        }
+    }
+}
+
+QString ResourcePaths::envVarValue(const QString& name) const {
+    if (name.isEmpty()) {
+        return QString();
+    }
+
+    for (const auto& entry : m_envVars) {
+        if (entry.name == name) {
+            return entry.value;
+        }
+    }
+
+    const QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    return env.value(name, QString());
+}
+
+QString ResourcePaths::expandEnvVars(const QString& path) const {
+    if (path.isEmpty()) {
+        return path;
+    }
+
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    for (const auto& entry : m_envVars) {
+        if (!entry.name.isEmpty()) {
+            env.insert(entry.name, entry.value);
+        }
+    }
+
+    const QRegularExpression pattern(
+        QStringLiteral(R"(\$\{([^}]+)\}|%([^%]+)%)"));
+
+    QString expanded;
+    expanded.reserve(path.size());
+    int lastIndex = 0;
+    auto matchIt = pattern.globalMatch(path);
+    while (matchIt.hasNext()) {
+        const auto match = matchIt.next();
+        const int start = match.capturedStart();
+        const int end = match.capturedEnd();
+        expanded.append(path.mid(lastIndex, start - lastIndex));
+
+        const QString key = !match.captured(1).isEmpty() ? match.captured(1)
+                                                         : match.captured(2);
+        expanded.append(env.value(key, QString()));
+        lastIndex = end;
+    }
+
+    expanded.append(path.mid(lastIndex));
+    return expanded;
+}
+
+QList<ResourcePathElement> ResourcePaths::elementsByTier(resourceInfo::ResourceTier tier) const {
+    QList<ResourcePathElement> result;
+    result.reserve(m_resourcePathElements.size());
+    for (const auto& elem : m_resourcePathElements) {
+        if (elem.tier == tier) {
+            result.append(elem);
+        }
+    }
+    result.squeeze();
+    return result;
 }
 
 // ========== Validation ==========

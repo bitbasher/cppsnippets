@@ -24,9 +24,8 @@ protected:
     QString persPath;
     
     void SetUp() override {
-        // Get absolute path to testFileStructure
+        // Get absolute path to testFileStructure from working directory (CMAKE_SOURCE_DIR)
         QDir currentDir(QDir::currentPath());
-        currentDir.cdUp(); // Go to project root from build directory
         testBasePath = currentDir.absoluteFilePath("testFileStructure");
         
         instPath = QDir(testBasePath).absoluteFilePath("inst");
