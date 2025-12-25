@@ -42,6 +42,7 @@ public:
 signals:
     void locationsChanged();
     void locationAdded();
+    void rescanLocationsClicked();
 
 private slots:
     void onAddLocation();
@@ -57,6 +58,7 @@ private:
     QListWidget* m_listWidget;
     LocationInputWidget* m_inputWidget;
     QPushButton* m_removeButton;
+    QPushButton* m_rescanButton;
     bool m_readOnly = false;
     bool m_allowAdd = true;
     

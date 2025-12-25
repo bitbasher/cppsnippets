@@ -16,6 +16,7 @@ class DialogButtonBar;
 class InstallationTab;
 class MachineTab;
 class UserTab;
+class EnvVarsTab;
 
 namespace platformInfo {
 class ResourceLocationManager;
@@ -55,5 +56,6 @@ private:
     InstallationTab* m_installationTab;
     MachineTab* m_machineTab;
     UserTab* m_userTab;
+    EnvVarsTab* m_envVarsTab;
     DialogButtonBar* m_buttonBar;
 };

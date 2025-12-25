@@ -17,7 +17,7 @@
 MachineTab::MachineTab(QWidget* parent)
     : QWidget(parent)
 {
-    m_locationWidget = new ResourceLocationWidget(tr("Machine Resources"), true, true);
+    m_locationWidget = new ResourceLocationWidget(tr("Machine Locations"), true, true);
     connect(m_locationWidget, &ResourceLocationWidget::locationsChanged,
             this, &MachineTab::locationsChanged);
     

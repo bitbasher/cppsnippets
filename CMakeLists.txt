@@ -202,6 +202,7 @@ set(RESOURCEMGMT_SOURCES
     src/platformInfo/resourcePaths.cpp
     src/platformInfo/resourceLocationManager.cpp
     # resInventory - location storage, scanning, UI widgets
+    src/resInventory/ResourceLocation.cpp
     src/resInventory/resLocMap.cpp
     src/resInventory/resLocTree.cpp
     src/resInventory/resourceItem.cpp
@@ -321,6 +322,8 @@ if(BUILD_APP)
         src/gui/machineTab.hpp
         src/gui/userTab.cpp
         src/gui/userTab.hpp
+        src/gui/envVarsTab.cpp
+        src/gui/envVarsTab.h
         src/gui/aboutDialog.cpp
         src/gui/aboutDialog.h
         src/gui/sysInfoDialog.cpp
@@ -640,6 +643,159 @@ if(BUILD_TESTS)
         set_tests_properties(test_templatetreemodel PROPERTIES
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         )
+        
+        # GUI Test for MainWindow
+        add_executable(test_mainwindow_gui EXCLUDE_FROM_ALL
+            tests/qt/test_mainwindow_gui.cpp
+            tests/qt/test_mainwindow_gui.h
+            src/app/mainwindow.cpp
+            src/app/mainwindow.h
+            src/gui/preferencesdialog.cpp
+            src/gui/preferencesdialog.h
+            src/gui/resourcelocationwidget.cpp
+            src/gui/resourceLocationWidget.hpp
+            src/gui/locationInputWidget.cpp
+            src/gui/locationInputWidget.hpp
+            src/gui/platformInfoWidget.cpp
+            src/gui/platformInfoWidget.hpp
+            src/gui/dialogButtonBar.cpp
+            src/gui/dialogButtonBar.hpp
+            src/gui/installationTab.cpp
+            src/gui/installationTab.hpp
+            src/gui/machineTab.cpp
+            src/gui/machineTab.hpp
+            src/gui/userTab.cpp
+            src/gui/userTab.hpp
+            src/gui/envVarsTab.cpp
+            src/gui/envVarsTab.h
+            src/gui/aboutDialog.cpp
+            src/gui/aboutDialog.h
+            src/gui/sysInfoDialog.cpp
+            src/gui/sysInfoDialog.h
+        )
+        
+        target_link_libraries(test_mainwindow_gui PRIVATE
+            scadtemplates_lib
+            resourceMgmt_lib
+            JsonReaderPortable
+            ${QT_LIBRARIES}
+            Qt6::Test
+        )
+        
+        target_include_directories(test_mainwindow_gui PRIVATE
+            ${CMAKE_SOURCE_DIR}/src
+            ${CMAKE_SOURCE_DIR}/src/app
+            ${CMAKE_SOURCE_DIR}/src/gui
+            ${CMAKE_SOURCE_DIR}/src/resInventory
+        )
+        
+        target_compile_definitions(test_mainwindow_gui PRIVATE
+            SRCDIR="${CMAKE_SOURCE_DIR}"
+        )
+        
+        if(WIN32 AND BUILD_SHARED_LIBS)
+            add_custom_command(TARGET test_mainwindow_gui POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_mainwindow_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test> $<TARGET_FILE_DIR:test_mainwindow_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Gui> $<TARGET_FILE_DIR:test_mainwindow_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Widgets> $<TARGET_FILE_DIR:test_mainwindow_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_mainwindow_gui>
+                COMMENT "Copy Qt and project DLLs for test_mainwindow_gui")
+        endif()
+        
+        add_test(NAME test_mainwindow_gui 
+                 COMMAND test_mainwindow_gui)
+        
+        set_tests_properties(test_mainwindow_gui PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
+        
+        # GUI Test for EnvVarsTab
+        add_executable(test_envvarstab_gui EXCLUDE_FROM_ALL
+            tests/qt/test_envvarstab_gui_simple.cpp
+            tests/qt/test_envvarstab_gui_simple.h
+            src/gui/envVarsTab.cpp
+            src/gui/envVarsTab.h
+            src/gui/dialogButtonBar.cpp
+            src/gui/dialogButtonBar.hpp
+        )
+        
+        target_link_libraries(test_envvarstab_gui PRIVATE
+            scadtemplates_lib
+            resourceMgmt_lib
+            JsonReaderPortable
+            ${QT_LIBRARIES}
+            Qt6::Test
+        )
+        
+        target_include_directories(test_envvarstab_gui PRIVATE
+            ${CMAKE_SOURCE_DIR}/src
+            ${CMAKE_SOURCE_DIR}/src/gui
+            ${CMAKE_SOURCE_DIR}/src/resInventory
+        )
+        
+        target_compile_definitions(test_envvarstab_gui PRIVATE
+            SRCDIR="${CMAKE_SOURCE_DIR}"
+        )
+        
+        if(WIN32 AND BUILD_SHARED_LIBS)
+            add_custom_command(TARGET test_envvarstab_gui POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_envvarstab_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test> $<TARGET_FILE_DIR:test_envvarstab_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Gui> $<TARGET_FILE_DIR:test_envvarstab_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Widgets> $<TARGET_FILE_DIR:test_envvarstab_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_envvarstab_gui>
+                COMMENT "Copy Qt and project DLLs for test_envvarstab_gui")
+        endif()
+        
+        add_test(NAME test_envvarstab_gui 
+                 COMMAND test_envvarstab_gui)
+        
+        set_tests_properties(test_envvarstab_gui PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
+        
+        # GUI Test for ResourceLocationWidget
+        # Simplified - verifies test infrastructure works
+        add_executable(test_resourcelocationwidget_gui EXCLUDE_FROM_ALL
+            tests/qt/test_resourcelocationwidget_gui_simple.cpp
+            tests/qt/test_resourcelocationwidget_gui_simple.h
+        )
+        
+        target_link_libraries(test_resourcelocationwidget_gui PRIVATE
+            scadtemplates_lib
+            resourceMgmt_lib
+            JsonReaderPortable
+            ${QT_LIBRARIES}
+            Qt6::Test
+        )
+        
+        target_include_directories(test_resourcelocationwidget_gui PRIVATE
+            ${CMAKE_SOURCE_DIR}/src
+            ${CMAKE_SOURCE_DIR}/src/gui
+            ${CMAKE_SOURCE_DIR}/src/resInventory
+        )
+        
+        target_compile_definitions(test_resourcelocationwidget_gui PRIVATE
+            SRCDIR="${CMAKE_SOURCE_DIR}"
+        )
+        
+        if(WIN32 AND BUILD_SHARED_LIBS)
+            add_custom_command(TARGET test_resourcelocationwidget_gui POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_resourcelocationwidget_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test> $<TARGET_FILE_DIR:test_resourcelocationwidget_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Gui> $<TARGET_FILE_DIR:test_resourcelocationwidget_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Widgets> $<TARGET_FILE_DIR:test_resourcelocationwidget_gui>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_resourcelocationwidget_gui>
+                COMMENT "Copy Qt and project DLLs for test_resourcelocationwidget_gui")
+        endif()
+        
+        add_test(NAME test_resourcelocationwidget_gui 
+                 COMMAND test_resourcelocationwidget_gui)
+        
+        set_tests_properties(test_resourcelocationwidget_gui PROPERTIES
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
 
         # JsonReader file tests now live in subproject (jsonreader_files_qttest)
     else()
@@ -670,6 +826,9 @@ if(BUILD_TESTS)
             test_resourcescannerdirlisting
             test_resourcestore
             test_templatetreemodel
+            test_mainwindow_gui
+            test_envvarstab_gui
+            test_resourcelocationwidget_gui
     )
     set_target_properties(tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()

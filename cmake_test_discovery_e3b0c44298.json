@@ -1,5 +1,5 @@
 {
-  "tests": 85,
+  "tests": 90,
   "name": "AllTests",
   "testsuites": [
     {
@@ -391,17 +391,54 @@
         {
           "name": "AddUpdateRemove",
           "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
-          "line": 11
+          "line": 14
         },
         {
           "name": "ExpandPlaceholdersAndMissing",
           "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
-          "line": 27
+          "line": 30
         },
         {
           "name": "OverridesSystemEnvironment",
           "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
-          "line": 40
+          "line": 43
+        }
+      ]
+    },
+    {
+      "name": "ResourceLocationPlaceholder",
+      "tests": 3,
+      "testsuite": [
+        {
+          "name": "ExpandWithEnvVars",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 58
+        },
+        {
+          "name": "NonTemplateUsesDirectPath",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 77
+        },
+        {
+          "name": "RelativePathBecomesAbsolute",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 94
+        }
+      ]
+    },
+    {
+      "name": "ResourcePathsDefaults",
+      "tests": 2,
+      "testsuite": [
+        {
+          "name": "ExpandUserSearchPaths",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 116
+        },
+        {
+          "name": "ExpandMachineSearchPaths",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
+          "line": 135
         }
       ]
     },

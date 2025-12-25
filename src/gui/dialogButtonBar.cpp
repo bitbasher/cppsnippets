@@ -13,6 +13,7 @@ DialogButtonBar::DialogButtonBar(QWidget* parent)
     QHBoxLayout* buttonLayout = new QHBoxLayout;
     
     m_restoreDefaultsButton = new QPushButton(tr("Restore Defaults"));
+    m_restoreDefaultsButton->setToolTip(tr("to remove all user defined resource locations"));
     connect(m_restoreDefaultsButton, &QPushButton::clicked, 
             this, &DialogButtonBar::restoreDefaultsClicked);
     buttonLayout->addWidget(m_restoreDefaultsButton);

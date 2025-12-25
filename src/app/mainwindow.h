@@ -108,6 +108,9 @@ private:
     QPushButton* m_saveBtn;
     QPushButton* m_cancelBtn;
     
+    // Save destination for new/copied templates
+    QString m_saveDestinationPath;
+    
     // Main editor
     QPlainTextEdit* m_editor;
     QString m_currentFile;

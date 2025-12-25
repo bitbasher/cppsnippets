@@ -204,11 +204,25 @@ QVariant TemplateTreeModel::data(const QModelIndex& index, int role) const
                 QFile f(path);
                 if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
                     const auto doc = QJsonDocument::fromJson(f.readAll());
+                    f.close();
                     if (doc.isObject()) {
                         const auto obj = doc.object();
-                        const auto descVal = obj.value(QStringLiteral("description"));
+                        
+                        // Try root-level description first (legacy or single-snippet format)
+                        auto descVal = obj.value(QStringLiteral("description"));
                         if (descVal.isString()) {
                             return descVal.toString();
+                        }
+                        
+                        // Try VSCode snippet format: look in first non-metadata key
+                        for (auto it = obj.begin(); it != obj.end(); ++it) {
+                            if (it.key().startsWith('_')) continue;  // Skip metadata keys
+                            if (it.value().isObject()) {
+                                descVal = it.value().toObject().value(QStringLiteral("description"));
+                                if (descVal.isString()) {
+                                    return descVal.toString();
+                                }
+                            }
                         }
                     }
                 }

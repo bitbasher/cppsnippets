@@ -21,6 +21,7 @@
 #include <QString>
 #include <QStringList>
 
+class QSettings;
 
 namespace platformInfo {
 
@@ -283,6 +284,24 @@ public:
    * @note Paths are relative to userConfigBasePath() or userDocumentsPath().
    */
   static const QStringList &defaultUserSearchPaths();
+  
+  /**
+   * @brief Get expanded user search paths with env vars resolved
+   * @return List of expanded paths
+   * 
+   * Expands any ${VAR} or %VAR% templates in defaultUserSearchPaths()
+   * using current environment variables and user overrides.
+   */
+  QStringList expandedUserSearchPaths() const;
+  
+  /**
+   * @brief Get expanded machine search paths with env vars resolved
+   * @return List of expanded paths
+   * 
+   * Expands any ${VAR} or %VAR% templates in defaultMachineSearchPaths()
+   * using current environment variables and user overrides.
+   */
+  QStringList expandedMachineSearchPaths() const;
 
 private:
   // ========== Platform-Specific Search Path Constants ==========
@@ -320,11 +339,12 @@ private:
   /// Machine tier: system-wide locations for all users
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
   inline static const QStringList s_defaultMachineSearchPaths = {
-      QStringLiteral("C:/ProgramData/") // All users app data
+      QStringLiteral("%PROGRAMDATA%/CppSnippets"), // All users app data (template)
+      QStringLiteral("C:/ProgramData/")             // Fallback: legacy absolute path
   };
 #elif defined(Q_OS_MACOS) || defined(__APPLE__)
   inline static const QStringList s_defaultMachineSearchPaths = {
-      QStringLiteral("/Library/Application Support/") // System-wide
+      QStringLiteral("/Library/Application Support/CppSnippets") // System-wide
   };
 #else // Linux/BSD/POSIX
   inline static const QStringList s_defaultMachineSearchPaths = {
@@ -340,20 +360,24 @@ private:
   /// scanned directly
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
   inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("."),  // Current directory (userOpenSCADPath)
-      QStringLiteral("../") // User documents base (CSIDL_PERSONAL with suffix)
+      QStringLiteral("%APPDATA%/CppSnippets"),      // User roaming app data (template)
+      QStringLiteral("%LOCALAPPDATA%/CppSnippets"), // User local app data (template)
+      QStringLiteral("."),                           // Current directory
+      QStringLiteral("../")                          // User documents base (legacy)
   };
 #elif defined(Q_OS_MACOS) || defined(__APPLE__)
   inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("."),               // Current directory (userOpenSCADPath)
-      QStringLiteral("../../Documents/") // User documents (NSDocumentDirectory
-                                         // with suffix)
+      QStringLiteral("${HOME}/Library/Application Support/CppSnippets"), // User app support (template)
+      QStringLiteral("."),                                                 // Current directory
+      QStringLiteral("../../Documents/")                                  // User documents (legacy)
   };
 #else // Linux/BSD/POSIX
   inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("."), // Current directory (userOpenSCADPath)
-      QStringLiteral("../../.local/share/") // User documents
-                                            // ($HOME/.local/share with suffix)
+      QStringLiteral("${XDG_CONFIG_HOME}/cppsnippets"),    // XDG config (template)
+      QStringLiteral("${HOME}/.config/cppsnippets"),       // Fallback config (template)
+      QStringLiteral("${HOME}/.local/share/cppsnippets"),  // XDG data (template)
+      QStringLiteral("."),                                  // Current directory
+      QStringLiteral("../../.local/share/")                // Legacy relative path
   };
 #endif
 
@@ -656,6 +680,25 @@ public:
    * @return List of elements matching the tier
    */
   QList<ResourcePathElement> elementsByTier(resourceInfo::ResourceTier tier) const;
+
+  // ========== Settings Persistence ==========
+
+  /**
+   * @brief Save environment variables to QSettings
+   * @param settings QSettings instance to write to
+   * 
+   * Writes user-configured env vars to [EnvVars] section as key=value pairs.
+   */
+  void saveEnvVars(QSettings& settings) const;
+
+  /**
+   * @brief Load environment variables from QSettings
+   * @param settings QSettings instance to read from
+   * 
+   * Reads user-configured env vars from [EnvVars] section.
+   * Should be called during app startup before initializing ResourceLocationManager.
+   */
+  void loadEnvVars(QSettings& settings);
 
   // ========== Validation ==========
 

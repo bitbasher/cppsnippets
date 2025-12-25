@@ -13,6 +13,7 @@
 #include <QCoreApplication>
 #include <QProcessEnvironment>
 #include <QRegularExpression>
+#include <QSettings>
 
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 #include <shlobj.h>
@@ -118,6 +119,28 @@ const QStringList& ResourcePaths::defaultMachineSearchPaths() {
 
 const QStringList& ResourcePaths::defaultUserSearchPaths() {
     return s_defaultUserSearchPaths;
+}
+
+QStringList ResourcePaths::expandedUserSearchPaths() const {
+    QStringList expanded;
+    expanded.reserve(s_defaultUserSearchPaths.size());
+    
+    for (const QString& path : s_defaultUserSearchPaths) {
+        expanded.append(expandEnvVars(path));
+    }
+    
+    return expanded;
+}
+
+QStringList ResourcePaths::expandedMachineSearchPaths() const {
+    QStringList expanded;
+    expanded.reserve(s_defaultMachineSearchPaths.size());
+    
+    for (const QString& path : s_defaultMachineSearchPaths) {
+        expanded.append(expandEnvVars(path));
+    }
+    
+    return expanded;
 }
 
 QStringList ResourcePaths::appSearchPaths() const {
@@ -479,6 +502,31 @@ QList<ResourcePathElement> ResourcePaths::elementsByTier(resourceInfo::ResourceT
     }
     result.squeeze();
     return result;
+}
+
+// ========== Settings Persistence ==========
+
+void ResourcePaths::saveEnvVars(QSettings& settings) const {
+    settings.beginGroup(QStringLiteral("EnvVars"));
+    settings.remove(QString());  // Clear existing env vars
+    
+    for (const EnvVarEntry& entry : m_envVars) {
+        settings.setValue(entry.name, entry.value);
+    }
+    
+    settings.endGroup();
+}
+
+void ResourcePaths::loadEnvVars(QSettings& settings) {
+    settings.beginGroup(QStringLiteral("EnvVars"));
+    
+    const QStringList keys = settings.childKeys();
+    for (const QString& key : keys) {
+        const QString value = settings.value(key).toString();
+        addEnvVar(key, value);
+    }
+    
+    settings.endGroup();
 }
 
 // ========== Validation ==========

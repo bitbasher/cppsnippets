@@ -11,6 +11,7 @@
 #include "gui/installationTab.hpp"
 #include "gui/machineTab.hpp"
 #include "gui/userTab.hpp"
+#include "gui/envVarsTab.h"
 #include "gui/resourceLocationWidget.hpp"
 #include "platformInfo/resourceLocationManager.h"
 #include "resInventory/ResourceLocation.h"
@@ -52,6 +53,11 @@ PreferencesDialog::PreferencesDialog(platformInfo::ResourceLocationManager* mana
     connect(m_userTab, &UserTab::locationsChanged,
             this, &PreferencesDialog::onLocationsChanged);
     m_tabWidget->addTab(m_userTab, tr("User (Personal)"));
+    
+    m_envVarsTab = new EnvVarsTab(m_manager);
+    connect(m_envVarsTab, &EnvVarsTab::envVarsChanged,
+            this, &PreferencesDialog::onLocationsChanged);
+    m_tabWidget->addTab(m_envVarsTab, tr("Environment Variables"));
     
     // Create button bar
     m_buttonBar = new DialogButtonBar;
@@ -143,9 +149,7 @@ void PreferencesDialog::loadSettings() {
         }
     }
     
-    // Add OPENSCAD_PATH environment variable entry
-    // Shows as disabled placeholder if not set, otherwise allows toggle
-    machineLocations.append(MachineTab::openscadPathLocation());
+    // Remove OPENSCAD_PATH; manager will handle OPENSCADPATH placeholder if present
     
     // Add XDG_DATA_DIRS environment variable entries
     // On Windows: only shown if defined; On POSIX/Mac: shown as placeholder if not defined
@@ -163,8 +167,7 @@ void PreferencesDialog::loadSettings() {
         }
     }
     
-    // Add OPENSCAD_PATH environment variable entry for User tier too
-    userLocations.append(UserTab::openscadPathLocation());
+    // Remove OPENSCAD_PATH from user tier; keep OPENSCADPATH only via manager
     
     // Add XDG_DATA_HOME environment variable entries
     // On Windows: only shown if defined; On POSIX/Mac: shown as placeholder if not defined
@@ -215,6 +218,12 @@ void PreferencesDialog::saveSettings() {
 
 void PreferencesDialog::accept() {
     saveSettings();
+    
+    // Save env vars if there are changes
+    if (m_envVarsTab->hasUnsavedChanges()) {
+        m_envVarsTab->saveEnvVars();
+    }
+    
     QDialog::accept();
 }
 

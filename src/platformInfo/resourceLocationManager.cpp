@@ -34,6 +34,11 @@ ResourceLocationManager::ResourceLocationManager(QSettings* settings, const QStr
 {
     detectOSType();
     initializeSettings();
+    
+    // Load user-configured environment variables from settings
+    if (m_settings) {
+        m_resourcePaths.loadEnvVars(*m_settings);
+    }
 }
 
 ResourceLocationManager::~ResourceLocationManager() {
@@ -802,7 +807,7 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
     } else {
         // Environment variable not set - show as informational placeholder
         ResourceLocation envPlaceholder(
-            QStringLiteral("(OPENSCADPATH not set)"),
+            QStringLiteral("(not set)"),
             QStringLiteral("OPENSCADPATH"),
             QStringLiteral("Set OPENSCADPATH environment variable to add custom resource paths")
         );
@@ -1213,6 +1218,17 @@ void ResourceLocationManager::updateLocationStatus(ResourceLocation& loc) {
 void ResourceLocationManager::updateLocationStatuses(QVector<ResourceLocation>& locations) {
     for (ResourceLocation& loc : locations) {
         updateLocationStatus(loc);
+    }
+}
+
+// ============================================================================
+// Environment Variables
+// ============================================================================
+
+void ResourceLocationManager::saveEnvVarsToSettings() {
+    if (m_settings) {
+        m_resourcePaths.saveEnvVars(*m_settings);
+        m_settings->sync();  // Flush to disk
     }
 }
 

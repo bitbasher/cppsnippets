@@ -416,6 +416,23 @@ public:
      * @brief Get the detected OS type
      */
     ExtnOSType osType() const { return m_osType; }
+    
+    // ========== Environment Variables ==========
+    
+    /**
+     * @brief Get the internal ResourcePaths for env var management
+     * @return Reference to ResourcePaths instance
+     */
+    ResourcePaths& resourcePaths() { return m_resourcePaths; }
+    const ResourcePaths& resourcePaths() const { return m_resourcePaths; }
+    
+    /**
+     * @brief Save user-configured environment variables to settings
+     * 
+     * Writes current env vars from ResourcePaths to QSettings [EnvVars] section.
+     * Call this after modifying env vars via resourcePaths().addEnvVar().
+     */
+    void saveEnvVarsToSettings();
 
 private:
     QString m_applicationPath;
@@ -423,6 +440,9 @@ private:
     ExtnOSType m_osType;
     QSettings* m_settings;
     bool m_ownsSettings;
+    
+    // ResourcePaths instance for env var management
+    ResourcePaths m_resourcePaths;
     
     // Cached locations
     mutable QVector<ResourceLocation> m_machineLocations;

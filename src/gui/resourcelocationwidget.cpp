@@ -40,6 +40,7 @@ void ResourceLocationWidget::setupUi(const QString& title, bool allowAdd, bool a
     
     // List widget for locations
     m_listWidget = new QListWidget(m_groupBox);
+    m_listWidget->setObjectName("m_listWidget");
     m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     connect(m_listWidget, &QListWidget::itemChanged, this, &ResourceLocationWidget::onItemChanged);
     connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &ResourceLocationWidget::onSelectionChanged);
@@ -49,6 +50,7 @@ void ResourceLocationWidget::setupUi(const QString& title, bool allowAdd, bool a
     if (allowRemove) {
         QHBoxLayout* buttonLayout = new QHBoxLayout;
         m_removeButton = new QPushButton(tr("Remove"), m_groupBox);
+        m_removeButton->setObjectName("m_removeButton");
         m_removeButton->setEnabled(false);
         connect(m_removeButton, &QPushButton::clicked, this, &ResourceLocationWidget::onRemoveLocation);
         buttonLayout->addWidget(m_removeButton);
@@ -64,6 +66,17 @@ void ResourceLocationWidget::setupUi(const QString& title, bool allowAdd, bool a
         connect(m_inputWidget, &LocationInputWidget::addClicked, this, &ResourceLocationWidget::onAddLocation);
         mainLayout->addWidget(m_inputWidget);
     }
+    
+    // Actions group box
+    auto* actionsGroup = new QGroupBox(tr("Actions"), this);
+    auto* actionsLayout = new QHBoxLayout(actionsGroup);
+    m_rescanButton = new QPushButton(tr("Rescan Locations"), actionsGroup);
+    m_rescanButton->setObjectName("m_rescanButton");
+    m_rescanButton->setToolTip(tr("Rescan the filesystem to refresh location information"));
+    connect(m_rescanButton, &QPushButton::clicked, this, &ResourceLocationWidget::rescanLocationsClicked);
+    actionsLayout->addWidget(m_rescanButton);
+    actionsLayout->addStretch();
+    mainLayout->addWidget(actionsGroup);
     
     setLayout(mainLayout);
 }
@@ -155,6 +168,7 @@ void ResourceLocationWidget::setReadOnly(bool readOnly)
     
     if (m_inputWidget) m_inputWidget->setEnabled(!readOnly);
     if (m_removeButton) m_removeButton->setEnabled(!readOnly);
+    if (m_rescanButton) m_rescanButton->setEnabled(!readOnly);
     
     // In read-only mode, don't allow checking/unchecking
     for (int i = 0; i < m_listWidget->count(); ++i) {

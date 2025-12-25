@@ -98,6 +98,7 @@ void MainWindow::setupUi() {
     QVBoxLayout* listLayout = new QVBoxLayout(listGroup);
     
     m_searchEdit = new QLineEdit(this);
+    m_searchEdit->setObjectName("m_searchEdit");
     m_searchEdit->setPlaceholderText(tr("Search templates..."));
     m_searchEdit->setClearButtonEnabled(true);
     connect(m_searchEdit, &QLineEdit::textChanged, this, &MainWindow::onSearch);
@@ -105,6 +106,7 @@ void MainWindow::setupUi() {
     
     // Create QTreeView with TemplateTreeModel
     m_templateTree = new QTreeView(this);
+    m_templateTree->setObjectName("m_templateTree");
     m_templateModel = new resInventory::TemplateTreeModel(this);
     m_templateModel->setResourceStore(m_resourceStore.get());
     m_templateTree->setModel(m_templateModel);
@@ -125,11 +127,17 @@ void MainWindow::setupUi() {
     
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     m_newBtn = new QPushButton(tr("New"), this);
+    m_newBtn->setObjectName("m_newBtn");
     m_deleteBtn = new QPushButton(tr("Delete"), this);
+    m_deleteBtn->setObjectName("m_deleteBtn");
     m_copyBtn = new QPushButton(tr("Copy"), this);
+    m_copyBtn->setObjectName("m_copyBtn");
     m_editBtn = new QPushButton(tr("Edit"), this);
+    m_editBtn->setObjectName("m_editBtn");
     m_saveBtn = new QPushButton(tr("Save"), this);
+    m_saveBtn->setObjectName("m_saveBtn");
     m_cancelBtn = new QPushButton(tr("Cancel"), this);
+    m_cancelBtn->setObjectName("m_cancelBtn");
     
     connect(m_newBtn, &QPushButton::clicked, this, &MainWindow::onNewTemplate);
     connect(m_deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteTemplate);
@@ -156,28 +164,33 @@ void MainWindow::setupUi() {
     QHBoxLayout* nameLayout = new QHBoxLayout();
     nameLayout->addWidget(new QLabel(tr("Name:"), this));
     m_prefixEdit = new QLineEdit(this);
+    m_prefixEdit->setObjectName("m_prefixEdit");
     nameLayout->addWidget(m_prefixEdit);
     editorLayout->addLayout(nameLayout);
     
     QHBoxLayout* sourceLayout = new QHBoxLayout();
     sourceLayout->addWidget(new QLabel(tr("Source:"), this));
     m_sourceEdit = new QLineEdit(this);
+    m_sourceEdit->setObjectName("m_sourceEdit");
     m_sourceEdit->setReadOnly(true);
     sourceLayout->addWidget(m_sourceEdit);
         sourceLayout->addSpacing(12);
         sourceLayout->addWidget(new QLabel(tr("Version:"), this));
         m_versionEdit = new QLineEdit(this);
+        m_versionEdit->setObjectName("m_versionEdit");
         m_versionEdit->setReadOnly(true);
         sourceLayout->addWidget(m_versionEdit);
     editorLayout->addLayout(sourceLayout);
     
     editorLayout->addWidget(new QLabel(tr("Description:"), this));
     m_descriptionEdit = new QTextEdit(this);
+    m_descriptionEdit->setObjectName("m_descriptionEdit");
     m_descriptionEdit->setMaximumHeight(80);
     editorLayout->addWidget(m_descriptionEdit);
     
     editorLayout->addWidget(new QLabel(tr("Body:"), this), 0, Qt::AlignTop);
     m_bodyEdit = new QTextEdit(this);
+    m_bodyEdit->setObjectName("m_bodyEdit");
     m_bodyEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     m_bodyEdit->setMaximumHeight(150);
     editorLayout->addWidget(m_bodyEdit);
@@ -376,6 +389,13 @@ void MainWindow::onNewTemplate() {
     m_templateTree->clearSelection();
     m_prefixEdit->setReadOnly(false);
     m_descriptionEdit->setReadOnly(false);
+    
+    // Set save destination to first available user location
+    auto userLocs = m_resourceManager->availableUserLocations();
+    if (!userLocs.isEmpty() && userLocs[0].exists) {
+        m_saveDestinationPath = userLocs[0].path;
+    }
+    
     updateTemplateButtons();
 }
 
@@ -406,6 +426,13 @@ void MainWindow::onCopyTemplate() {
     m_prefixEdit->setReadOnly(false);
     m_descriptionEdit->setReadOnly(false);
     m_templateTree->clearSelection();
+    
+    // Set save destination to first available user location
+    auto userLocs = m_resourceManager->availableUserLocations();
+    if (!userLocs.isEmpty() && userLocs[0].exists) {
+        m_saveDestinationPath = userLocs[0].path;
+    }
+    
     updateTemplateButtons();
 }
 
@@ -683,15 +710,18 @@ QString MainWindow::userTemplatesRoot() const {
 }
 
 bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl, const QString& version) {
-    // Get user template location
-    auto userLocs = m_resourceManager->availableUserLocations();
-    if (userLocs.empty() || !userLocs[0].exists) {
-        QMessageBox::warning(this, tr("Error"),
-            tr("No user template location available."));
-        return false;
+    // Use save destination if set, otherwise get first user location
+    QString targetDir = m_saveDestinationPath;
+    if (targetDir.isEmpty()) {
+        auto userLocs = m_resourceManager->availableUserLocations();
+        if (userLocs.empty() || !userLocs[0].exists) {
+            QMessageBox::warning(this, tr("Error"),
+                tr("No user template location available."));
+            return false;
+        }
+        targetDir = userLocs[0].path;
     }
     
-    QString targetDir = userLocs[0].path;
     if (!QDir(targetDir).exists()) {
         if (!QDir().mkpath(targetDir)) {
             QMessageBox::warning(this, tr("Error"),
@@ -735,21 +765,127 @@ bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl, const Q
     file.write(doc.toJson(QJsonDocument::Indented));
     file.close();
     
+    // Clear save destination after successful save
+    m_saveDestinationPath.clear();
+    
     return true;
 }
 
 void MainWindow::applyFilterToTree(const QString& text) {
-    // TODO: Filter tree based on search text
+    if (text.isEmpty()) {
+        // Clear search - show all and clear selection
+        m_templateTree->collapseAll();
+        m_templateTree->expandAll();
+        m_templateTree->clearSelection();
+        return;
+    }
+    
+    // Expand all to search through all items
+    m_templateTree->expandAll();
+    
+    // Get current selection
+    QModelIndex currentSelection;
+    QModelIndexList selectedIndexes = m_templateTree->selectionModel()->selectedRows();
+    if (!selectedIndexes.isEmpty()) {
+        currentSelection = selectedIndexes.first();
+    }
+    
+    // Function to search from a given starting point
+    auto searchFromIndex = [this, &text](const QModelIndex& startIndex, bool wrapAround) -> QModelIndex {
+        // Collect all template indices in order
+        QVector<QModelIndex> templateIndices;
+        
+        std::function<void(const QModelIndex&)> collectTemplates;
+        collectTemplates = [this, &collectTemplates, &templateIndices](const QModelIndex& parent) {
+            for (int row = 0; row < m_templateModel->rowCount(parent); ++row) {
+                QModelIndex idx = m_templateModel->index(row, 0, parent);
+                auto nodeType = m_templateModel->data(idx, resInventory::TemplateTreeModel::NodeTypeRole).toInt();
+                
+                if (nodeType == static_cast<int>(resInventory::TemplateTreeNode::NodeType::Template)) {
+                    templateIndices.append(idx);
+                } else {
+                    collectTemplates(idx);
+                }
+            }
+        };
+        
+        collectTemplates(QModelIndex());
+        
+        // Find starting position
+        int startPos = 0;
+        if (startIndex.isValid()) {
+            for (int i = 0; i < templateIndices.size(); ++i) {
+                if (templateIndices[i] == startIndex) {
+                    startPos = i + 1;  // Start from next item
+                    break;
+                }
+            }
+        }
+        
+        // Search from start position to end
+        for (int i = startPos; i < templateIndices.size(); ++i) {
+            QString name = m_templateModel->data(templateIndices[i], Qt::DisplayRole).toString();
+            if (name.contains(text, Qt::CaseInsensitive)) {
+                return templateIndices[i];
+            }
+        }
+        
+        // If wrapping, search from beginning to start position
+        if (wrapAround && startIndex.isValid()) {
+            for (int i = 0; i < startPos - 1; ++i) {
+                QString name = m_templateModel->data(templateIndices[i], Qt::DisplayRole).toString();
+                if (name.contains(text, Qt::CaseInsensitive)) {
+                    return templateIndices[i];
+                }
+            }
+        }
+        
+        return QModelIndex();
+    };
+    
+    // Search starting from current selection, with wrap-around
+    QModelIndex found = searchFromIndex(currentSelection, true);
+    
+    if (found.isValid()) {
+        m_templateTree->setCurrentIndex(found);
+        m_templateTree->scrollTo(found, QAbstractItemView::EnsureVisible);
+    } else if (currentSelection.isValid()) {
+        // No match found - keep current selection or clear it
+        m_templateTree->clearSelection();
+        m_templateTree->scrollTo(m_templateModel->index(0, 0, QModelIndex()), QAbstractItemView::PositionAtTop);
+    } else {
+        // No selection to begin with, no match found - show top and clear selection
+        m_templateTree->clearSelection();
+        m_templateTree->scrollTo(m_templateModel->index(0, 0, QModelIndex()), QAbstractItemView::PositionAtTop);
+    }
 }
 
 void MainWindow::updateTemplateButtons() {
     bool hasSelection = !m_selectedItem.path().isEmpty();
     bool isEditing = m_editMode;
     
+    // Determine if selected template is writable (in User tier or appropriate location)
+    bool isWritableTemplate = false;
+    if (hasSelection) {
+        // Check if it's from User tier
+        auto nodeType = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::NodeTypeRole).toInt();
+        auto tier = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::TierRole).toInt();
+        
+        if (nodeType == static_cast<int>(resInventory::TemplateTreeNode::NodeType::Template) &&
+            tier == static_cast<int>(resInventory::ResourceTier::User)) {
+            isWritableTemplate = true;
+        }
+    }
+    
+    // Enable New always, but only when not editing
     m_newBtn->setEnabled(!isEditing);
-    m_deleteBtn->setEnabled(!isEditing && hasSelection);
-    m_copyBtn->setEnabled(!isEditing && hasSelection);
-    m_editBtn->setEnabled(!isEditing && hasSelection);
+    
+    // Delete/Copy/Edit only enabled for writable templates and not editing
+    m_deleteBtn->setEnabled(!isEditing && isWritableTemplate);
+    m_copyBtn->setEnabled(!isEditing && hasSelection);  // Can copy from anywhere, save to User
+    m_editBtn->setEnabled(!isEditing && isWritableTemplate);
+    
+    // Save/Cancel only enabled when editing
     m_saveBtn->setEnabled(isEditing);
     m_cancelBtn->setEnabled(isEditing);
     

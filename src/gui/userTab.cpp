@@ -8,7 +8,7 @@
 UserTab::UserTab(QWidget* parent)
     : QWidget(parent)
 {
-    m_locationWidget = new ResourceLocationWidget(tr("User Resources"), true, true);
+    m_locationWidget = new ResourceLocationWidget(tr("User Locations"), true, true);
     connect(m_locationWidget, &ResourceLocationWidget::locationsChanged,
             this, &UserTab::locationsChanged);
     

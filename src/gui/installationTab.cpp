@@ -9,7 +9,7 @@ InstallationTab::InstallationTab(QWidget* parent)
 {
     // allowAdd=true so we have the input widget, but start with it hidden
     // allowRemove=false since user shouldn't remove installation locations
-    m_locationWidget = new ResourceLocationWidget(tr("Installation Resources"), true, false);
+    m_locationWidget = new ResourceLocationWidget(tr("Installation Locations"), true, false);
     m_locationWidget->setInputVisible(false);  // Hidden by default
     connect(m_locationWidget, &ResourceLocationWidget::locationsChanged,
             this, &InstallationTab::locationsChanged);
