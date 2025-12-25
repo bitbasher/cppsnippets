@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Open PowerShell with integration",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-NoLogo"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "useShellIntegration": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Build (CMake Debug)",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "${workspaceFolder}/build", "--config", "Debug", "--parallel"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "useShellIntegration": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run GUI Tests",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-Command",
+        ".\\bin\\Debug\\test_mainwindow_gui.exe; .\\bin\\Debug\\test_envvarstab_gui.exe; .\\bin\\Debug\\test_resourcelocationwidget_gui.exe"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/build",
+        "useShellIntegration": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

@@ -6,6 +6,7 @@
 #include "mainwindow.h"
 #include "gui/preferencesdialog.h"
 #include <scadtemplates/scadtemplates.h>
+#include <scadtemplates/template_parser.h>
 #include <platformInfo/resourceLocationManager.h>
 #include <resInventory/resourceScanner.h>
 #include <resInventory/resourceTreeWidget.h>
@@ -42,6 +43,10 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonValue>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
+#include <QUrl>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -165,7 +170,9 @@ void MainWindow::setupUi() {
     nameLayout->addWidget(new QLabel(tr("Name:"), this));
     m_prefixEdit = new QLineEdit(this);
     m_prefixEdit->setObjectName("m_prefixEdit");
+    m_prefixEdit->setReadOnly(true);  // Start as read-only for viewing
     nameLayout->addWidget(m_prefixEdit);
+    connect(m_prefixEdit, &QLineEdit::textChanged, this, &MainWindow::onTemplateFieldChanged);
     editorLayout->addLayout(nameLayout);
     
     QHBoxLayout* sourceLayout = new QHBoxLayout();
@@ -174,18 +181,21 @@ void MainWindow::setupUi() {
     m_sourceEdit->setObjectName("m_sourceEdit");
     m_sourceEdit->setReadOnly(true);
     sourceLayout->addWidget(m_sourceEdit);
-        sourceLayout->addSpacing(12);
-        sourceLayout->addWidget(new QLabel(tr("Version:"), this));
-        m_versionEdit = new QLineEdit(this);
-        m_versionEdit->setObjectName("m_versionEdit");
-        m_versionEdit->setReadOnly(true);
-        sourceLayout->addWidget(m_versionEdit);
+    sourceLayout->addSpacing(12);
+    sourceLayout->addWidget(new QLabel(tr("Version:"), this));
+    m_versionEdit = new QLineEdit(this);
+    m_versionEdit->setObjectName("m_versionEdit");
+    m_versionEdit->setReadOnly(true);
+    sourceLayout->addWidget(m_versionEdit);
     editorLayout->addLayout(sourceLayout);
     
     editorLayout->addWidget(new QLabel(tr("Description:"), this));
     m_descriptionEdit = new QTextEdit(this);
     m_descriptionEdit->setObjectName("m_descriptionEdit");
     m_descriptionEdit->setMaximumHeight(80);
+    m_descriptionEdit->setTabStopDistance(20);  // 2 characters at fixed font width
+    m_descriptionEdit->setReadOnly(true);  // Start as read-only for viewing
+    connect(m_descriptionEdit, &QTextEdit::textChanged, this, &MainWindow::onTemplateFieldChanged);
     editorLayout->addWidget(m_descriptionEdit);
     
     editorLayout->addWidget(new QLabel(tr("Body:"), this), 0, Qt::AlignTop);
@@ -193,6 +203,9 @@ void MainWindow::setupUi() {
     m_bodyEdit->setObjectName("m_bodyEdit");
     m_bodyEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     m_bodyEdit->setMaximumHeight(150);
+    m_bodyEdit->setTabStopDistance(20);  // 2 characters at fixed font width
+    m_bodyEdit->setReadOnly(true);  // Start as read-only for viewing
+    connect(m_bodyEdit, &QTextEdit::textChanged, this, &MainWindow::onTemplateFieldChanged);
     editorLayout->addWidget(m_bodyEdit);
     
     QHBoxLayout* editorButtonLayout = new QHBoxLayout();
@@ -201,6 +214,10 @@ void MainWindow::setupUi() {
     editorLayout->addLayout(editorButtonLayout);
     
     leftLayout->addWidget(editorGroup);
+    
+    // Enable drag and drop for template files
+    leftPanel->setAcceptDrops(true);
+    leftPanel->installEventFilter(this);
     
     splitter->addWidget(leftPanel);
     
@@ -389,6 +406,7 @@ void MainWindow::onNewTemplate() {
     m_templateTree->clearSelection();
     m_prefixEdit->setReadOnly(false);
     m_descriptionEdit->setReadOnly(false);
+    m_bodyEdit->setReadOnly(false);
     
     // Set save destination to first available user location
     auto userLocs = m_resourceManager->availableUserLocations();
@@ -417,20 +435,33 @@ void MainWindow::onCopyTemplate() {
         return;
     }
     
+    // Save the body and description before entering edit mode
+    QString bodyText = m_bodyEdit->toPlainText();
+    QString descText = m_descriptionEdit->toPlainText();
+    
     m_editMode = true;
-    m_prefixEdit->setText(m_selectedItem.name() + tr("-copy"));
+    // Base the copy name on the current prefix field (fallback to selected item name)
+    QString baseName = m_prefixEdit->text().trimmed();
+    if (baseName.isEmpty()) {
+        baseName = m_selectedItem.name();
+    }
+    m_prefixEdit->setText(baseName + tr("-copy"));
+    m_bodyEdit->setPlainText(bodyText);
+    m_descriptionEdit->setPlainText(descText);
     m_sourceEdit->setText(QStringLiteral("cppsnippet-made"));
-    m_descriptionEdit->setText(m_selectedItem.description());
-    // Body is already loaded from selection
+    m_versionEdit->setText(QStringLiteral("0"));
     m_prefixEdit->setFocus();
     m_prefixEdit->setReadOnly(false);
     m_descriptionEdit->setReadOnly(false);
+    m_bodyEdit->setReadOnly(false);
     m_templateTree->clearSelection();
     
     // Set save destination to first available user location
     auto userLocs = m_resourceManager->availableUserLocations();
     if (!userLocs.isEmpty() && userLocs[0].exists) {
-        m_saveDestinationPath = userLocs[0].path;
+        // Prefer the templates subfolder within the user location
+        QDir locDir(userLocs[0].path);
+        m_saveDestinationPath = locDir.filePath(QStringLiteral("templates"));
     }
     
     updateTemplateButtons();
@@ -440,6 +471,7 @@ void MainWindow::onEditTemplate() {
     m_editMode = true;
     m_prefixEdit->setReadOnly(false);
     m_descriptionEdit->setReadOnly(false);
+    m_bodyEdit->setReadOnly(false);
     updateTemplateButtons();
 }
 
@@ -475,6 +507,7 @@ void MainWindow::onCancelEdit() {
     m_editMode = false;
     m_prefixEdit->setReadOnly(true);
     m_descriptionEdit->setReadOnly(true);
+    m_bodyEdit->setReadOnly(true);
     if (!m_selectedItem.path().isEmpty()) {
         populateEditorFromSelection(m_selectedItem);
     } else {
@@ -484,6 +517,14 @@ void MainWindow::onCancelEdit() {
         m_sourceEdit->clear();
     }
     updateTemplateButtons();
+}
+
+void MainWindow::onTemplateFieldChanged() {
+    // When in edit mode, enable Save button on any field changes
+    if (m_editMode) {
+        // Re-evaluate buttons based on current selection and edit state
+        updateTemplateButtons();
+    }
 }
 
 void MainWindow::onInventoryItemSelected(const resInventory::ResourceItem& item) {
@@ -503,10 +544,13 @@ void MainWindow::onInventoryItemSelected(const resInventory::ResourceItem& item)
 void MainWindow::onInventorySelectionChanged() {
     QModelIndexList indexes = m_templateTree->selectionModel()->selectedRows();
     if (indexes.isEmpty()) {
-        m_prefixEdit->clear();
-        m_bodyEdit->clear();
-        m_descriptionEdit->clear();
-        m_sourceEdit->clear();
+        // Don't clear fields if we're in edit mode (New/Copy/Edit in progress)
+        if (!m_editMode) {
+            m_prefixEdit->clear();
+            m_bodyEdit->clear();
+            m_descriptionEdit->clear();
+            m_sourceEdit->clear();
+        }
         m_selectedItem = resInventory::ResourceItem();
         updateTemplateButtons();
         return;
@@ -517,6 +561,9 @@ void MainWindow::onInventorySelectionChanged() {
     // Only handle template leaf nodes
     auto nodeType = m_templateModel->data(index, resInventory::TemplateTreeModel::NodeTypeRole).toInt();
     if (nodeType != static_cast<int>(resInventory::TemplateTreeNode::NodeType::Template)) {
+        // Clear selection state for non-template nodes (folders/locations)
+        m_selectedItem = resInventory::ResourceItem();
+        updateTemplateButtons();
         return;
     }
     
@@ -624,6 +671,7 @@ void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& i
                 m_bodyEdit->setPlainText(content);
                 m_descriptionEdit->setText(item.description());
                 m_sourceEdit->setText(QStringLiteral("legacy-converted"));
+                m_versionEdit->setText(QStringLiteral("0"));
             } else {
                 // Modern VSCode snippet format: { "name": { "prefix": ..., "body": [...], "description": ..., "_source": ... } }
                 // Choose the first entry or the one matching item.name()
@@ -662,20 +710,21 @@ void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& i
                     m_bodyEdit->setPlainText(bodyText);
                     m_descriptionEdit->setText(desc);
                     m_sourceEdit->setText(sourceTag);
-                    // Version (simple integer)
+                    // Version (simple integer, default to 0 if missing)
                     const auto verVal = selectedObj.value(QStringLiteral("version"));
+                    QString version = QStringLiteral("0");
                     if (verVal.isDouble()) {
-                        m_versionEdit->setText(QString::number(static_cast<int>(verVal.toDouble())));
+                        version = QString::number(static_cast<int>(verVal.toDouble()));
                     } else if (verVal.isString()) {
-                        m_versionEdit->setText(verVal.toString());
-                    } else {
-                        m_versionEdit->setText(QStringLiteral("0"));
+                        version = verVal.toString();
                     }
+                    m_versionEdit->setText(version);
                 } else {
                     // Fallback: treat as plain text
                     m_bodyEdit->setPlainText(QString::fromUtf8(data));
                     m_descriptionEdit->setText(item.description());
                     m_sourceEdit->setText(item.sourceLocationKey());
+                    m_versionEdit->setText(QStringLiteral("0"));
                 }
             }
         } else {
@@ -683,11 +732,13 @@ void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& i
             m_bodyEdit->setPlainText(QString::fromUtf8(data));
             m_descriptionEdit->setText(item.description());
             m_sourceEdit->setText(item.sourceLocationKey());
+            m_versionEdit->setText(QStringLiteral("0"));
         }
     } else {
         m_bodyEdit->setPlainText("");
         m_descriptionEdit->setText(item.description());
         m_sourceEdit->setText(item.sourceLocationKey());
+        m_versionEdit->setText(QStringLiteral("0"));
     }
 
     updateTemplateButtons();
@@ -710,24 +761,41 @@ QString MainWindow::userTemplatesRoot() const {
 }
 
 bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl, const QString& version) {
-    // Use save destination if set, otherwise get first user location
-    QString targetDir = m_saveDestinationPath;
-    if (targetDir.isEmpty()) {
-        auto userLocs = m_resourceManager->availableUserLocations();
-        if (userLocs.empty() || !userLocs[0].exists) {
-            QMessageBox::warning(this, tr("Error"),
-                tr("No user template location available."));
-            return false;
-        }
-        targetDir = userLocs[0].path;
-    }
+    // Decide whether to overwrite an existing writable template or create a new file in the User templates folder
+    QString filePath;
     
-    if (!QDir(targetDir).exists()) {
-        if (!QDir().mkpath(targetDir)) {
+    // Check current selection context
+    auto nodeType = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::NodeTypeRole).toInt();
+    bool isTemplateNode = nodeType == static_cast<int>(resInventory::TemplateTreeNode::NodeType::Template);
+    bool canOverwrite = isTemplateNode && !m_selectedItem.path().isEmpty() &&
+                        (m_selectedItem.tier() == resInventory::ResourceTier::User);
+    
+    if (canOverwrite) {
+        // Overwrite the existing user template file
+        filePath = m_selectedItem.path();
+    } else {
+        // Determine a writable User templates folder
+        QString targetDir = m_saveDestinationPath;
+        if (targetDir.isEmpty()) {
+            targetDir = findNewResourcesTemplatesFolder();
+        }
+        if (targetDir.isEmpty()) {
             QMessageBox::warning(this, tr("Error"),
-                tr("Failed to create user template directory: %1").arg(targetDir));
+                tr("No writable User templates folder available."));
             return false;
         }
+        
+        if (!QDir(targetDir).exists()) {
+            if (!QDir().mkpath(targetDir)) {
+                QMessageBox::warning(this, tr("Error"),
+                    tr("Failed to create user templates directory: %1").arg(targetDir));
+                return false;
+            }
+        }
+        
+        // Compose file name from prefix and ensure uniqueness
+        QString fileName = QString::fromStdString(tmpl.getPrefix()) + ".json";
+        filePath = generateUniqueFileName(targetDir, fileName);
     }
     
     // Create JSON structure
@@ -749,10 +817,6 @@ bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl, const Q
     // Wrap in named object
     QJsonObject root;
     root[QString::fromStdString(tmpl.getPrefix())] = snippetObj;
-    
-    // Save to file
-    QString fileName = QString::fromStdString(tmpl.getPrefix()) + ".json";
-    QString filePath = QDir(targetDir).filePath(fileName);
     
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -864,33 +928,58 @@ void MainWindow::updateTemplateButtons() {
     bool hasSelection = !m_selectedItem.path().isEmpty();
     bool isEditing = m_editMode;
     
-    // Determine if selected template is writable (in User tier or appropriate location)
+    // Determine if selected item is a template (not a location/folder)
+    auto nodeType = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::NodeTypeRole).toInt();
+    bool isTemplate = nodeType == static_cast<int>(resInventory::TemplateTreeNode::NodeType::Template);
+    
+    // Determine if selected template is writable (in User tier)
     bool isWritableTemplate = false;
-    if (hasSelection) {
-        // Check if it's from User tier
-        auto nodeType = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::NodeTypeRole).toInt();
+    if (hasSelection && isTemplate) {
         auto tier = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::TierRole).toInt();
-        
-        if (nodeType == static_cast<int>(resInventory::TemplateTreeNode::NodeType::Template) &&
-            tier == static_cast<int>(resInventory::ResourceTier::User)) {
+        if (tier == static_cast<int>(resInventory::ResourceTier::User)) {
             isWritableTemplate = true;
         }
     }
     
-    // Enable New always, but only when not editing
-    m_newBtn->setEnabled(!isEditing);
+    // Determine if a user tier location is selected (allows New and Copy to set destination)
+    bool isUserTierLocation = false;
+    if (!hasSelection) {
+        // Check if it's a location node
+        auto nodeType2 = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::NodeTypeRole).toInt();
+        auto tier2 = m_templateModel->data(m_templateTree->currentIndex(), resInventory::TemplateTreeModel::TierRole).toInt();
+        if (nodeType2 == static_cast<int>(resInventory::TemplateTreeNode::NodeType::Location) &&
+            tier2 == static_cast<int>(resInventory::ResourceTier::User)) {
+            isUserTierLocation = true;
+        }
+    }
     
-    // Delete/Copy/Edit only enabled for writable templates and not editing
-    m_deleteBtn->setEnabled(!isEditing && isWritableTemplate);
-    m_copyBtn->setEnabled(!isEditing && hasSelection);  // Can copy from anywhere, save to User
+    // New: disabled on startup, enabled when user tier location or user tier template selected, disabled while editing
+    m_newBtn->setEnabled(!isEditing && (isWritableTemplate || isUserTierLocation));
+    
+    // Copy: can copy from anywhere (not just writable), disabled while editing and when location selected
+    m_copyBtn->setEnabled(!isEditing && hasSelection && isTemplate);
+    
+    // Edit: only for writable templates, disabled while editing
     m_editBtn->setEnabled(!isEditing && isWritableTemplate);
     
-    // Save/Cancel only enabled when editing
-    m_saveBtn->setEnabled(isEditing);
+    // Delete: only for writable templates, disabled for locations
+    m_deleteBtn->setEnabled(!isEditing && isWritableTemplate);
+    
+    // Save enabled only when editing AND a writable destination is selected
+    bool canSave = isEditing && (isWritableTemplate || isUserTierLocation);
+    m_saveBtn->setEnabled(canSave);
     m_cancelBtn->setEnabled(isEditing);
     
     // Update tooltips
-    m_saveBtn->setToolTip(isEditing ? tr("Save changes") : tr("Save only active in Edit mode"));
+    QString saveTooltip;
+    if (isEditing) {
+        saveTooltip = canSave
+            ? tr("Save changes")
+            : tr("Select a writable User location or template to enable Save");
+    } else {
+        saveTooltip = tr("Save only active in Edit mode");
+    }
+    m_saveBtn->setToolTip(saveTooltip);
     m_cancelBtn->setToolTip(isEditing ? tr("Cancel changes") : tr("Cancel only active in Edit mode"));
 }
 
@@ -979,3 +1068,216 @@ void MainWindow::onSaveFileAs() {
         onSaveFile();
     }
 }
+
+// ============================================================================
+// Drag and Drop Implementation
+// ============================================================================
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
+    // Handle drag/drop events for leftPanel
+    if (event->type() == QEvent::DragEnter) {
+        QDragEnterEvent* dragEvent = static_cast<QDragEnterEvent*>(event);
+        if (dragEvent->mimeData()->hasUrls()) {
+            dragEvent->acceptProposedAction();
+            return true;
+        }
+    } else if (event->type() == QEvent::Drop) {
+        QDropEvent* dropEvent = static_cast<QDropEvent*>(event);
+        const QMimeData* mimeData = dropEvent->mimeData();
+        
+        if (mimeData->hasUrls()) {
+            QList<QUrl> urls = mimeData->urls();
+            if (!urls.isEmpty()) {
+                dropEvent->acceptProposedAction();
+                processDroppedTemplates(urls);
+                return true;
+            }
+        }
+    }
+    
+    return QMainWindow::eventFilter(watched, event);
+}
+
+QString MainWindow::findNewResourcesTemplatesFolder() const {
+    // Get all user locations from the resource manager
+    auto userLocs = m_resourceManager->availableUserLocations();
+    
+    // Look for a writable user location with a templates folder
+    for (const auto& loc : userLocs) {
+        if (loc.exists && loc.isWritable) {
+            QDir templatesDir(QDir(loc.path).filePath("templates"));
+            if (templatesDir.exists()) {
+                return templatesDir.absolutePath();
+            }
+        }
+    }
+    
+    // No writable templates folder found
+    return QString();
+}
+
+bool MainWindow::validateTemplateFile(const QString& filePath, QString& errorMsg) const {
+    QFileInfo fileInfo(filePath);
+    
+    // Phase 1: Extension check
+    if (fileInfo.suffix().toLower() != "json") {
+        errorMsg = tr("Not a JSON file");
+        return false;
+    }
+    
+    // Phase 2: JSON parsing
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        errorMsg = tr("Cannot open file: %1").arg(file.errorString());
+        return false;
+    }
+    
+    QByteArray jsonData = file.readAll();
+    file.close();
+    
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData, &parseError);
+    if (doc.isNull()) {
+        errorMsg = tr("Invalid JSON: %1").arg(parseError.errorString());
+        return false;
+    }
+    
+    // Phase 3: Template schema validation using TemplateParser
+    scadtemplates::TemplateParser parser;
+    scadtemplates::ParseResult result = parser.parseJson(jsonData.toStdString());
+    
+    if (!result.success) {
+        errorMsg = tr("Invalid template format: %1").arg(QString::fromStdString(result.errorMessage));
+        return false;
+    }
+    
+    if (result.templates.empty()) {
+        errorMsg = tr("No valid templates found in file");
+        return false;
+    }
+    
+    return true;
+}
+
+QString MainWindow::generateUniqueFileName(const QString& targetDir, const QString& baseName) const {
+    QFileInfo baseInfo(baseName);
+    QString name = baseInfo.completeBaseName();
+    QString ext = baseInfo.suffix();
+    
+    QString targetPath = QDir(targetDir).filePath(baseName);
+    if (!QFile::exists(targetPath)) {
+        return targetPath;
+    }
+    
+    // Generate numeric suffix
+    int counter = 1;
+    QString newName;
+    do {
+        newName = QString("%1_%2.%3").arg(name).arg(counter).arg(ext);
+        targetPath = QDir(targetDir).filePath(newName);
+        counter++;
+    } while (QFile::exists(targetPath));
+    
+    return targetPath;
+}
+
+void MainWindow::processDroppedTemplates(const QList<QUrl>& urls) {
+    // Find target folder
+    QString targetFolder = findNewResourcesTemplatesFolder();
+    
+    if (targetFolder.isEmpty()) {
+        // Build list of expected locations for error message
+        auto userLocs = m_resourceManager->availableUserLocations();
+        QStringList expectedPaths;
+        for (const auto& loc : userLocs) {
+            QString templatesPath = QDir(loc.path).filePath("templates");
+            expectedPaths.append(QString("• %1").arg(templatesPath));
+        }
+        
+        QString message = tr("No writable templates folder found.\n\n"
+                           "Expected locations:\n%1\n\n"
+                           "Please create a 'templates' subfolder in one of your enabled user resource locations.")
+                           .arg(expectedPaths.join("\n"));
+        
+        QMessageBox::warning(this, tr("Folder Not Found"), message);
+        return;
+    }
+    
+    QStringList acceptedFiles;
+    QStringList rejectedFiles;
+    
+    // Validate all files first
+    for (const QUrl& url : urls) {
+        if (!url.isLocalFile()) {
+            rejectedFiles.append(QString("%1: Not a local file").arg(url.toString()));
+            continue;
+        }
+        
+        QString filePath = url.toLocalFile();
+        QFileInfo fileInfo(filePath);
+        
+        if (!fileInfo.exists() || !fileInfo.isFile()) {
+            rejectedFiles.append(QString("%1: Not a valid file").arg(fileInfo.fileName()));
+            continue;
+        }
+        
+        QString errorMsg;
+        if (!validateTemplateFile(filePath, errorMsg)) {
+            rejectedFiles.append(QString("%1: %2").arg(fileInfo.fileName()).arg(errorMsg));
+            continue;
+        }
+        
+        // Validation passed - copy file
+        QString targetPath = generateUniqueFileName(targetFolder, fileInfo.fileName());
+        
+        if (QFile::copy(filePath, targetPath)) {
+            acceptedFiles.append(fileInfo.fileName());
+        } else {
+            rejectedFiles.append(QString("%1: Failed to copy file").arg(fileInfo.fileName()));
+        }
+    }
+    
+    // Show results
+    showDropResults(acceptedFiles, rejectedFiles);
+    
+    // Refresh inventory if any files were accepted
+    if (!acceptedFiles.isEmpty()) {
+        refreshInventory();
+        statusBar()->showMessage(tr("Imported %n template file(s)", "", acceptedFiles.count()), 5000);
+    }
+}
+
+void MainWindow::showDropResults(const QStringList& accepted, const QStringList& rejected) {
+    QString message;
+    
+    if (!accepted.isEmpty()) {
+        message += tr("<b>Successfully imported:</b><ul>");
+        for (const QString& file : accepted) {
+            message += QString("<li>%1</li>").arg(file.toHtmlEscaped());
+        }
+        message += "</ul>";
+    }
+    
+    if (!rejected.isEmpty()) {
+        if (!message.isEmpty()) {
+            message += "<br>";
+        }
+        message += tr("<b>Rejected:</b><ul>");
+        for (const QString& file : rejected) {
+            message += QString("<li>%1</li>").arg(file.toHtmlEscaped());
+        }
+        message += "</ul>";
+    }
+    
+    if (message.isEmpty()) {
+        message = tr("No files to process");
+    }
+    
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Template Import Results"));
+    msgBox.setTextFormat(Qt::RichText);
+    msgBox.setText(message);
+    msgBox.setIcon(accepted.isEmpty() ? QMessageBox::Warning : QMessageBox::Information);
+    msgBox.exec();
+}
+

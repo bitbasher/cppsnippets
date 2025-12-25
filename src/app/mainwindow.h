@@ -70,17 +70,28 @@ private slots:
     void onInventoryItemSelected(const resInventory::ResourceItem& item);
     void onInventorySelectionChanged();
 
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
     void setupUi();
     void setupMenus();
     void updateWindowTitle();
     void updateTemplateButtons();
+    void onTemplateFieldChanged();
     void refreshInventory();
     void populateEditorFromSelection(const resInventory::ResourceItem& item);
     QString userTemplatesRoot() const;
     bool saveTemplateToUser(const scadtemplates::Template& tmpl, const QString& version);
     QString incrementVersion(const QString& version) const;
     void applyFilterToTree(const QString& text);
+    
+    // Drag and drop helper methods
+    QString findNewResourcesTemplatesFolder() const;
+    bool validateTemplateFile(const QString& filePath, QString& errorMsg) const;
+    QString generateUniqueFileName(const QString& targetDir, const QString& baseName) const;
+    void processDroppedTemplates(const QList<QUrl>& urls);
+    void showDropResults(const QStringList& accepted, const QStringList& rejected);
     
     std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;
     std::unique_ptr<platformInfo::ResourceLocationManager> m_resourceManager;
