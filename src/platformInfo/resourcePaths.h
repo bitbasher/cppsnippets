@@ -63,7 +63,8 @@ enum class ResourceType {
   Templates,    ///< Template files ($RESOURCEDIR/templates)
   Libraries,    ///< OpenSCAD library .scad scripts ($RESOURCEDIR/libraries) -
                 ///< extend OpenSCAD features
-  Translations  ///< Translation/locale files ($RESOURCEDIR/locale)
+  Translations, ///< Translation/locale files ($RESOURCEDIR/locale)
+  NewResources  ///< Drop zone for drag and drop of new resource types
 };
 
 static const QString groupNameCapture = QStringLiteral("__capture__");
@@ -392,6 +393,12 @@ private:
       ResourceType::Libraries,
       ResourceType::Translations
     };
+    inline static const QVector<ResourceType> s_nonContainerResTypes = {
+      ResourceType::Fonts,
+      ResourceType::ColorSchemes,
+      ResourceType::Shaders,
+      ResourceType::Templates
+    };
 
     inline static const QVector<ResourceType> s_exampleSubResTypes = {
       ResourceType::Group, ResourceType::Templates};
@@ -414,19 +421,26 @@ private:
        {QStringLiteral(".scad")},
        s_attachmentsList},
 
+      {ResourceType::NewResources, // container of resources
+       QStringLiteral("newresources"),
+       QStringLiteral("Drop Targets"),
+       s_nonContainerResTypes, // no sub-resources
+       {},
+       {}},
+
       {ResourceType::Group, // container of resources
        groupNameCapture,
        QStringLiteral("Editor Categories"),
        {}, // no sub-resources
        {QStringLiteral(".scad")},
-      s_attachmentsList},
+       s_attachmentsList},
 
       {ResourceType::Tests, // container, but may contain resources directly
        QStringLiteral("tests"),
        QStringLiteral("Test OpenSCAD scripts"),
-      s_testSubResTypes, // might have templates
+       s_testSubResTypes, // might have templates
        {QStringLiteral(".scad")},
-      s_attachmentsList},
+       s_attachmentsList},
 
       {ResourceType::Fonts,
        QStringLiteral("fonts"),

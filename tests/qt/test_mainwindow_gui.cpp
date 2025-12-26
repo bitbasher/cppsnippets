@@ -26,7 +26,7 @@ void TestMainWindowGUI::init() {
     // Called before each test function
     m_window = new MainWindow();
     m_window->show();
-    QTest::qWaitForWindowExposed(m_window);
+    (void)QTest::qWaitForWindowExposed(m_window);
 }
 
 void TestMainWindowGUI::cleanup() {
@@ -513,4 +513,3 @@ bool TestMainWindowGUI::isButtonEnabled(const QString& buttonName) {
 }
 
 QTEST_MAIN(TestMainWindowGUI)
-#include "test_mainwindow_gui.moc"

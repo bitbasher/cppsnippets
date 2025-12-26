@@ -25,4 +25,3 @@ void TestResourceLocationWidgetGUI::testQtVersion() {
 }
 
 QTEST_MAIN(TestResourceLocationWidgetGUI)
-#include "test_resourcelocationwidget_gui_simple.moc"

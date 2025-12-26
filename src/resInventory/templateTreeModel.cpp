@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <algorithm>
 
 namespace resInventory {
 
@@ -61,6 +62,11 @@ void TemplateTreeNode::clearChildren()
 {
     qDeleteAll(m_children);
     m_children.clear();
+}
+
+void TemplateTreeNode::sortChildren(const std::function<bool(const TemplateTreeNode*, const TemplateTreeNode*)>& less)
+{
+    std::sort(m_children.begin(), m_children.end(), less);
 }
 
 
@@ -234,7 +240,14 @@ QVariant TemplateTreeModel::data(const QModelIndex& index, int role) const
         
     case Qt::ToolTipRole:
         if (node->nodeType() == TemplateTreeNode::NodeType::Template) {
-            return node->resource().path;
+            // Show display name and canonical path to help user distinguish
+            // between standard templates and those from newresources container
+            const DiscoveredResource& res = node->resource();
+                QString tooltip = res.name;
+            if (!res.path.isEmpty()) {
+                tooltip += QStringLiteral("\n") + QDir::fromNativeSeparators(res.path);
+            }
+            return tooltip;
         } else if (node->nodeType() == TemplateTreeNode::NodeType::Location) {
             return node->locationKey();
         }
@@ -392,6 +405,7 @@ void TemplateTreeModel::rebuild()
     m_rootNode->clearChildren();
     if (m_store) {
         buildTree();
+        sortTree(m_rootNode.get());
     }
     endResetModel();
 }
@@ -622,7 +636,58 @@ QString TemplateTreeModel::extractLocationDisplayName(ResourceTier tier, const Q
     }
     }
 
-    return normalized;
+    // Should not reach here, but return empty string as fallback
+    return QString();
+
+}
+
+QString TemplateTreeModel::templateDisplayName(const TemplateTreeNode* node)
+{
+    if (!node || node->nodeType() != TemplateTreeNode::NodeType::Template) {
+        return QString();
+    }
+    QString name = node->resource().name;
+    if (name.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive)) {
+        name.chop(5);
+    }
+    return name;
+}
+
+void TemplateTreeModel::sortTree(TemplateTreeNode* node)
+{
+    if (!node) {
+        return;
+    }
+
+    switch (node->nodeType()) {
+    case TemplateTreeNode::NodeType::Root:
+    case TemplateTreeNode::NodeType::Tier:
+        node->sortChildren([](const TemplateTreeNode* a, const TemplateTreeNode* b) {
+            // Tier nodes live under Root; Tier children live under Tier nodes as Locations.
+            // Sort by display name as a fallback, but preserve tier numeric order when applicable.
+            if (a->nodeType() == TemplateTreeNode::NodeType::Tier && b->nodeType() == TemplateTreeNode::NodeType::Tier) {
+                return static_cast<int>(a->tier()) < static_cast<int>(b->tier());
+            }
+            return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0;
+        });
+        break;
+
+    case TemplateTreeNode::NodeType::Location:
+        node->sortChildren([](const TemplateTreeNode* a, const TemplateTreeNode* b) {
+            const QString an = TemplateTreeModel::templateDisplayName(a);
+            const QString bn = TemplateTreeModel::templateDisplayName(b);
+            return QString::localeAwareCompare(an, bn) < 0;
+        });
+        break;
+
+    case TemplateTreeNode::NodeType::Template:
+    default:
+        break;
+    }
+
+    for (int i = 0; i < node->childCount(); ++i) {
+        sortTree(node->child(i));
+    }
 }
 
 } // namespace resInventory

@@ -94,6 +94,7 @@ ResourceType ResourceScannerDirListing::categorizeByPath(const QString& filePath
         return ResourceType::Test;
     }
     
+    // Templates from both standard location and newresources drop zone
     if (normalized.contains(QLatin1String("/templates/"))) {
         return ResourceType::Template;
     }
@@ -162,30 +163,47 @@ int ResourceScannerDirListing::scanLocationForType(
     QString scanPath = QDir::cleanPath(basePath + QLatin1Char('/') + subfolder);
     QDir scanDir(scanPath);
     
-    if (!scanDir.exists()) {
-        return 0;  // Not an error - resource type simply not present
+    int count = 0;
+    
+    // Scan standard resource type directory
+    if (scanDir.exists()) {
+        emit scanStarted(scanPath, type);
+        
+        // Determine if this type needs recursive scanning
+        bool recursive = false;
+        switch (type) {
+            case ResourceType::Library:
+            case ResourceType::Example:
+            case ResourceType::Test:
+            case ResourceType::Template:
+                recursive = true;
+                break;
+            default:
+                recursive = false;
+                break;
+        }
+        
+        count += scanWithDirListing(scanPath, type, tier, locationKey, 
+                                    QString(), callback, recursive);
+        
+        emit scanCompleted(scanPath, count);
     }
     
-    emit scanStarted(scanPath, type);
-    
-    // Determine if this type needs recursive scanning
-    bool recursive = false;
-    switch (type) {
-        case ResourceType::Library:
-        case ResourceType::Example:
-        case ResourceType::Test:
-        case ResourceType::Template:
-            recursive = true;
-            break;
-        default:
-            recursive = false;
-            break;
+    // For templates, also scan the newresources drop zone
+    if (type == ResourceType::Template) {
+        QString newResourcesPath = QDir::cleanPath(basePath + QLatin1String("/newresources/templates"));
+        QDir newResourcesDir(newResourcesPath);
+        
+        if (newResourcesDir.exists()) {
+            emit scanStarted(newResourcesPath, type);
+            
+            int newResourcesCount = scanWithDirListing(newResourcesPath, type, tier, locationKey,
+                                                        QString(), callback, true);
+            count += newResourcesCount;
+            
+            emit scanCompleted(newResourcesPath, newResourcesCount);
+        }
     }
-    
-    int count = scanWithDirListing(scanPath, type, tier, locationKey, 
-                                   QString(), callback, recursive);
-    
-    emit scanCompleted(scanPath, count);
     
     return count;
 }

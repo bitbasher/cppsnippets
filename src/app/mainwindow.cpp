@@ -1182,24 +1182,22 @@ QString MainWindow::generateUniqueFileName(const QString& targetDir, const QStri
 }
 
 void MainWindow::processDroppedTemplates(const QList<QUrl>& urls) {
-    // Find target folder
-    QString targetFolder = findNewResourcesTemplatesFolder();
-    
-    if (targetFolder.isEmpty()) {
-        // Build list of expected locations for error message
-        auto userLocs = m_resourceManager->availableUserLocations();
-        QStringList expectedPaths;
-        for (const auto& loc : userLocs) {
-            QString templatesPath = QDir(loc.path).filePath("templates");
-            expectedPaths.append(QString("• %1").arg(templatesPath));
+    // Find target folder: newresources/templates within first available user location
+    QString targetFolder;
+    auto userLocs = m_resourceManager->availableUserLocations();
+    for (const auto& loc : userLocs) {
+        if (loc.exists && loc.isWritable) {
+            targetFolder = QDir(loc.path).filePath("newresources/templates");
+            break;
         }
-        
-        QString message = tr("No writable templates folder found.\n\n"
-                           "Expected locations:\n%1\n\n"
-                           "Please create a 'templates' subfolder in one of your enabled user resource locations.")
-                           .arg(expectedPaths.join("\n"));
-        
-        QMessageBox::warning(this, tr("Folder Not Found"), message);
+    }
+    
+    // Check if newresources/templates exists (user must create it manually)
+    if (!QDir(targetFolder).exists()) {
+        QMessageBox::warning(this, tr("Cannot Accept Templates"),
+            tr("The 'newresources/templates' folder does not exist.\n\n"
+               "Please create it manually in your User location:\n%1\n\n"
+               "Then try dropping the files again.").arg(targetFolder));
         return;
     }
     

@@ -25,7 +25,7 @@ void TestEnvVarsTabGUI::init() {
     auto* manager = new platformInfo::ResourceLocationManager(nullptr);
     m_tab = new EnvVarsTab(manager, nullptr);
     m_tab->show();
-    QTest::qWaitForWindowExposed(m_tab);
+    (void)QTest::qWaitForWindowExposed(m_tab);
 }
 
 void TestEnvVarsTabGUI::cleanup() {
@@ -175,4 +175,3 @@ void TestEnvVarsTabGUI::selectVariable(const QString& name) {
 }
 
 QTEST_MAIN(TestEnvVarsTabGUI)
-#include "test_envvarstab_gui_simple.moc"

@@ -16,6 +16,7 @@
 #include <QAbstractItemModel>
 #include <QVector>
 #include <memory>
+#include <functional>
 
 #include "platformInfo/export.h"
 #include "resInventory/resourceStore.h"
@@ -52,6 +53,7 @@ public:
     void appendChild(TemplateTreeNode* child);
     void removeChild(int row);
     void clearChildren();
+    void sortChildren(const std::function<bool(const TemplateTreeNode*, const TemplateTreeNode*)>& less);
     
     // Node data
     NodeType nodeType() const { return m_nodeType; }
@@ -167,6 +169,8 @@ private:
     TemplateTreeNode* findOrCreateLocationNode(TemplateTreeNode* tierNode, 
                                                 const QString& locationKey,
                                                 bool isLibrary);
+    void sortTree(TemplateTreeNode* node);
+    static QString templateDisplayName(const TemplateTreeNode* node);
     
     // Extract library name from path if applicable
     static QString extractLibraryName(const QString& path);
