@@ -32,7 +32,7 @@ namespace platformInfo {
  * @brief Manages three-tier resource locations with QSettings persistence
  * 
  * ## Architecture
- * 
+ *     
  * ### Tier 1: Installation Locations
  * - Hardcoded in platform-specific code
  * - Read-only, cannot be modified by users or admins
@@ -106,7 +106,7 @@ public:
     QString applicationPath() const { return m_applicationPath; }
     
     /**
-     * @brief Set the build suffix
+     * @brief Set the build suffix (install tier only)
      * @param suffix Build suffix (e.g., "" or " (Nightly)")
      */
     void setSuffix(const QString& suffix);
@@ -117,7 +117,7 @@ public:
     QString suffix() const { return m_suffix; }
     
     /**
-     * @brief Get the folder name (OpenSCAD + suffix)
+     * @brief Get the folder name (unsuffixed)
      */
     QString folderName() const;
     
@@ -224,10 +224,10 @@ public:
      * @brief Get default machine-level locations for the current platform
      * @return List of default machine resource locations
      * 
-     * Platform defaults:
-     * - Windows: C:/ProgramData/OpenSCAD[suffix]
-     * - macOS: /Library/Application Support/OpenSCAD[suffix]
-     * - Linux: /usr/local/share/openscad[suffix], /opt/openscad[suffix]
+    * Platform defaults:
+    * - Windows: C:/ProgramData/OpenSCAD
+    * - macOS: /Library/Application Support/OpenSCAD
+    * - Linux: /usr/local/share/openscad, /opt/openscad
      */
     QVector<ResourceLocation> defaultMachineLocations() const;
     
@@ -235,7 +235,7 @@ public:
      * @brief Get default machine locations for a specific platform
      */
     static QVector<ResourceLocation> defaultMachineLocationsForPlatform(
-        ExtnOSType osType, const QString& suffix = QString());
+        ExtnOSType osType);
     
     /**
      * @brief Get path to machine-level config file
@@ -298,7 +298,7 @@ public:
      * @brief Get default user locations for a specific platform
      */
     static QVector<ResourceLocation> defaultUserLocationsForPlatform(
-        ExtnOSType osType, const QString& suffix = QString());
+        ExtnOSType osType);
     
     /**
      * @brief Get path to user-level config file
@@ -458,7 +458,8 @@ private:
     void initializeSettings();
     
     // Config file I/O
-    static QVector<ResourceLocation> loadLocationsFromJson(const QString& filePath);
+    static QVector<ResourceLocation> loadLocationsFromJson(const QString& filePath,
+                                                          resourceInfo::ResourceTier tier);
     static bool saveLocationsToJson(const QString& filePath, 
                                     const QVector<ResourceLocation>& locations);
     

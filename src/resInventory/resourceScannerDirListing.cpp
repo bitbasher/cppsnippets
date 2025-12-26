@@ -11,8 +11,14 @@
 #include <QDirListing>
 #include <QFileInfo>
 #include <QTimeZone>
+#include <QLoggingCategory>
+
+Q_LOGGING_CATEGORY(logDirListingScanner, "openscad.scanner.dirlisting", QtInfoMsg)
 
 namespace resInventory {
+
+// Static member initialization
+bool ResourceScannerDirListing::m_loggingEnabled = false;
 
 // ============================================================================
 // Static helper functions
@@ -115,6 +121,28 @@ ResourceScannerDirListing::ResourceScannerDirListing(QObject* parent)
 {
 }
 
+void ResourceScannerDirListing::enableLogging(bool enable)
+{
+    m_loggingEnabled = enable;
+    if (enable) {
+        // Enable info-level output for this category and the base scanner category
+        QLoggingCategory::setFilterRules(QStringLiteral(
+            "openscad.scanner.dirlisting.info=true\n"
+            "openscad.scanner.info=true"));
+        qCInfo(logDirListingScanner) << "=== DIRLISTING SCANNER LOGGING ENABLED ===";
+    } else {
+        // Leave other categories untouched; disable only ours
+        QLoggingCategory::setFilterRules(QStringLiteral(
+            "openscad.scanner.dirlisting=false\n"
+            "openscad.scanner=false"));
+    }
+}
+
+bool ResourceScannerDirListing::isLoggingEnabled()
+{
+    return m_loggingEnabled;
+}
+
 int ResourceScannerDirListing::scanLocation(
     const QString& basePath,
     ResourceTier tier,
@@ -123,8 +151,15 @@ int ResourceScannerDirListing::scanLocation(
 {
     QDir baseDir(basePath);
     if (!baseDir.exists()) {
+        if (m_loggingEnabled) {
+            qCInfo(logDirListingScanner) << "SKIP - NOT FOUND:" << basePath;
+        }
         emit scanError(basePath, QStringLiteral("Directory does not exist"));
         return 0;
+    }
+    
+    if (m_loggingEnabled) {
+        qCInfo(logDirListingScanner) << "SCAN:" << basePath << "tier=" << static_cast<int>(tier) << "location=" << locationKey;
     }
     
     int totalCount = 0;
@@ -187,6 +222,10 @@ int ResourceScannerDirListing::scanLocationForType(
                                     QString(), callback, recursive);
         
         emit scanCompleted(scanPath, count);
+        if (m_loggingEnabled) {
+            qCInfo(logDirListingScanner) << scanPath << "type=" << static_cast<int>(type)
+                                         << "tier=" << static_cast<int>(tier) << "items=" << count;
+        }
     }
     
     // For templates, also scan the newresources drop zone
@@ -202,6 +241,10 @@ int ResourceScannerDirListing::scanLocationForType(
             count += newResourcesCount;
             
             emit scanCompleted(newResourcesPath, newResourcesCount);
+            if (m_loggingEnabled) {
+                qCInfo(logDirListingScanner) << newResourcesPath << "type=" << static_cast<int>(type)
+                                             << "tier=" << static_cast<int>(tier) << "items=" << newResourcesCount;
+            }
         }
     }
     

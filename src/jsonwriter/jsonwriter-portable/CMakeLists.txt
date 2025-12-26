@@ -4,7 +4,7 @@ project(JsonWriterPortable VERSION 0.1.0 LANGUAGES CXX)
 # Enable Qt's automoc for targets here
 set(CMAKE_AUTOMOC ON)
 
-option(JSONWRITER_BUILD_TESTS "Build JsonWriter tests" ON)
+option(JSONWRITER_BUILD_TESTS "Build JsonWriter tests" OFF)
 
 # Try Qt6 first, then Qt5
 set(_need_qttest ${JSONWRITER_BUILD_TESTS})

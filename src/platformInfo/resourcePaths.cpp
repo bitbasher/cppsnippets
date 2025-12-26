@@ -43,26 +43,16 @@ ResourcePaths::ResourcePaths(const QString& applicationPath, const QString& suff
 }
 
 void ResourcePaths::setApplicationPath(const QString& path) {
-    if (m_applicationPath != path) {
-        m_applicationPath = path;
-        m_appResourceDirCached = false;
-        m_cachedAppResourceDir.clear();
-    }
+    m_applicationPath = path;
 }
 
 void ResourcePaths::setSuffix(const QString& suffix) {
-    if (m_suffix != suffix) {
-        m_suffix = suffix;
-        m_appResourceDirCached = false;
-        m_cachedAppResourceDir.clear();
-        m_userConfigPathCached = false;
-        m_cachedUserConfigPath.clear();
-    }
+    m_suffix = suffix;
 }
 
 QString ResourcePaths::folderName() const {
-    // OPENSCAD_FOLDER_NAME = "OpenSCAD" + OPENSCAD_SUFFIX
-    return QStringLiteral("OpenSCAD") + m_suffix;
+    // User/machine tiers are unsuffixed per updated spec
+    return QStringLiteral("ScadTemplates");
 }
 
 void ResourcePaths::detectOSType() {
@@ -70,31 +60,24 @@ void ResourcePaths::detectOSType() {
     m_osType = info.currentOSType();
 }
 
-QVector<ResourceTypeInfo> ResourcePaths::allResourceTypes() {
-    return s_resourceTypes;
+QList<ResourceTypeInfo> ResourcePaths::allResourceTypes() {
+    return resourceInfo::ResourceTypeRegistry::allTypes();
 }
 
 const ResourceTypeInfo* ResourcePaths::resourceTypeInfo(ResourceType type) {
-    for (const auto& info : s_resourceTypes) {
-        if (info.type == type) {
-            return &info;
-        }
-    }
-    return nullptr;
+    return resourceInfo::ResourceTypeRegistry::info(type);
 }
 
 QString ResourcePaths::resourceSubdirectory(ResourceType type) {
-    const auto* info = resourceTypeInfo(type);
-    return info ? info->subdirectory : QString();
+    return resourceInfo::ResourceTypeRegistry::subdir(type);
 }
 
 QStringList ResourcePaths::resourceExtensions(ResourceType type) {
-    const auto* info = resourceTypeInfo(type);
-    return info ? info->primaryExtensions : QStringList();
+    return resourceInfo::ResourceTypeRegistry::extensions(type);
 }
 
-QVector<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
-    return s_allTopLevelResTypes;
+QList<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
+    return resourceInfo::ResourceTypeRegistry::topLevelTypes();
 }
 
 // ============================================================================
@@ -143,48 +126,113 @@ QStringList ResourcePaths::expandedMachineSearchPaths() const {
     return expanded;
 }
 
+QList<ResourcePathElement> ResourcePaths::defaultElements() const {
+    QList<ResourcePathElement> result;
+
+    // Installation tier (relative to application path, with suffix rules)
+    if (!m_applicationPath.isEmpty()) {
+        QDir appDir(m_applicationPath);
+        for (const QString& raw : s_defaultInstallSearchPaths) {
+            QString base = expandEnvVars(raw);
+            QString rel = base.endsWith(QStringLiteral("/"))
+                ? QDir::cleanPath(base + QStringLiteral("openscad") + m_suffix)
+                : QDir::cleanPath(base);
+            QString abs = appDir.absoluteFilePath(rel);
+            QFileInfo fi(abs);
+            QString finalPath = fi.canonicalFilePath();
+            if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
+            ResourceLocation loc(finalPath, QStringLiteral("Installation"), QString(), resourceInfo::ResourceTier::Installation);
+            result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::Installation));
+        }
+    }
+
+    // Machine tier
+    for (const QString& raw : s_defaultMachineSearchPaths) {
+        QString expanded = QDir::cleanPath(expandEnvVars(raw));
+        QFileInfo fi(expanded);
+        QString finalPath = fi.canonicalFilePath();
+        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
+        ResourceLocation loc(finalPath, QStringLiteral("Machine"), QString(), resourceInfo::ResourceTier::Machine);
+        result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::Machine));
+    }
+
+    // User tier
+    for (const QString& raw : s_defaultUserSearchPaths) {
+        QString expanded = QDir::cleanPath(expandEnvVars(raw));
+        QFileInfo fi(expanded);
+        QString finalPath = fi.canonicalFilePath();
+        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
+        ResourceLocation loc(finalPath, QStringLiteral("User"), QString(), resourceInfo::ResourceTier::User);
+        result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::User));
+    }
+
+    // Env-derived elements (OPENSCADPATH)
+    const auto envElems = openscadEnvElements();
+    for (const auto& elem : envElems) {
+        result.append(elem);
+    }
+
+    return result;
+}
+
+QList<ResourcePathElement> ResourcePaths::openscadEnvElements() const {
+    QList<ResourcePathElement> result;
+    QString env = QString::fromLocal8Bit(qgetenv("OPENSCADPATH"));
+    if (env.isEmpty()) {
+        // Alternate variable sometimes referenced in GUI
+        env = QString::fromLocal8Bit(qgetenv("OPENSCAD_PATH"));
+    }
+    if (env.isEmpty()) {
+        return result;
+    }
+
+    const QChar sep = QDir::listSeparator();
+    const QStringList parts = env.split(sep, Qt::SkipEmptyParts);
+    for (const QString& part : parts) {
+        QString expanded = QDir::cleanPath(expandEnvVars(part));
+        QFileInfo fi(expanded);
+        QString finalPath = fi.canonicalFilePath();
+        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
+        ResourceLocation loc(finalPath, QStringLiteral("OPENSCADPATH"), QString(), resourceInfo::ResourceTier::User);
+        result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::User));
+    }
+    return result;
+}
+
 QStringList ResourcePaths::appSearchPaths() const {
-    // Build concrete search paths from defaults, handling suffix rules:
+    // Build concrete search paths from defaults with env var expansion and suffix rules:
+    // - Expand ${VAR} and %VAR% using ResourcePaths env registry + system env
     // - Paths ending with "/" have app name + suffix appended
-    //   Example: "../share/" becomes "../share/openscad (Nightly)"
-    // - Paths without "/" are scanned directly without suffix
-    //   Example: "../.." is used as-is, not modified
-    //
-    // AGENT NOTE: Suffix indicator pattern (trailing "/") is intentional design.
-    // Do not refactor to use contains() or endsWith() for specific paths.
-    // This simple rule prevents cross-platform path bugs.
-    // See DEVELOPMENT.md section 6 for resource path configuration details.
+    //   Example: "%PROGRAMFILES%/" -> "C:/Program Files/openscad (Nightly)"
+    // - Paths without trailing "/" are used as-is (after expansion)
     QStringList paths;
-    for (const QString& path : s_defaultInstallSearchPaths) {
-        if (path.endsWith(QStringLiteral("/"))) {
-            // Path ends with "/" – append app name + suffix
-            // Use lowercase "openscad" + suffix
-            paths << QDir::cleanPath(path + QStringLiteral("openscad") + m_suffix);
+    paths.reserve(s_defaultInstallSearchPaths.size());
+    for (const QString& raw : s_defaultInstallSearchPaths) {
+        QString base = expandEnvVars(raw);
+        if (base.endsWith(QStringLiteral("/"))) {
+            // Append app folder name + suffix for share-style bases
+            QString withSuffix = QDir::cleanPath(base + QStringLiteral("openscad") + m_suffix);
+            paths << withSuffix;
         } else {
-            // Path does not end with "/" – scan directly without suffix
-            paths << path;
+            // Use expanded path directly
+            paths << QDir::cleanPath(base);
         }
     }
     return paths;
 }
 
 QString ResourcePaths::findAppResourceDirectory() const {
-    // Return cached value if available
-    if (m_appResourceDirCached) {
-        return m_cachedAppResourceDir;
-    }
-    
     if (m_applicationPath.isEmpty()) {
         return QString();
     }
-    
+
     QDir appDir(m_applicationPath);
     const QStringList paths = appSearchPaths();
-    
+
     for (const QString& relativePath : paths) {
         QString candidatePath = appDir.absoluteFilePath(relativePath);
         QDir candidateDir(candidatePath);
-        
+
         // Check if this looks like a valid resource directory
         // by checking for at least one known subdirectory
         if (candidateDir.exists()) {
@@ -193,15 +241,11 @@ QString ResourcePaths::findAppResourceDirectory() const {
             if (candidateDir.exists(QStringLiteral("examples")) ||
                 candidateDir.exists(QStringLiteral("fonts")) ||
                 candidateDir.exists(QStringLiteral("color-schemes"))) {
-                m_cachedAppResourceDir = candidateDir.absolutePath();
-                m_appResourceDirCached = true;
-                return m_cachedAppResourceDir;
+                return candidateDir.absolutePath();
             }
         }
     }
-    
-    m_appResourceDirCached = true;
-    m_cachedAppResourceDir.clear();
+
     return QString();
 }
 
@@ -234,13 +278,7 @@ bool ResourcePaths::hasAppResourceDirectory(ResourceType type) const {
 // ========== User Resource Paths ==========
 
 QString ResourcePaths::resolveUserConfigBasePath() const {
-    if (m_userConfigPathCached) {
-        return m_cachedUserConfigPath;
-    }
-    
-    m_cachedUserConfigPath = userConfigBasePathForPlatform(m_osType);
-    m_userConfigPathCached = true;
-    return m_cachedUserConfigPath;
+    return userConfigBasePathForPlatform(m_osType);
 }
 
 QString ResourcePaths::userConfigBasePathForPlatform(ExtnOSType osType) {

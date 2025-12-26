@@ -5,12 +5,20 @@
 
 namespace resourceInfo {
 
-// Imaginary tiers that categorize folders by scope/access
+/**
+ * @brief Resource location tier/level
+ * 
+ * Resources are organized into three tiers based on their scope and accessibility:
+ * - Installation: Built-in resources from the application installation (read-only)
+ * - Machine: System-wide resources available to all users (admin-managed)
+ * - User: Personal resources in the user's home directory (user-managed)
+ */
 enum class ResourceTier {
-    Installation,  // Built-in application resources (read-only)
-    Machine,       // System-wide resources for all users (admin-managed)
-    Personal       // Per-user resources (writable)
+    Installation,   ///< Built-in application resources (read-only, hardcoded)
+    Machine,        ///< System-wide resources for all users (admin-managed)
+    User            ///< Per-user resources (user-managed)
 };
+
 
 // Access modes applicable to tiers and resources
 enum class Access {
@@ -29,7 +37,7 @@ public:
         switch (tier) {
             case ResourceTier::Installation: return QStringLiteral("Installation");
             case ResourceTier::Machine:      return QStringLiteral("Machine");
-            case ResourceTier::Personal:     return QStringLiteral("Personal");
+            case ResourceTier::User:         return QStringLiteral("User");
         }
         return QString();
     }
@@ -39,7 +47,7 @@ public:
         switch (tier) {
             case ResourceTier::Installation: return Access::ReadOnly;
             case ResourceTier::Machine:      return Access::ReadOnly;
-            case ResourceTier::Personal:     return Access::ReadWrite;
+            case ResourceTier::User:     return Access::ReadWrite;
         }
         return Access::Undefined;
     }
@@ -61,7 +69,7 @@ private:
     inline static const QList<ResourceTier> s_allTiers = {
         ResourceTier::Installation,
         ResourceTier::Machine,
-        ResourceTier::Personal
+        ResourceTier::User
     };
 };
 

@@ -15,7 +15,17 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+            "compileCommands": [
+                "build/compile_commands.json"
+            ],
+            "recursiveIncludes": {
+                "reduce": "never"
+            },
+            "browse": {
+                "databaseFilename": ".vscode/.vscode_browse.vc.db"
+            }
         }
     ],
     "version": 4

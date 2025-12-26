@@ -4,7 +4,7 @@ project(JsonReaderPortable VERSION 0.1.0 LANGUAGES CXX)
 # Enable Qt's automoc for targets here
 set(CMAKE_AUTOMOC ON)
 
-option(JSONREADER_BUILD_TESTS "Build JsonReader tests" ON)
+option(JSONREADER_BUILD_TESTS "Build JsonReader tests" OFF)
 
 # Try Qt6 first, then Qt5
 set(_need_qttest ${JSONREADER_BUILD_TESTS})

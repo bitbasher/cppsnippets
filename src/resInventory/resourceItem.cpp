@@ -1,6 +1,8 @@
 #include "resInventory/resourceItem.h"
+
 #include <QFileInfo>
 #include <QMetaType>
+#include "resourceInfo/resourceTier.h"
 
 namespace resInventory {
 

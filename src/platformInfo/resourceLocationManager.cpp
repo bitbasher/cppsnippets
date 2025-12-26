@@ -83,7 +83,8 @@ void ResourceLocationManager::setSuffix(const QString& suffix) {
 }
 
 QString ResourceLocationManager::folderName() const {
-    return QStringLiteral("OpenSCAD") + m_suffix;
+    // User and machine tiers are unsuffixed per updated policy
+    return QStringLiteral("OpenSCAD");
 }
 
 // ============================================================================
@@ -120,7 +121,7 @@ bool ResourceLocationManager::isValidInstallation(const QString& path) {
     
     // Check for at least one resource subdirectory
     // Use the canonical list of top-level resource types from ResourcePaths
-    const QVector<ResourceType> topLevelTypes = ResourcePaths::allTopLevelResourceTypes();
+    const QList<ResourceType> topLevelTypes = ResourcePaths::allTopLevelResourceTypes();
     
     // Check in the directory itself
     for (const ResourceType& type : topLevelTypes) {
@@ -283,7 +284,14 @@ QString ResourceLocationManager::findInstallationResourceDir() const {
 // ============================================================================
 
 QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallations() const {
-    return findSiblingInstallationsForPlatform(m_osType, m_applicationPath, folderName());
+    QDir appDir(m_applicationPath);
+    QString currentFolderName = appDir.dirName();
+    if (currentFolderName.compare(QStringLiteral("bin"), Qt::CaseInsensitive) == 0) {
+        appDir.cdUp();
+        currentFolderName = appDir.dirName();
+    }
+
+    return findSiblingInstallationsForPlatform(m_osType, m_applicationPath, currentFolderName);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPlatform(
@@ -327,6 +335,22 @@ QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPl
                 current = appDir.absolutePath();
             }
             
+            // Fallback: if not running from a standard installation (e.g., running from build dir),
+            // scan common Windows paths
+            if (parentPath.isEmpty()) {
+                qInfo() << "[Sibling Finder] App not in standard path, checking Program Files...";
+                QString progFiles = QStringLiteral("C:/Program Files");
+                if (QDir(progFiles).exists()) {
+                    parentPath = progFiles;
+                } else {
+                    // Try alternate path
+                    progFiles = QStringLiteral("C:/Program Files (x86)");
+                    if (QDir(progFiles).exists()) {
+                        parentPath = progFiles;
+                    }
+                }
+            }
+            
             pattern = QStringLiteral("OpenSCAD*");
             break;
         }
@@ -367,8 +391,11 @@ QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPl
     }
     
     if (parentPath.isEmpty()) {
+        qWarning() << "[Sibling Finder] No parent path found for scanning siblings";
         return siblings;
     }
+    
+    qInfo() << "[Sibling Finder] Scanning for siblings in:" << parentPath << "Pattern:" << pattern;
     
     // Scan for sibling installations
     QDir parentDir(parentPath);
@@ -378,6 +405,7 @@ QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPl
     parentDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
     
     const QStringList entries = parentDir.entryList();
+    qInfo() << "[Sibling Finder] Found" << entries.count() << "potential sibling folders:" << entries;
     for (const QString& entry : entries) {
         // Skip current installation
         QString entryName = entry;
@@ -424,6 +452,7 @@ QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPl
                     testDir.exists(QStringLiteral("locale")) ||
                     testDir.exists(QStringLiteral("libraries"))) {
                     resourceDir = testDir.absolutePath();
+                    qInfo() << "[Sibling Finder]   Found resources at:" << resourceDir;
                     break;
                 }
             }
@@ -434,14 +463,19 @@ QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPl
             loc.path = resourceDir;
             loc.displayName = entryName + QStringLiteral(" (Sibling Installation)");
             loc.description = QStringLiteral("Resources from sibling OpenSCAD installation");
-            loc.isEnabled = false; // Disabled by default - user must opt-in
+            loc.tier = resourceInfo::ResourceTier::Installation;
+            loc.isEnabled = true; // Auto-enable discovered siblings for scanning
             
             // Update exists/writable status
             QFileInfo info(resourceDir);
             loc.exists = info.exists() && info.isDir();
             loc.isWritable = false; // Installation dirs are read-only
             
+            qInfo() << "[Sibling Finder]   Added sibling:" << loc.displayName << "enabled=" << loc.isEnabled << "path=" << resourceDir;
+            
             siblings.append(loc);
+        } else {
+            qInfo() << "[Sibling Finder]   No resources found in:" << entryName;
         }
     }
     
@@ -465,15 +499,15 @@ void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
 // ============================================================================
 
 QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocations() const {
-    return defaultMachineLocationsForPlatform(m_osType, m_suffix);
+    return defaultMachineLocationsForPlatform(m_osType);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPlatform(
-    ExtnOSType osType, const QString& suffix) 
+    ExtnOSType osType) 
 {
     QVector<ResourceLocation> locations;
-    QString folder = QStringLiteral("OpenSCAD") + suffix;
-    QString folderLower = QStringLiteral("openscad") + suffix.toLower();
+    QString folder = QStringLiteral("OpenSCAD");
+    QString folderLower = QStringLiteral("openscad");
     
     switch (osType) { //FIXME there is no need for IFDEF here since osType is already determined
         case ExtnOSType::Windows: {
@@ -493,7 +527,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
             locations.append(ResourceLocation(
                 QDir(programData).absoluteFilePath(folder),
                 QStringLiteral("System Resources"),
-                QStringLiteral("Shared resources for all users on this machine")
+                QStringLiteral("Shared resources for all users on this machine"),
+                resourceInfo::ResourceTier::Machine
             ));
             break;
         }
@@ -503,7 +538,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
             locations.append(ResourceLocation(
                 QStringLiteral("/Library/Application Support/") + folder,
                 QStringLiteral("System Resources"),
-                QStringLiteral("Shared resources for all users on this Mac")
+                QStringLiteral("Shared resources for all users on this Mac"),
+                resourceInfo::ResourceTier::Machine
             ));
             break;
             
@@ -517,12 +553,14 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
             locations.append(ResourceLocation(
                 QStringLiteral("/usr/local/share/") + folderLower,
                 QStringLiteral("Local System Resources"),
-                QStringLiteral("Site-local resources in /usr/local")
+                QStringLiteral("Site-local resources in /usr/local"),
+                resourceInfo::ResourceTier::Machine
             ));
             locations.append(ResourceLocation(
                 QStringLiteral("/opt/") + folderLower,
                 QStringLiteral("Optional Package Resources"),
-                QStringLiteral("Resources in /opt directory")
+                QStringLiteral("Resources in /opt directory"),
+                resourceInfo::ResourceTier::Machine
             ));
             // XDG system data dirs
             //FIXME this should be using the predefined constant for XDG_DATA_DIRS
@@ -543,7 +581,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPla
                     locations.append(ResourceLocation(
                         path,
                         QStringLiteral("XDG Data: ") + dir,
-                        QStringLiteral("System data directory")
+                            QStringLiteral("System data directory"),
+                            resourceInfo::ResourceTier::Machine
                     ));
                 }
             }
@@ -635,7 +674,7 @@ bool ResourceLocationManager::loadMachineLocationsConfig() {
     QString configPath = machineConfigFilePath();
     
     if (QFile::exists(configPath)) {
-        m_machineLocations = loadLocationsFromJson(configPath);
+        m_machineLocations = loadLocationsFromJson(configPath, resourceInfo::ResourceTier::Machine);
     } else {
         // Use defaults if no config file
         m_machineLocations = defaultMachineLocations();
@@ -670,15 +709,15 @@ bool ResourceLocationManager::saveMachineLocationsConfig(const QVector<ResourceL
 // ============================================================================
 
 QVector<ResourceLocation> ResourceLocationManager::defaultUserLocations() const {
-    return defaultUserLocationsForPlatform(m_osType, m_suffix);
+    return defaultUserLocationsForPlatform(m_osType);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatform(
-    ExtnOSType osType, const QString& suffix) 
+    ExtnOSType osType) 
 {
     QVector<ResourceLocation> locations;
-    QString folder = QStringLiteral("OpenSCAD") + suffix;
-    QString folderLower = QStringLiteral("openscad") + suffix.toLower();
+    QString folder = QStringLiteral("OpenSCAD");
+    QString folderLower = QStringLiteral("openscad");
     
     switch (osType) {
         case ExtnOSType::Windows: {
@@ -691,7 +730,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
                 locations.append(ResourceLocation(
                     QDir(genericData).absoluteFilePath(folder),
                     QStringLiteral("Local Application Data"),
-                    QStringLiteral("Primary user resource location (%LOCALAPPDATA%)")
+                    QStringLiteral("Primary user resource location (%LOCALAPPDATA%)"),
+                    resourceInfo::ResourceTier::User
                 ));
             }
             
@@ -703,7 +743,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
             locations.append(ResourceLocation(
                 roamingDir.absoluteFilePath(folder),
                 QStringLiteral("Roaming Application Data"),
-                QStringLiteral("Roaming profile - syncs across machines in a domain")
+                QStringLiteral("Roaming profile - syncs across machines in a domain"),
+                resourceInfo::ResourceTier::User
             ));
             
             // 3. Documents/OpenSCAD
@@ -711,7 +752,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
             locations.append(ResourceLocation(
                 QDir(docs).absoluteFilePath(folder),
                 QStringLiteral("My Documents"),
-                QStringLiteral("User documents folder - easy to find and backup")
+                QStringLiteral("User documents folder - easy to find and backup"),
+                resourceInfo::ResourceTier::User
             ));
             break;
         }
@@ -722,14 +764,16 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
             locations.append(ResourceLocation(
                 QDir::homePath() + QStringLiteral("/Library/Application Support/") + folder,
                 QStringLiteral("Application Support"),
-                QStringLiteral("Standard macOS application data location")
+                QStringLiteral("Standard macOS application data location"),
+                resourceInfo::ResourceTier::User
             ));
             
             // 2. ~/Documents/OpenSCAD
             locations.append(ResourceLocation(
                 QDir::homePath() + QStringLiteral("/Documents/") + folder,
                 QStringLiteral("Documents"),
-                QStringLiteral("User documents folder - visible in Finder")
+                QStringLiteral("User documents folder - visible in Finder"),
+                resourceInfo::ResourceTier::User
             ));
             break;
             
@@ -746,7 +790,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
             locations.append(ResourceLocation(
                 QDir(configHome).absoluteFilePath(folderLower),
                 QStringLiteral("User Config"),
-                QStringLiteral("XDG config directory - for settings and small data")
+                QStringLiteral("XDG config directory - for settings and small data"),
+                resourceInfo::ResourceTier::User
             ));
             
             // 2. XDG_DATA_HOME (~/.local/share/openscad)
@@ -757,7 +802,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
             locations.append(ResourceLocation(
                 QDir(dataHome).absoluteFilePath(folderLower),
                 QStringLiteral("User Data"),
-                QStringLiteral("XDG data directory - for user resources")
+                QStringLiteral("XDG data directory - for user resources"),
+                resourceInfo::ResourceTier::User
             ));
             
             // 3. ~/Documents/OpenSCAD (if Documents exists)
@@ -766,7 +812,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
                 locations.append(ResourceLocation(
                     QDir(docs).absoluteFilePath(folder),
                     QStringLiteral("Documents"),
-                    QStringLiteral("User documents folder - easy to find")
+                    QStringLiteral("User documents folder - easy to find"),
+                    resourceInfo::ResourceTier::User
                 ));
             }
             break;
@@ -799,7 +846,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
                     locations.append(ResourceLocation(
                         cleanPath,
                         QStringLiteral("OPENSCADPATH"),
-                        QStringLiteral("From OPENSCADPATH environment variable")
+                        QStringLiteral("From OPENSCADPATH environment variable"),
+                        resourceInfo::ResourceTier::User
                     ));
                 }
             }
@@ -809,7 +857,8 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
         ResourceLocation envPlaceholder(
             QStringLiteral("(not set)"),
             QStringLiteral("OPENSCADPATH"),
-            QStringLiteral("Set OPENSCADPATH environment variable to add custom resource paths")
+            QStringLiteral("Set OPENSCADPATH environment variable to add custom resource paths"),
+            resourceInfo::ResourceTier::User
         );
         envPlaceholder.exists = false;
         envPlaceholder.isEnabled = false;
@@ -895,7 +944,7 @@ bool ResourceLocationManager::loadUserLocationsConfig() {
     QString configPath = userConfigFilePath();
     
     if (QFile::exists(configPath)) {
-        m_userLocations = loadLocationsFromJson(configPath);
+        m_userLocations = loadLocationsFromJson(configPath, resourceInfo::ResourceTier::User);
     } else {
         // Use defaults if no config file
         m_userLocations = defaultUserLocations();
@@ -996,7 +1045,8 @@ QVector<ResourceLocation> ResourceLocationManager::allEnabledLocations() const {
     if (!installDir.isEmpty()) {
         ResourceLocation install(installDir, 
             QStringLiteral("Application Resources"), 
-            QStringLiteral("Built-in resources from installation"));
+            QStringLiteral("Built-in resources from installation"),
+            resourceInfo::ResourceTier::Installation);
         install.isEnabled = true;
         install.exists = true;
         install.isWritable = false;
@@ -1117,7 +1167,8 @@ void ResourceLocationManager::reloadConfiguration() {
 // Config File I/O (JSON)
 // ============================================================================
 
-QVector<ResourceLocation> ResourceLocationManager::loadLocationsFromJson(const QString& filePath) {
+QVector<ResourceLocation> ResourceLocationManager::loadLocationsFromJson(const QString& filePath,
+                                                                         resourceInfo::ResourceTier tier) {
     QVector<ResourceLocation> locations;
     
     QFile file(filePath);
@@ -1147,6 +1198,7 @@ QVector<ResourceLocation> ResourceLocationManager::loadLocationsFromJson(const Q
         loc.path = path;
         loc.displayName = obj[QStringLiteral("displayName")].toString(path);
         loc.description = obj[QStringLiteral("description")].toString();
+        loc.tier = tier;
         loc.isEnabled = obj[QStringLiteral("enabled")].toBool(true);
         
         locations.append(loc);

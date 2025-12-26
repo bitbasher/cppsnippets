@@ -5,6 +5,9 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QDirIterator>
+#include <QLoggingCategory>
+
+Q_LOGGING_CATEGORY(logResourceScanner, "openscad.scanner", QtInfoMsg)
 
 // Allowed attachments for script-like resources (examples/tests/templates)
 static const QStringList kScriptAttachmentFilters = {
@@ -16,6 +19,9 @@ static const QStringList kScriptAttachmentFilters = {
 };
 
 namespace resInventory {
+
+// Static member initialization
+bool ResourceScanner::m_loggingEnabled = false;
 
 // Shared no-op scanner for resource types that are handled elsewhere
 static QVector<ResourceItem> scanNoOp(const QString& basePath,
@@ -35,6 +41,22 @@ static QVector<ResourceItem> scanNoOp(const QString& basePath,
 ResourceScanner::ResourceScanner(QObject* parent)
     : QObject(parent)
 {
+}
+
+void ResourceScanner::enableLogging(bool enable)
+{
+    m_loggingEnabled = enable;
+    if (enable) {
+        QLoggingCategory::setFilterRules(QStringLiteral("openscad.scanner=true"));
+        qCInfo(logResourceScanner) << "=== SCANNER LOGGING ENABLED ===";
+    } else {
+        QLoggingCategory::setFilterRules(QStringLiteral("openscad.scanner=false"));
+    }
+}
+
+bool ResourceScanner::isLoggingEnabled()
+{
+    return m_loggingEnabled;
 }
 
 QString ResourceScanner::resourceSubfolder(ResourceType type)
@@ -85,6 +107,9 @@ QVector<ResourceItem> ResourceScanner::scanLocation(
     ResourceTier tier)
 {
     if (!location.exists || !location.isEnabled) {
+        if (m_loggingEnabled) {
+            qCInfo(logResourceScanner) << "SKIP:" << location.displayName << "exists=" << location.exists << "enabled=" << location.isEnabled;
+        }
         return {};
     }
     
@@ -99,9 +124,15 @@ QVector<ResourceItem> ResourceScanner::scanLocation(
     
     QDir dir(basePath);
     if (!dir.exists()) {
+        if (m_loggingEnabled) {
+            qCInfo(logResourceScanner) << "NOT FOUND:" << basePath;
+        }
         return {};
     }
     
+    if (m_loggingEnabled) {
+        qCInfo(logResourceScanner) << "SCAN:" << basePath << "type=" << static_cast<int>(type) << "tier=" << static_cast<int>(tier);
+    }
     switch (type) {
         case ResourceType::ColorSchemes:
             return scanColorSchemes(basePath, tier, locationKey);

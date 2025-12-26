@@ -18,9 +18,12 @@
 #include <QVector>
 #include <QDateTime>
 #include <functional>
+#include <QLoggingCategory>
 
 #include "platformInfo/export.h"
 #include "resInventory/resourceItem.h"  // For ResourceType, ResourceTier enums
+
+Q_DECLARE_LOGGING_CATEGORY(logDirListingScanner)
 
 namespace resInventory {
 
@@ -82,6 +85,10 @@ public:
 
     explicit ResourceScannerDirListing(QObject* parent = nullptr);
     ~ResourceScannerDirListing() override = default;
+    
+    /// Enable/disable detailed logging of scan operations
+    static void enableLogging(bool enable = true);
+    static bool isLoggingEnabled();
     
     /**
      * @brief Scan a single location for all resource types
@@ -165,6 +172,8 @@ signals:
     void scanError(const QString& path, const QString& error);
 
 private:
+    static bool m_loggingEnabled;
+    
     /**
      * @brief Internal scan using QDirListing
      * 

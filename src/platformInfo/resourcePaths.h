@@ -20,10 +20,15 @@
 #include <QDir>
 #include <QString>
 #include <QStringList>
+#include <QList>
 
 class QSettings;
 
 namespace platformInfo {
+
+using resourceInfo::ResourceTier;
+using resourceInfo::ResourceType;
+using resourceInfo::ResourceTypeInfo;
 
 // Associates a ResourceLocation (path) with its tier assignment
 struct ResourcePathElement {
@@ -43,57 +48,6 @@ struct EnvVarEntry {
 };
 
 /**
- * @brief Enumeration of OpenSCAD resource types
- *
- * These correspond to the subdirectories under the resource directory
- * that contain different types of resources.
- */
-enum class ResourceType {
-  Examples, ///< Example .scad files ($RESOURCEDIR/examples)
-  Group,    ///< Grouping type - not an actual resource - names to be captured
-  Tests, ///< Test .scad files ($RESOURCEDIR/tests) - may have .json/.txt/.dat
-         ///< attachments
-  Fonts, ///< Font files - .ttf, .otf ($RESOURCEDIR/fonts)
-  ColorSchemes, ///< Color scheme folder - no files ($RESOURCEDIR/color-schemes)
-  EditorColors, ///< Color scheme files for the editor - .json
-                ///< ($RESOURCEDIR/color-schemes)
-  RenderColors, ///< Color scheme files for 3D View - .json
-                ///< ($RESOURCEDIR/color-schemes)
-  Shaders,      ///< Shader files - .frag, .vert ($RESOURCEDIR/shaders)
-  Templates,    ///< Template files ($RESOURCEDIR/templates)
-  Libraries,    ///< OpenSCAD library .scad scripts ($RESOURCEDIR/libraries) -
-                ///< extend OpenSCAD features
-  Translations, ///< Translation/locale files ($RESOURCEDIR/locale)
-  NewResources  ///< Drop zone for drag and drop of new resource types
-};
-
-static const QString groupNameCapture = QStringLiteral("__capture__");
-
-/**
- * @brief Resource type metadata
- *
- * Contains the subdirectory name, description, and file extensions for a
- * resource type.
- */
-struct RESOURCEMGMT_API ResourceTypeInfo {
-  ResourceType type;    ///< The resource type enum
-  QString subdirectory; ///< Subdirectory name under resource dir
-  QString description;  ///< Human-readable description
-  QVector<ResourceType>
-      subResTypes; ///< Sub-resource types contained within this resource type
-  QStringList primaryExtensions; ///< Primary file extensions for this resource
-  QStringList attachmentExtensions; ///< Optional attachment file extensions
-
-  ResourceTypeInfo() = default;
-  ResourceTypeInfo(ResourceType t, const QString &subdir, const QString &desc,
-                   const QVector<ResourceType> &subRes = {},
-                   const QStringList &primary = {},
-                   const QStringList &attachments = {})
-      : type(t), subdirectory(subdir), description(desc), subResTypes(subRes),
-        primaryExtensions(primary), attachmentExtensions(attachments) {}
-};
-
-/**
  * @brief Manages resource paths for OpenSCAD
  *
  * This class provides platform-specific search paths for locating
@@ -109,14 +63,14 @@ struct RESOURCEMGMT_API ResourceTypeInfo {
  *
  * OpenSCAD uses preprocessor macros for build variants:
  * - `OPENSCAD_SUFFIX` - Optional suffix like " (Nightly)" for dev builds
- * - `OPENSCAD_FOLDER_NAME` - "OpenSCAD" + OPENSCAD_SUFFIX for user paths
+ * - `OPENSCAD_FOLDER_NAME` - "OpenSCAD" for user/machine paths (unsuffixed)
  * - `RESOURCE_FOLDER(path)` - Appends OPENSCAD_SUFFIX to share paths
  *
  * Example with suffix " (Nightly)":
- * - `OPENSCAD_FOLDER_NAME` → "OpenSCAD (Nightly)"
+ * - User/machine folder name stays "OpenSCAD"
  * - `RESOURCE_FOLDER("../share/openscad")` → "../share/openscad (Nightly)"
- *
- * This class mirrors this behavior via the `suffix` parameter.
+
+ * This class mirrors this behavior via the `suffix` parameter for install-tier lookups only.
  *
  * OpenSCAD defines several platform-specific paths (in PlatformUtils):
  *
@@ -158,9 +112,9 @@ public:
    * @param suffix Build suffix (e.g., "" for release, " (Nightly)" for nightly
    * builds)
    *
-   * @note The suffix corresponds to OpenSCAD's OPENSCAD_SUFFIX preprocessor
-   * define. It is appended to both share paths ("../share/openscad" + suffix)
-   * and user config paths ("OpenSCAD" + suffix).
+  * @note The suffix corresponds to OpenSCAD's OPENSCAD_SUFFIX preprocessor
+  * define. It is appended to installation/share paths; user and machine tiers
+  * remain unsuffixed.
    */
   explicit ResourcePaths(const QString &applicationPath,
                          const QString &suffix = QString());
@@ -183,9 +137,8 @@ public:
    * @brief Set the build suffix
    * @param suffix Build suffix (e.g., "" for release, " (Nightly)" for nightly)
    *
-   * This suffix is appended to:
-   * - Share paths: "../share/openscad" + suffix (via RESOURCE_FOLDER macro)
-   * - User config paths: "OpenSCAD" + suffix (via OPENSCAD_FOLDER_NAME)
+    * This suffix is appended only to installation/share search paths. Machine and
+    * user tier paths remain unsuffixed per revised policy.
    */
   void setSuffix(const QString &suffix);
 
@@ -197,9 +150,10 @@ public:
 
   /**
    * @brief Get the OpenSCAD folder name (for user paths)
-   * @return "OpenSCAD" + suffix
+    * @return "OpenSCAD" (unsuffixed)
    *
-   * This is equivalent to OpenSCAD's OPENSCAD_FOLDER_NAME macro.
+    * This is equivalent to OpenSCAD's OPENSCAD_FOLDER_NAME macro without build
+    * suffix for user/machine tiers.
    */
   QString folderName() const;
 
@@ -209,7 +163,7 @@ public:
    * @brief Get all resource type definitions
    * @return Vector of all resource type info
    */
-  static QVector<ResourceTypeInfo> allResourceTypes();
+  static QList<ResourceTypeInfo> allResourceTypes();
 
   /**
    * @brief Get info for a specific resource type
@@ -242,7 +196,7 @@ public:
    *
    * @note This list is read-only and cannot be modified.
    */
-  static QVector<ResourceType> allTopLevelResourceTypes();
+  static QList<ResourceType> allTopLevelResourceTypes();
 
   // ========== Default Search Paths (Immutable) ==========
   //
@@ -304,13 +258,30 @@ public:
    */
   QStringList expandedMachineSearchPaths() const;
 
-private:
-  // ========== Platform-Specific Search Path Constants ==========
+  /**
+   * @brief Build default location elements with tier tags
+   * @return Ordered list of locations from Installation → Machine → User
+   *
+   * Expands env vars at runtime and applies install-tier suffix rules.
+   * Installation paths are resolved relative to the application path.
+   */
+  QList<ResourcePathElement> defaultElements() const;
+  
+  /**
+   * @brief Build elements from OPENSCADPATH environment variable(s)
+   * @return Zero or more user-tier locations derived from env
+   *
+   * Supports list separators (';' on Windows, ':' on POSIX). Each entry is
+   * expanded for env vars and added as a User-tier location.
+   */
+  QList<ResourcePathElement> openscadEnvElements() const;
+
   // These static members are defined inline with #ifdef for each platform
 
   /// Installation tier: relative to application executable
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
   inline static const QStringList s_defaultInstallSearchPaths = {
+      QStringLiteral("%PROGRAMFILES%/"), // Standard install (append openscad + suffix)
       QStringLiteral("."),         // Release location (same as exe)
       QStringLiteral("../share/"), // MSYS2 style Base share folder (append
                                    // openscad + suffix)
@@ -340,12 +311,12 @@ private:
   /// Machine tier: system-wide locations for all users
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
   inline static const QStringList s_defaultMachineSearchPaths = {
-      QStringLiteral("%PROGRAMDATA%/CppSnippets"), // All users app data (template)
+      QStringLiteral("%PROGRAMDATA%/ScadTemplates"), // All users app data (template)
       QStringLiteral("C:/ProgramData/")             // Fallback: legacy absolute path
   };
 #elif defined(Q_OS_MACOS) || defined(__APPLE__)
   inline static const QStringList s_defaultMachineSearchPaths = {
-      QStringLiteral("/Library/Application Support/CppSnippets") // System-wide
+      QStringLiteral("/Library/Application Support/ScadTemplates") // System-wide
   };
 #else // Linux/BSD/POSIX
   inline static const QStringList s_defaultMachineSearchPaths = {
@@ -361,14 +332,14 @@ private:
   /// scanned directly
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
   inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("%APPDATA%/CppSnippets"),      // User roaming app data (template)
-      QStringLiteral("%LOCALAPPDATA%/CppSnippets"), // User local app data (template)
+      QStringLiteral("%APPDATA%/ScadTemplates"),      // User roaming app data (template)
+      QStringLiteral("%LOCALAPPDATA%/ScadTemplates"), // User local app data (template)
       QStringLiteral("."),                           // Current directory
       QStringLiteral("../")                          // User documents base (legacy)
   };
 #elif defined(Q_OS_MACOS) || defined(__APPLE__)
   inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("${HOME}/Library/Application Support/CppSnippets"), // User app support (template)
+      QStringLiteral("${HOME}/Library/Application Support/ScadTemplates"), // User app support (template)
       QStringLiteral("."),                                                 // Current directory
       QStringLiteral("../../Documents/")                                  // User documents (legacy)
   };
@@ -381,124 +352,6 @@ private:
       QStringLiteral("../../.local/share/")                // Legacy relative path
   };
 #endif
-
-    // ===== Shared constants used by resource type definitions =====
-    inline static const QVector<ResourceType> s_allTopLevelResTypes = {
-      ResourceType::Examples,
-      ResourceType::Tests,
-      ResourceType::Fonts,
-      ResourceType::ColorSchemes,
-      ResourceType::Shaders,
-      ResourceType::Templates,
-      ResourceType::Libraries,
-      ResourceType::Translations
-    };
-    inline static const QVector<ResourceType> s_nonContainerResTypes = {
-      ResourceType::Fonts,
-      ResourceType::ColorSchemes,
-      ResourceType::Shaders,
-      ResourceType::Templates
-    };
-
-    inline static const QVector<ResourceType> s_exampleSubResTypes = {
-      ResourceType::Group, ResourceType::Templates};
-
-    inline static const QVector<ResourceType> s_testSubResTypes = {
-      ResourceType::Templates};
-
-    inline static const QStringList s_attachmentsList = {
-      QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat"),
-      QStringLiteral(".png"),  QStringLiteral(".jpg"), QStringLiteral(".jpeg"),
-      QStringLiteral(".svg"),  QStringLiteral(".gif"), QStringLiteral(".csv"),
-      QStringLiteral(".stl"),  QStringLiteral(".off"), QStringLiteral(".dxf")};
-
-    // Static resource type definitions with file extensions
-    inline static const QVector<ResourceTypeInfo> s_resourceTypes = {
-      {ResourceType::Examples, // container, but may contain resources directly
-       QStringLiteral("examples"),
-       QStringLiteral("Example scripts"),
-       s_exampleSubResTypes, // groups are just folder with .scad files in them
-       {QStringLiteral(".scad")},
-       s_attachmentsList},
-
-      {ResourceType::NewResources, // container of resources
-       QStringLiteral("newresources"),
-       QStringLiteral("Drop Targets"),
-       s_nonContainerResTypes, // no sub-resources
-       {},
-       {}},
-
-      {ResourceType::Group, // container of resources
-       groupNameCapture,
-       QStringLiteral("Editor Categories"),
-       {}, // no sub-resources
-       {QStringLiteral(".scad")},
-       s_attachmentsList},
-
-      {ResourceType::Tests, // container, but may contain resources directly
-       QStringLiteral("tests"),
-       QStringLiteral("Test OpenSCAD scripts"),
-       s_testSubResTypes, // might have templates
-       {QStringLiteral(".scad")},
-       s_attachmentsList},
-
-      {ResourceType::Fonts,
-       QStringLiteral("fonts"),
-       QStringLiteral("Font files (supplements OS fonts)"),
-       {}, // no sub-resources
-       {QStringLiteral(".ttf"), QStringLiteral(".otf")},
-       {}},
-
-      {ResourceType::ColorSchemes, // container only
-       QStringLiteral("color-schemes"),
-       QStringLiteral("Color scheme definitions"),
-       QVector<ResourceType>{
-           ResourceType::EditorColors,
-           ResourceType::RenderColors}, // contains editor and render colors
-       {}, // no primary extensions (container only)
-       {}},
-
-      {ResourceType::EditorColors, // scheme definitions
-       QStringLiteral("editor"),
-       QStringLiteral("Editor color schemes"),
-       {}, // no sub-resources
-       {QStringLiteral(".json")},
-       {}},
-
-      {ResourceType::RenderColors, // scheme definitions
-       QStringLiteral("render"),
-       QStringLiteral("Render color schemes"),
-       {}, // no sub-resources
-       {QStringLiteral(".json")},
-       {}},
-
-      {ResourceType::Shaders,
-       QStringLiteral("shaders"),
-       QStringLiteral("OpenGL shader files"),
-       {}, // no sub-resources
-       {QStringLiteral(".frag"), QStringLiteral(".vert")},
-       {}},
-
-      {ResourceType::Templates,
-       QStringLiteral("templates"),
-       QStringLiteral("Template files"),
-       {}, // no sub-resources
-       {QStringLiteral(".json")},
-       {}},
-
-      {ResourceType::Libraries,
-       QStringLiteral("libraries"),
-       QStringLiteral("OpenSCAD library scripts that extend features"),
-         s_allTopLevelResTypes, // libraries can contain any top-level resource
-       {QStringLiteral(".scad")},
-       {}},
-
-      {ResourceType::Translations,
-       QStringLiteral("locale"),
-       QStringLiteral("Translation files"),
-       {}, // no sub-resources
-       {QStringLiteral(".qm"), QStringLiteral(".ts")},
-       {}}};
 
 public:
   /**
@@ -732,11 +585,6 @@ private:
   QString m_applicationPath;
   QString m_suffix; ///< Build suffix (e.g., "" or " (Nightly)")
   ExtnOSType m_osType;
-  mutable QString
-      m_cachedAppResourceDir; ///< Cached app resource directory path
-  mutable QString m_cachedUserConfigPath; ///< Cached user config base path
-  mutable bool m_appResourceDirCached = false;
-  mutable bool m_userConfigPathCached = false;
 
   QList<EnvVarEntry> m_envVars; ///< User/config overrides applied before system env
 

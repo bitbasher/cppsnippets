@@ -6,12 +6,12 @@
 #include <QDateTime>
 #include <QVariant>
 #include "platformInfo/export.h"
-#include "resInventory/ResourceLocation.h"  // For ResourceTier enum
+#include "resourceInfo/resourceTier.h"
 
 namespace resInventory {
 
-// Import ResourceTier from platformInfo namespace
-using platformInfo::ResourceTier;
+// Type alias for ResourceTier from resourceInfo namespace
+typedef resourceInfo::ResourceTier ResourceTier;
 
 /**
  * @brief Type of resource

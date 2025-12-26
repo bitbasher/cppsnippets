@@ -6,9 +6,12 @@
 #include <QVector>
 #include <QMap>
 #include <functional>
+#include <QLoggingCategory>
 #include "platformInfo/export.h"
 #include "resInventory/resourceItem.h"
 #include "resInventory/ResourceLocation.h"
+
+Q_DECLARE_LOGGING_CATEGORY(logResourceScanner)
 
 namespace platformInfo {
 class ResourceLocationManager;
@@ -16,6 +19,10 @@ class ResourceLocationManager;
 
 namespace resInventory {
 
+// Type alias for ResourceTier
+typedef resourceInfo::ResourceTier ResourceTier;
+
+// Forward declaration
 class ResourceTreeWidget;
 
 /**
@@ -37,6 +44,10 @@ class RESOURCEMGMT_API ResourceScanner : public QObject {
 
 public:
     explicit ResourceScanner(QObject* parent = nullptr);
+    
+    /// Enable/disable detailed logging of scan operations
+    static void enableLogging(bool enable = true);
+    static bool isLoggingEnabled();
     
     /**
      * @brief Scan a single location for a specific resource type
@@ -130,6 +141,8 @@ private:
                              const QString& locationKey,
                              const QString& category,
                              QVector<ResourceItem>& results);
+    
+    static bool m_loggingEnabled;
 };
 
 /**
@@ -220,6 +233,7 @@ private:
     QVector<platformInfo::ResourceLocation> m_machineLocs;
     QVector<platformInfo::ResourceLocation> m_userLocs;
     
+    static bool m_loggingEnabled;
     QMap<ResourceType, ResourceTreeWidget*> m_inventories;
 };
 

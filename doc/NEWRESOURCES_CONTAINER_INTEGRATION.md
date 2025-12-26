@@ -15,7 +15,7 @@ The `NewResources` container is a special drop-zone folder structure that:
 
 **Folder Structure Example**:
 ```
-User Location: C:\Users\Jeff\AppData\Local\CppSnippets
+User Location: C:\Users\Jeff\AppData\Local\ScadTemplates
 ├── templates/              ← Standard location: direct templates
 │   ├── aaa.json
 │   └── bbb.json
@@ -27,10 +27,10 @@ User Location: C:\Users\Jeff\AppData\Local\CppSnippets
 
 **Discovery Result**:
 - All 4 templates appear as direct children of the User Location in the tree
-- `aaa.json` → path: `...AppData\Local\CppSnippets\templates\aaa.json`
-- `bbb.json` → path: `...AppData\Local\CppSnippets\templates\bbb.json`
-- `import1.json` → path: `...AppData\Local\CppSnippets\newresources\templates\import1.json` ← Tooltip shows full path
-- `import2.json` → path: `...AppData\Local\CppSnippets\newresources\templates\import2.json` ← Tooltip shows full path
+- `aaa.json` → path: `...AppData\Local\ScadTemplates\templates\aaa.json`
+- `bbb.json` → path: `...AppData\Local\ScadTemplates\templates\bbb.json`
+- `import1.json` → path: `...AppData\Local\ScadTemplates\newresources\templates\import1.json` ← Tooltip shows full path
+- `import2.json` → path: `...AppData\Local\ScadTemplates\newresources\templates\import2.json` ← Tooltip shows full path
 
 ---
 
@@ -193,8 +193,8 @@ case Qt::ToolTipRole:
 ```
 
 **Recommendation**: Enhance tooltip to show full path for clarity:
-- Standard template: `C:\...\AppData\Local\CppSnippets\templates\foo.json`
-- NewResources template: `C:\...\AppData\Local\CppSnippets\newresources\templates\foo.json`
+- Standard template: `C:\...\AppData\Local\ScadTemplates\templates\foo.json`
+- NewResources template: `C:\...\AppData\Local\ScadTemplates\newresources\templates\foo.json`
 
 ---
 

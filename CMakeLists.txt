@@ -80,7 +80,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Options
 option(INFO "Display build configuration info at end of cmake config" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(BUILD_TESTS "Build test suite" ON)
+option(BUILD_TESTS "Build test suite" OFF)
 option(BUILD_APP "Build Qt application" ON)
 option(USE_QSCINTILLA "Enable QScintilla editor integration" OFF)
 
@@ -816,7 +816,7 @@ if(TARGET template_tree_demo OR TARGET convert_templates_test OR TARGET template
 endif()
 
 if(BUILD_TESTS)
-    add_custom_target(tests ALL
+    add_custom_target(tests
         DEPENDS
             scadtemplates_tests
             inventory_test

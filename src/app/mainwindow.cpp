@@ -47,6 +47,11 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QUrl>
+#include <QTextBrowser>
+#include <QDialog>
+#include <QDateTime>
+#include <QDebug>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -56,7 +61,11 @@ MainWindow::MainWindow(QWidget *parent)
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
     , m_resourceStore(std::make_unique<resInventory::ResourceStore>())
     , m_scanner(std::make_unique<resInventory::ResourceScannerDirListing>())
+    , m_scannerLoggingEnabled(true)
 {
+    // Enable scanner logging for debugging (initially on)
+    resInventory::ResourceScannerDirListing::enableLogging(m_scannerLoggingEnabled);
+    
     // Set application path for resource manager
     m_resourceManager->setApplicationPath(QCoreApplication::applicationDirPath());
     
@@ -348,6 +357,21 @@ void MainWindow::setupMenus() {
         }
     });
     
+    // Diagnostics menu
+    QMenu* diagnosticsMenu = menuBar()->addMenu(tr("&Diagnostics"));
+    
+    QAction* loggingAction = diagnosticsMenu->addAction(tr("Toggle Scanner &Logging"));
+    loggingAction->setCheckable(true);
+    loggingAction->setChecked(m_scannerLoggingEnabled);
+    connect(loggingAction, &QAction::triggered, this, &MainWindow::onToggleScannerLogging);
+    
+    QAction* siblingAction = diagnosticsMenu->addAction(tr("Toggle &Sibling Installations"));
+    siblingAction->setCheckable(true);
+    siblingAction->setChecked(true);
+    connect(siblingAction, &QAction::triggered, this, &MainWindow::onToggleSiblingInstallations);
+    
+    diagnosticsMenu->addSeparator();
+    
     // Help menu
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
     
@@ -425,8 +449,28 @@ void MainWindow::onDeleteTemplate() {
     if (QMessageBox::question(this, tr("Delete Template"),
             tr("Delete template '%1'?").arg(m_selectedItem.name()),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
-        // TODO: Implement delete logic
+        // Delete the template file
+        QFile file(m_selectedItem.path());
+        if (!file.remove()) {
+            QMessageBox::warning(this, tr("Error"),
+                tr("Failed to delete template file: %1").arg(m_selectedItem.path()));
+            return;
+        }
+        
+        // Clear editor and selection
+        m_prefixEdit->clear();
+        m_bodyEdit->clear();
+        m_descriptionEdit->clear();
+        m_sourceEdit->clear();
+        m_versionEdit->clear();
+        m_selectedItem = resInventory::ResourceItem();
+        m_templateTree->clearSelection();
+        
+        // Refresh inventory to update tree view
+        refreshInventory();
+        
         statusBar()->showMessage(tr("Deleted template: %1").arg(m_selectedItem.name()));
+        updateTemplateButtons();
     }
 }
 
@@ -740,6 +784,12 @@ void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& i
         m_sourceEdit->setText(item.sourceLocationKey());
         m_versionEdit->setText(QStringLiteral("0"));
     }
+
+    // Ensure fields reflect editability: read-only when not in Edit mode
+    const bool editable = m_editMode;
+    m_prefixEdit->setReadOnly(!editable);
+    m_descriptionEdit->setReadOnly(!editable);
+    m_bodyEdit->setReadOnly(!editable);
 
     updateTemplateButtons();
 }
@@ -1277,5 +1327,19 @@ void MainWindow::showDropResults(const QStringList& accepted, const QStringList&
     msgBox.setText(message);
     msgBox.setIcon(accepted.isEmpty() ? QMessageBox::Warning : QMessageBox::Information);
     msgBox.exec();
+}
+
+void MainWindow::onToggleScannerLogging() {
+    m_scannerLoggingEnabled = !m_scannerLoggingEnabled;
+    resInventory::ResourceScannerDirListing::enableLogging(m_scannerLoggingEnabled);
+    
+    QString status = m_scannerLoggingEnabled ? tr("enabled") : tr("disabled");
+    statusBar()->showMessage(tr("Scanner logging %1 ").arg(status));
+}
+
+void MainWindow::onToggleSiblingInstallations() {
+    // Re-scan inventory with sibling setting now auto-enabled
+    refreshInventory();
+    statusBar()->showMessage(tr("Sibling installations are now included in scan"), 3000);
 }
 

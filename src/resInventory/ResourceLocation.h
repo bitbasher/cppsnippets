@@ -1,22 +1,11 @@
 #pragma once
+
 #include <QString>
+
 #include "platformInfo/export.h"
+#include "resourceInfo/resourceTier.h"
 
 namespace platformInfo {
-
-/**
- * @brief Resource location tier/level
- * 
- * Resources are organized into three tiers based on their scope and accessibility:
- * - Installation: Built-in resources from the application installation (read-only)
- * - Machine: System-wide resources available to all users (admin-managed)
- * - User: Personal resources in the user's home directory (user-managed)
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in application resources (read-only, hardcoded)
-    Machine,        ///< System-wide resources for all users (admin-managed)
-    User            ///< Per-user resources (user-managed)
-};
 
 // Forward declaration
 class ResourcePaths;
@@ -26,14 +15,16 @@ public:
     QString path;           ///< Expanded absolute path (for backward compatibility)
     QString displayName;
     QString description;
+    resourceInfo::ResourceTier tier = resourceInfo::ResourceTier::Installation;
     bool isEnabled = true;
     bool exists = false;
     bool isWritable = false;
     bool hasResourceFolders = false;  // true if path contains resource folders (examples, fonts, libraries, locale)
 
     ResourceLocation() = default;
-    ResourceLocation(const QString& p, const QString& name, const QString& desc = QString())
-        : path(p), displayName(name), description(desc) {}
+    ResourceLocation(const QString& p, const QString& name, const QString& desc = QString(),
+                     resourceInfo::ResourceTier t = resourceInfo::ResourceTier::Installation)
+        : path(p), displayName(name), description(desc), tier(t) {}
     
     /**
      * @brief Construct with template path containing env var placeholders
@@ -41,8 +32,9 @@ public:
      * @param name Display name
      * @param desc Description
      */
-    ResourceLocation(const QString& rawPath, const QString& name, const QString& desc, bool isTemplate)
-        : displayName(name), description(desc), m_rawPath(isTemplate ? rawPath : QString())
+    ResourceLocation(const QString& rawPath, const QString& name, const QString& desc, bool isTemplate,
+                     resourceInfo::ResourceTier t = resourceInfo::ResourceTier::Installation)
+        : displayName(name), description(desc), tier(t), m_rawPath(isTemplate ? rawPath : QString())
     {
         if (!isTemplate) {
             path = rawPath;  // Direct path, no template
@@ -54,6 +46,7 @@ public:
         path(other.path),
         displayName(other.displayName),
         description(other.description),
+        tier(other.tier),
         isEnabled(other.isEnabled),
         exists(other.exists),
         isWritable(other.isWritable),

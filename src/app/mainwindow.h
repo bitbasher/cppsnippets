@@ -69,6 +69,8 @@ private slots:
     void onSaveFileAs();
     void onInventoryItemSelected(const resInventory::ResourceItem& item);
     void onInventorySelectionChanged();
+    void onToggleScannerLogging();
+    void onToggleSiblingInstallations();
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -128,4 +130,7 @@ private:
     bool m_modified = false;
     bool m_editMode = false;
     resInventory::ResourceItem m_selectedItem;
+    
+    // Logging
+    bool m_scannerLoggingEnabled = false;
 };
