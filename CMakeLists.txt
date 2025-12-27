@@ -709,6 +709,7 @@ if(BUILD_TESTS)
         
         set_tests_properties(test_mainwindow_gui PROPERTIES
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            LABELS "GUI"
         )
         
         # GUI Test for EnvVarsTab
@@ -754,6 +755,7 @@ if(BUILD_TESTS)
         
         set_tests_properties(test_envvarstab_gui PROPERTIES
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            LABELS "GUI"
         )
         
         # GUI Test for ResourceLocationWidget
@@ -796,6 +798,7 @@ if(BUILD_TESTS)
         
         set_tests_properties(test_resourcelocationwidget_gui PROPERTIES
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            LABELS "GUI"
         )
 
         # JsonReader file tests now live in subproject (jsonreader_files_qttest)
@@ -832,6 +835,30 @@ if(BUILD_TESTS)
             test_resourcelocationwidget_gui
     )
     set_target_properties(tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+    # Convenience targets to run subsets of tests via CTest
+    add_custom_target(non_gui_tests
+        COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR} -C $<CONFIG> -LE "^GUI$" --output-on-failure
+        USES_TERMINAL
+    )
+    add_dependencies(non_gui_tests
+        scadtemplates_tests
+        test_resourcescannerdirlisting
+        test_resourcestore
+        test_templatetreemodel
+    )
+    set_target_properties(non_gui_tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+    add_custom_target(gui_tests
+        COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR} -C $<CONFIG> -L gui --output-on-failure
+        USES_TERMINAL
+    )
+    add_dependencies(gui_tests
+        test_mainwindow_gui
+        test_envvarstab_gui
+        test_resourcelocationwidget_gui
+    )
+    set_target_properties(gui_tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()
 
 # Installation rules

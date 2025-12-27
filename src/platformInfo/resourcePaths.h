@@ -594,3 +594,10 @@ private:
 };
 
 } // namespace platformInfo
+
+// Backward-compatible alias to ease future renaming across the codebase.
+// Prefer `platformInfo::PlatformLocations` as the semantic name; it currently
+// maps directly to `platformInfo::ResourcePaths`.
+namespace platformInfo {
+using PlatformLocations = ResourcePaths;
+}
