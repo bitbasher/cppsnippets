@@ -265,7 +265,16 @@ void PreferencesDialog::onRestoreDefaults() {
                "Are you sure?"),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
         
+        // Reset UI display
         m_machineTab->locationWidget()->setLocations(m_manager->defaultMachineLocations());
         m_userTab->locationWidget()->setLocations(m_manager->defaultUserLocations());
+        
+        // Reset enabled state to defaults (install + machine + user + siblings)
+        m_manager->restoreEnabledPathsToDefaults();
+        
+        // Trigger rescan to apply changes
+        if (m_inventoryManager) {
+            m_inventoryManager->buildInventory(*m_manager);
+        }
     }
 }

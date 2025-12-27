@@ -91,35 +91,19 @@ QList<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
 // Note: The suffix (e.g., " (Nightly)") is handled separately when resolving paths.
 // These are the base paths without suffix applied.
 
-// Constants moved to header as inline static members
-const QStringList& ResourcePaths::defaultInstallSearchPaths() {
-    return s_defaultInstallSearchPaths;
+// Constants moved to header as inline static member (unified map)
+const QStringList& ResourcePaths::defaultSearchPaths(resourceInfo::ResourceTier tier) {
+    static const QStringList empty;
+    auto it = s_defaultSearchPaths.find(tier);
+    return (it != s_defaultSearchPaths.end()) ? it.value() : empty;
 }
 
-const QStringList& ResourcePaths::defaultMachineSearchPaths() {
-    return s_defaultMachineSearchPaths;
-}
-
-const QStringList& ResourcePaths::defaultUserSearchPaths() {
-    return s_defaultUserSearchPaths;
-}
-
-QStringList ResourcePaths::expandedUserSearchPaths() const {
+QStringList ResourcePaths::expandedSearchPaths(resourceInfo::ResourceTier tier) const {
+    const QStringList& defaults = defaultSearchPaths(tier);
     QStringList expanded;
-    expanded.reserve(s_defaultUserSearchPaths.size());
+    expanded.reserve(defaults.size());
     
-    for (const QString& path : s_defaultUserSearchPaths) {
-        expanded.append(expandEnvVars(path));
-    }
-    
-    return expanded;
-}
-
-QStringList ResourcePaths::expandedMachineSearchPaths() const {
-    QStringList expanded;
-    expanded.reserve(s_defaultMachineSearchPaths.size());
-    
-    for (const QString& path : s_defaultMachineSearchPaths) {
+    for (const QString& path : defaults) {
         expanded.append(expandEnvVars(path));
     }
     
@@ -132,7 +116,7 @@ QList<ResourcePathElement> ResourcePaths::defaultElements() const {
     // Installation tier (relative to application path, with suffix rules)
     if (!m_applicationPath.isEmpty()) {
         QDir appDir(m_applicationPath);
-        for (const QString& raw : s_defaultInstallSearchPaths) {
+        for (const QString& raw : defaultSearchPaths(resourceInfo::ResourceTier::Installation)) {
             QString base = expandEnvVars(raw);
             QString rel = base.endsWith(QStringLiteral("/"))
                 ? QDir::cleanPath(base + QStringLiteral("openscad") + m_suffix)
@@ -144,10 +128,16 @@ QList<ResourcePathElement> ResourcePaths::defaultElements() const {
             ResourceLocation loc(finalPath, QStringLiteral("Installation"), QString(), resourceInfo::ResourceTier::Installation);
             result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::Installation));
         }
+        
+        // Add sibling installations discovered on this platform
+        const QVector<ResourceLocation> siblings = findSiblingInstallations();
+        for (const ResourceLocation& sib : siblings) {
+            result.append(ResourcePathElement(sib, resourceInfo::ResourceTier::Installation));
+        }
     }
 
     // Machine tier
-    for (const QString& raw : s_defaultMachineSearchPaths) {
+    for (const QString& raw : defaultSearchPaths(resourceInfo::ResourceTier::Machine)) {
         QString expanded = QDir::cleanPath(expandEnvVars(raw));
         QFileInfo fi(expanded);
         QString finalPath = fi.canonicalFilePath();
@@ -157,7 +147,7 @@ QList<ResourcePathElement> ResourcePaths::defaultElements() const {
     }
 
     // User tier
-    for (const QString& raw : s_defaultUserSearchPaths) {
+    for (const QString& raw : defaultSearchPaths(resourceInfo::ResourceTier::User)) {
         QString expanded = QDir::cleanPath(expandEnvVars(raw));
         QFileInfo fi(expanded);
         QString finalPath = fi.canonicalFilePath();
@@ -175,9 +165,10 @@ QStringList ResourcePaths::appSearchPaths() const {
     // - Paths ending with "/" have app name + suffix appended
     //   Example: "%PROGRAMFILES%/" -> "C:/Program Files/openscad (Nightly)"
     // - Paths without trailing "/" are used as-is (after expansion)
+    const QStringList& installPaths = defaultSearchPaths(resourceInfo::ResourceTier::Installation);
     QStringList paths;
-    paths.reserve(s_defaultInstallSearchPaths.size());
-    for (const QString& raw : s_defaultInstallSearchPaths) {
+    paths.reserve(installPaths.size());
+    for (const QString& raw : installPaths) {
         QString base = expandEnvVars(raw);
         if (base.endsWith(QStringLiteral("/"))) {
             // Append app folder name + suffix for share-style bases
@@ -538,6 +529,202 @@ void ResourcePaths::loadEnvVars(QSettings& settings) {
 }
 
 // ========== Validation ==========
+
+bool ResourcePaths::isValidResourceDirectory(const QString& path) const {
+    QDir dir(path);
+    if (!dir.exists()) {
+        return false;
+    }
+    
+    // Validate by checking for known OpenSCAD subdirectories
+    return dir.exists(QStringLiteral("examples")) ||
+           dir.exists(QStringLiteral("fonts")) ||
+           dir.exists(QStringLiteral("locale")) ||
+           dir.exists(QStringLiteral("libraries"));
+}
+
+// ========== Sibling Installation Discovery ==========
+
+QVector<ResourceLocation> ResourcePaths::findSiblingInstallations() const {
+    QDir appDir(m_applicationPath);
+    QString currentFolderName = appDir.dirName();
+    if (currentFolderName.compare(QStringLiteral("bin"), Qt::CaseInsensitive) == 0) {
+        appDir.cdUp();
+        currentFolderName = appDir.dirName();
+    }
+
+    return findSiblingInstallationsForPlatform(m_osType, m_applicationPath, currentFolderName);
+}
+
+QVector<ResourceLocation> ResourcePaths::findSiblingInstallationsForPlatform(
+    ExtnOSType osType,
+    const QString& applicationPath,
+    const QString& currentFolderName)
+{
+    QVector<ResourceLocation> siblings;
+    
+    if (applicationPath.isEmpty()) {
+        return siblings;
+    }
+    
+    // Determine the parent directory to scan and the pattern to match
+    QString parentPath;
+    QString pattern;
+    bool isMacOSApp = false;
+    
+    switch (osType) {
+        case ExtnOSType::Windows: {
+            // Windows: application is in e.g., C:\Program Files\OpenSCAD (Nightly)\
+            // We want to scan C:\Program Files\ for OpenSCAD* folders
+            QDir appDir(applicationPath);
+            
+            // Go up to find Program Files level
+            QString current = appDir.absolutePath();
+            while (!current.isEmpty() && !appDir.isRoot()) {
+                QString dirName = appDir.dirName();
+                if (dirName.startsWith(QStringLiteral("OpenSCAD"), Qt::CaseInsensitive)) {
+                    // Found the OpenSCAD folder, parent is what we want to scan
+                    appDir.cdUp();
+                    parentPath = appDir.absolutePath();
+                    break;
+                }
+                appDir.cdUp();
+                if (appDir.absolutePath() == current) break; // Avoid infinite loop
+                current = appDir.absolutePath();
+            }
+            
+            // Fallback: if not running from a standard installation, scan common Windows paths
+            if (parentPath.isEmpty()) {
+                QString progFiles = QStringLiteral("C:/Program Files");
+                if (QDir(progFiles).exists()) {
+                    parentPath = progFiles;
+                } else {
+                    // Try alternate path
+                    progFiles = QStringLiteral("C:/Program Files (x86)");
+                    if (QDir(progFiles).exists()) {
+                        parentPath = progFiles;
+                    }
+                }
+            }
+            
+            pattern = QStringLiteral("OpenSCAD*");
+            break;
+        }
+        
+        case ExtnOSType::MacOS: {
+            // macOS: application is in e.g., /Applications/OpenSCAD (Nightly).app/Contents/MacOS/
+            // We want to scan /Applications/ for OpenSCAD*.app bundles
+            QDir appDir(applicationPath);
+            
+            // Navigate up to find the .app bundle and then its parent
+            QString current = appDir.absolutePath();
+            while (!current.isEmpty() && !appDir.isRoot()) {
+                QString dirName = appDir.dirName();
+                if (dirName.endsWith(QStringLiteral(".app"), Qt::CaseInsensitive) &&
+                    dirName.startsWith(QStringLiteral("OpenSCAD"), Qt::CaseInsensitive)) {
+                    // Found the .app bundle, parent is what we want to scan
+                    appDir.cdUp();
+                    parentPath = appDir.absolutePath();
+                    isMacOSApp = true;
+                    break;
+                }
+                appDir.cdUp();
+                if (appDir.absolutePath() == current) break;
+                current = appDir.absolutePath();
+            }
+            
+            pattern = QStringLiteral("OpenSCAD*.app");
+            break;
+        }
+        
+        case ExtnOSType::Linux:
+        case ExtnOSType::BSD:
+        case ExtnOSType::Solaris:
+        default:
+            // Linux/POSIX: Installations are in system paths, not siblings
+            return siblings;
+    }
+    
+    if (parentPath.isEmpty()) {
+        return siblings;
+    }
+    
+    // Scan for sibling installations
+    QDir parentDir(parentPath);
+    QStringList filters;
+    filters << pattern;
+    parentDir.setNameFilters(filters);
+    parentDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+    
+    const QStringList entries = parentDir.entryList();
+    for (const QString& entry : entries) {
+        // Skip current installation
+        QString entryName = entry;
+        if (isMacOSApp && entryName.endsWith(QStringLiteral(".app"), Qt::CaseInsensitive)) {
+            entryName = entryName.left(entryName.length() - 4); // Remove .app suffix
+        }
+        
+        if (entryName.compare(currentFolderName, Qt::CaseInsensitive) == 0) {
+            continue; // Skip ourselves
+        }
+        
+        QString siblingPath = parentDir.absoluteFilePath(entry);
+        
+        // Find the resource directory within this sibling
+        QString resourceDir;
+        QStringList searchPaths;
+        
+        if (isMacOSApp) {
+            // macOS .app bundle: check Contents/Resources
+            searchPaths << QStringLiteral("Contents/Resources");
+        } else {
+            // Windows: check . and share/openscad variants
+            QString siblingFolderName = entryName; // e.g., "OpenSCAD" or "OpenSCAD (Nightly)"
+            // Extract suffix if present
+            QString sibSuffix;
+            if (siblingFolderName.startsWith(QStringLiteral("OpenSCAD"))) {
+                sibSuffix = siblingFolderName.mid(8); // Everything after "OpenSCAD"
+            }
+            
+            searchPaths << QStringLiteral(".");
+            searchPaths << (QStringLiteral("share/openscad") + sibSuffix);
+        }
+        
+        QDir sibDir(siblingPath);
+        for (const QString& relPath : searchPaths) {
+            QString testPath = sibDir.absoluteFilePath(relPath);
+            QDir testDir(testPath);
+            if (testDir.exists()) {
+                // Check if it looks like a valid resource directory
+                if (testDir.exists(QStringLiteral("examples")) ||
+                    testDir.exists(QStringLiteral("fonts")) ||
+                    testDir.exists(QStringLiteral("locale")) ||
+                    testDir.exists(QStringLiteral("libraries"))) {
+                    resourceDir = testDir.absolutePath();
+                    break;
+                }
+            }
+        }
+        
+        if (!resourceDir.isEmpty()) {
+            ResourceLocation loc;
+            loc.path = resourceDir;
+            loc.displayName = entryName + QStringLiteral(" (Sibling Installation)");
+            loc.description = QStringLiteral("Resources from sibling OpenSCAD installation");
+            loc.tier = resourceInfo::ResourceTier::Installation;
+            loc.isEnabled = true; // Auto-enable discovered siblings
+            
+            // Update exists/writable status
+            QFileInfo info(resourceDir);
+            loc.exists = info.exists() && info.isDir();
+            loc.isWritable = false; // Installation dirs are read-only
+            
+            siblings.append(loc);
+        }
+    }
+    
+    return siblings;
+}
 
 bool ResourcePaths::isValid() const {
     return !findAppResourceDirectory().isEmpty();

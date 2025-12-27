@@ -91,16 +91,50 @@ QStringList ResourceLocationManager::loadEnabledPaths() const {
     }
 
     // Preferred unified key
-    QStringList paths = m_settings->value(QLatin1String(KEY_ENABLED_PATHS)).toStringList();
+    QStringList paths = m_settings->value(KEY_ENABLED_PATHS).toStringList();
 
     // Fallback to legacy per-tier keys and sibling key
     if (paths.isEmpty()) {
-        paths = m_settings->value(QLatin1String(KEY_MACHINE_PATHS)).toStringList();
-        paths.append(m_settings->value(QLatin1String(KEY_USER_PATHS)).toStringList());
-        paths.append(m_settings->value(QLatin1String(KEY_SIBLING_PATHS)).toStringList());
+        paths = m_settings->value(KEY_MACHINE_PATHS).toStringList();
+        paths.append(m_settings->value(KEY_USER_PATHS).toStringList());
+        paths.append(m_settings->value(KEY_SIBLING_PATHS).toStringList());
     }
 
-    QStringList canonical = canonicalizedPaths(paths);
+    // Canonicalize and filter out stale (non-existent) paths
+    QStringList canonical;
+    QStringList stalePaths;
+    QSet<QString> seen;
+
+    for (const QString& path : paths) {
+        if (path.isEmpty()) continue;
+
+        QFileInfo fi(path);
+        QString canonicalPath = fi.canonicalFilePath();
+        
+        // If canonicalFilePath() returns empty, the path doesn't exist - it's stale
+        if (canonicalPath.isEmpty()) {
+            stalePaths.append(path);
+            continue;
+        }
+        
+        // Skip duplicates
+        if (seen.contains(canonicalPath)) {
+            continue;
+        }
+
+        seen.insert(canonicalPath);
+        canonical.append(canonicalPath);
+    }
+
+    // Log and persist cleanup if stale paths were found
+    if (!stalePaths.isEmpty()) {
+        qInfo() << "[Resource Manager] Removed" << stalePaths.count() << "missing path(s) from settings:";
+        for (const QString& stale : stalePaths) {
+            qInfo() << "  -" << stale;
+        }
+        // Persist the cleaned list back to settings
+        saveEnabledPaths(canonical);
+    }
 
     // Always keep the primary installation path enabled when any settings exist
     if (!canonical.isEmpty()) {
@@ -127,7 +161,7 @@ QStringList ResourceLocationManager::loadEnabledPaths() const {
 void ResourceLocationManager::saveEnabledPaths(const QStringList& paths) const {
     if (!m_settings) return;
     QStringList canonical = canonicalizedPaths(paths);
-    m_settings->setValue(QLatin1String(KEY_ENABLED_PATHS), canonical);
+    m_settings->setValue(KEY_ENABLED_PATHS, canonical);
     m_settings->sync();
 }
 
@@ -231,6 +265,19 @@ ResourceLocationManager::TieredLocationSet ResourceLocationManager::enabledLocat
     return buildEnabledTieredLocations();
 }
 
+QStringList ResourceLocationManager::defaultEnabledPaths() const {
+    QStringList paths;
+    const QList<ResourcePathElement> elements = buildDefaultElementsWithSiblings();
+    for (const auto& elem : elements) {
+        paths.append(elem.location.path);
+    }
+    return paths;
+}
+
+void ResourceLocationManager::restoreEnabledPathsToDefaults() const {
+    if (!m_settings) return;
+    saveEnabledPaths(defaultEnabledPaths());
+}
 void ResourceLocationManager::updateEnabledForTier(resourceInfo::ResourceTier tier,
                                                    const QStringList& enabledPaths,
                                                    const QStringList& protectedPaths)
@@ -393,15 +440,15 @@ QString ResourceLocationManager::defaultInstallationSearchPath() const {
 
 QString ResourceLocationManager::userSpecifiedInstallationPath() const {
     if (!m_settings) return QString();
-    return m_settings->value(QLatin1String(KEY_USER_INSTALL_PATH)).toString();
+    return m_settings->value(KEY_USER_INSTALL_PATH).toString();
 }
 
 void ResourceLocationManager::setUserSpecifiedInstallationPath(const QString& path) {
     if (m_settings) {
         if (path.isEmpty()) {
-            m_settings->remove(QLatin1String(KEY_USER_INSTALL_PATH));
+            m_settings->remove(KEY_USER_INSTALL_PATH);
         } else {
-            m_settings->setValue(QLatin1String(KEY_USER_INSTALL_PATH), path);
+            m_settings->setValue(KEY_USER_INSTALL_PATH, path);
         }
         m_settings->sync();
         
@@ -433,7 +480,7 @@ QString ResourceLocationManager::effectiveInstallationPath() const {
 QStringList ResourceLocationManager::installationSearchPaths() const {
     // Use the immutable default paths, applying suffix to share paths
     QStringList paths;
-    for (const QString& path : ResourcePaths::defaultInstallSearchPaths()) {
+    for (const QString& path : ResourcePaths::defaultSearchPaths(resourceInfo::ResourceTier::Installation)) {
         if (path.contains(QStringLiteral("share/openscad"))) {
             paths << (path + m_suffix);
         } else {
@@ -686,7 +733,7 @@ QVector<ResourceLocation> ResourceLocationManager::findSiblingInstallationsForPl
 
 QStringList ResourceLocationManager::enabledSiblingPaths() const {
     if (!m_settings) return QStringList();
-    return m_settings->value(QLatin1String(KEY_SIBLING_PATHS)).toStringList();
+    return m_settings->value(KEY_SIBLING_PATHS).toStringList();
 }
 
 void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
@@ -708,7 +755,7 @@ void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
     // Keep the current installation enabled while updating sibling selections
     updateEnabledForTier(resourceInfo::ResourceTier::Installation, canonical, protect);
 
-    m_settings->setValue(QLatin1String(KEY_SIBLING_PATHS), canonical);
+    m_settings->setValue(KEY_SIBLING_PATHS, canonical);
     m_settings->sync();
 }
 
@@ -850,7 +897,7 @@ QString ResourceLocationManager::machineConfigFilePath() const {
             break;
     }
     
-    return QDir(basePath).absoluteFilePath(folder + QLatin1Char('/') + QLatin1String(CONFIG_FILENAME));
+    return QDir(basePath).absoluteFilePath(folder + QLatin1Char('/') + CONFIG_FILENAME);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::availableMachineLocations() const {
@@ -867,7 +914,7 @@ QVector<ResourceLocation> ResourceLocationManager::enabledMachineLocations() con
 void ResourceLocationManager::setEnabledMachineLocations(const QStringList& paths) {
     if (!m_settings) return;
     updateEnabledForTier(resourceInfo::ResourceTier::Machine, paths);
-    m_settings->setValue(QLatin1String(KEY_MACHINE_PATHS), canonicalizedPaths(paths));
+    m_settings->setValue(KEY_MACHINE_PATHS, canonicalizedPaths(paths));
     m_settings->sync();
 }
 
@@ -1058,7 +1105,7 @@ QString ResourceLocationManager::userConfigFilePath() const {
         }
     }
     
-    return QDir(basePath).absoluteFilePath(QLatin1String(CONFIG_FILENAME));
+    return QDir(basePath).absoluteFilePath(CONFIG_FILENAME);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::availableUserLocations() const {
@@ -1075,7 +1122,7 @@ QVector<ResourceLocation> ResourceLocationManager::enabledUserLocations() const 
 void ResourceLocationManager::setEnabledUserLocations(const QStringList& paths) {
     if (!m_settings) return;
     updateEnabledForTier(resourceInfo::ResourceTier::User, paths);
-    m_settings->setValue(QLatin1String(KEY_USER_PATHS), canonicalizedPaths(paths));
+    m_settings->setValue(KEY_USER_PATHS, canonicalizedPaths(paths));
     m_settings->sync();
 }
 
@@ -1134,7 +1181,7 @@ bool ResourceLocationManager::addUserLocation(const ResourceLocation& location, 
     }
     
     if (enable) {
-        QStringList enabled = m_settings->value(QLatin1String(KEY_USER_PATHS)).toStringList();
+        QStringList enabled = m_settings->value(KEY_USER_PATHS).toStringList();
         enabled.append(location.path);
         setEnabledUserLocations(enabled);
     }
@@ -1165,7 +1212,7 @@ bool ResourceLocationManager::removeUserLocation(const QString& path) {
     }
     
     // Also remove from enabled list
-    QStringList enabled = m_settings->value(QLatin1String(KEY_USER_PATHS)).toStringList();
+    QStringList enabled = m_settings->value(KEY_USER_PATHS).toStringList();
     enabled.removeAll(path);
     setEnabledUserLocations(enabled);
     

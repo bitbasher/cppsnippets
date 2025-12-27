@@ -205,58 +205,29 @@ public:
   // User cannot modify these - they modify their selection in ResLocMap.
 
   /**
-   * @brief Get default installation search paths for this platform
-   * @return Immutable list of relative paths to search for installation
-   * resources
+   * @brief Get default search paths for a specific tier
+   * @param tier The resource tier (Installation, Machine, or User)
+   * @return Immutable list of default paths for the tier
    *
-   * These paths are relative to the application executable directory.
+   * Returns platform-specific compile-time search paths:
+   * - Installation: relative to application executable, may include build suffix
+   * - Machine: system-wide locations for all users
+   * - User: locations in user's home/config directory
+   *
    * This is a compile-time constant list that cannot be modified by the user.
-   * Used as the default/reset source for the Installation tier in preferences.
-   *
-   * @note Paths may include the build suffix (e.g., " (Nightly)") for share
-   * paths.
+   * Used as the default/reset source for preferences.
    */
-  static const QStringList &defaultInstallSearchPaths();
-
-  /**
-   * @brief Get default machine-level search paths for this platform
-   * @return Immutable list of absolute paths for machine-wide resources
-   *
-   * These are system-wide locations accessible to all users.
-   * This is a compile-time constant list that cannot be modified by the user.
-   * Used as the default/reset source for the Machine tier in preferences.
-   */
-  static const QStringList &defaultMachineSearchPaths();
-
-  /**
-   * @brief Get default user-level search paths for this platform
-   * @return Immutable list of paths for user-specific resources
-   *
-   * These are locations in the user's home/config directory.
-   * This is a compile-time constant list that cannot be modified by the user.
-   * Used as the default/reset source for the User tier in preferences.
-   *
-   * @note Paths are relative to userConfigBasePath() or userDocumentsPath().
-   */
-  static const QStringList &defaultUserSearchPaths();
+  static const QStringList &defaultSearchPaths(resourceInfo::ResourceTier tier);
   
   /**
-   * @brief Get expanded user search paths with env vars resolved
+   * @brief Get expanded search paths with env vars resolved
+   * @param tier The resource tier
    * @return List of expanded paths
    * 
-   * Expands any ${VAR} or %VAR% templates in defaultUserSearchPaths()
+   * Expands any ${VAR} or %VAR% templates in defaultSearchPaths(tier)
    * using current environment variables and user overrides.
    */
-  QStringList expandedUserSearchPaths() const;
-  
-  /**
-   * @brief Get expanded machine search paths with env vars resolved
-   * @return List of expanded paths
-   * 
-   * Expands any ${VAR} or %VAR% templates in defaultMachineSearchPaths()
-   * using current environment variables and user overrides.
-   */
-  QStringList expandedMachineSearchPaths() const;
+  QStringList expandedSearchPaths(resourceInfo::ResourceTier tier) const;
 
   /**
    * @brief Build default location elements with tier tags
@@ -267,89 +238,74 @@ public:
    */
   QList<ResourcePathElement> defaultElements() const;
 
-  // These static members are defined inline with #ifdef for each platform
-
-  /// Installation tier: relative to application executable
+  // Unified default search paths structure indexed by tier
+  // These are compile-time platform-specific constants
+  inline static const QMap<resourceInfo::ResourceTier, QStringList> s_defaultSearchPaths = {
+    // Installation tier: relative to application executable
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-  inline static const QStringList s_defaultInstallSearchPaths = {
+    {resourceInfo::ResourceTier::Installation, {
       QStringLiteral("%PROGRAMFILES%/"), // Standard install (append openscad + suffix)
-      QStringLiteral("."),         // Release location (same as exe)
-      QStringLiteral("../share/"), // MSYS2 style Base share folder (append
-                                   // openscad + suffix)
-      QStringLiteral("..")         // Dev location
-  };
+      QStringLiteral("."),                // Release location (same as exe)
+      QStringLiteral("../share/"),        // MSYS2 style Base share folder
+      QStringLiteral("..")                // Dev location
+    }},
+    // Machine tier: system-wide locations for all users
+    {resourceInfo::ResourceTier::Machine, {
+      QStringLiteral("%PROGRAMDATA%/ScadTemplates"),
+      QStringLiteral("C:/ProgramData/")
+    }},
+    // User tier: user-specific locations
+    {resourceInfo::ResourceTier::User, {
+      QStringLiteral("%APPDATA%/ScadTemplates"),
+      QStringLiteral("%LOCALAPPDATA%/ScadTemplates"),
+      QStringLiteral("."),
+      QStringLiteral("../")
+    }}
 #elif defined(Q_OS_MACOS) || defined(__APPLE__)
-  inline static const QStringList s_defaultInstallSearchPaths = {
-      QStringLiteral("../Resources"), // Resources bundled in .app
-      QStringLiteral("../../.."),     // Dev location
-      QStringLiteral("../../../.."),  // Test location (cmake)
-      QStringLiteral(".."),           // Test location
-      QStringLiteral(
-          "../share/") // Base share folder (append openscad + suffix)
-  };
+    {resourceInfo::ResourceTier::Installation, {
+      QStringLiteral("../Resources"),
+      QStringLiteral("../../.."),
+      QStringLiteral("../../../.."),
+      QStringLiteral(".."),
+      QStringLiteral("../share/")
+    }},
+    {resourceInfo::ResourceTier::Machine, {
+      QStringLiteral("/Library/Application Support/ScadTemplates")
+    }},
+    {resourceInfo::ResourceTier::User, {
+      QStringLiteral("${HOME}/Library/Application Support/ScadTemplates"),
+      QStringLiteral("."),
+      QStringLiteral("../../Documents/")
+    }}
 #else // Linux/BSD/POSIX
-  inline static const QStringList s_defaultInstallSearchPaths = {
-      QStringLiteral(
-          "../share/"), // Standard install (append openscad + suffix)
-      QStringLiteral(
-          "../../share/"),    // Alternate install (append openscad + suffix)
-      QStringLiteral("."),    // Build directory
-      QStringLiteral(".."),   // Up one
-      QStringLiteral("../..") // Up two
-  };
+    {resourceInfo::ResourceTier::Installation, {
+      QStringLiteral("../share/"),
+      QStringLiteral("../../share/"),
+      QStringLiteral("."),
+      QStringLiteral(".."),
+      QStringLiteral("../..")
+    }},
+    {resourceInfo::ResourceTier::Machine, {
+      QStringLiteral("/usr/share/"),
+      QStringLiteral("/usr/local/share/"),
+      QStringLiteral("/opt/openscad/share/")
+    }},
+    {resourceInfo::ResourceTier::User, {
+      QStringLiteral("${XDG_CONFIG_HOME}/cppsnippets"),
+      QStringLiteral("${HOME}/.config/cppsnippets"),
+      QStringLiteral("${HOME}/.local/share/cppsnippets"),
+      QStringLiteral("."),
+      QStringLiteral("../../.local/share/")
+    }}
 #endif
-
-  /// Machine tier: system-wide locations for all users
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-  inline static const QStringList s_defaultMachineSearchPaths = {
-      QStringLiteral("%PROGRAMDATA%/ScadTemplates"), // All users app data (template)
-      QStringLiteral("C:/ProgramData/")             // Fallback: legacy absolute path
   };
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-  inline static const QStringList s_defaultMachineSearchPaths = {
-      QStringLiteral("/Library/Application Support/ScadTemplates") // System-wide
-  };
-#else // Linux/BSD/POSIX
-  inline static const QStringList s_defaultMachineSearchPaths = {
-      QStringLiteral("/usr/share/"),         // System packages
-      QStringLiteral("/usr/local/share/"),   // Local installs
-      QStringLiteral("/opt/openscad/share/") // Opt installs
-  };
-#endif
-
-  /// User tier: base directories where user resources can be located
-  /// Resolved using userConfigBasePath(), userDocumentsPath(), etc.
-  /// Paths ending with "/" have the app name + suffix appended; others are
-  /// scanned directly
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-  inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("%APPDATA%/ScadTemplates"),      // User roaming app data (template)
-      QStringLiteral("%LOCALAPPDATA%/ScadTemplates"), // User local app data (template)
-      QStringLiteral("."),                           // Current directory
-      QStringLiteral("../")                          // User documents base (legacy)
-  };
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-  inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("${HOME}/Library/Application Support/ScadTemplates"), // User app support (template)
-      QStringLiteral("."),                                                 // Current directory
-      QStringLiteral("../../Documents/")                                  // User documents (legacy)
-  };
-#else // Linux/BSD/POSIX
-  inline static const QStringList s_defaultUserSearchPaths = {
-      QStringLiteral("${XDG_CONFIG_HOME}/cppsnippets"),    // XDG config (template)
-      QStringLiteral("${HOME}/.config/cppsnippets"),       // Fallback config (template)
-      QStringLiteral("${HOME}/.local/share/cppsnippets"),  // XDG data (template)
-      QStringLiteral("."),                                  // Current directory
-      QStringLiteral("../../.local/share/")                // Legacy relative path
-  };
-#endif
 
 public:
   /**
    * @brief Get platform-specific search paths for application resources
    * @return List of relative paths to search for resource directory
    *
-   * Convenience method that returns defaultInstallSearchPaths().
+   * Convenience method that returns expanded Installation tier paths.
    * These paths are relative to the application path and are searched
    * in order until a valid resource directory is found.
    */
@@ -567,6 +523,13 @@ public:
   bool isValid() const;
 
   /**
+   * @brief Check if a path is a valid OpenSCAD resource directory
+   * @param path Directory path to validate
+   * @return true if the directory contains expected resource subdirectories
+   */
+  bool isValidResourceDirectory(const QString& path) const;
+
+  /**
    * @brief Get the detected OS type
    * @return Current OS type used for search path selection
    */
@@ -588,9 +551,32 @@ private:
   void detectOSType();
 
   /**
-   * @brief Resolve user config base path (internal, with caching)
+   * @brief Resolve user config base path
    */
   QString resolveUserConfigBasePath() const;
+
+  /**
+   * @brief Find sibling OpenSCAD installations on this system
+   * @return Vector of discovered sibling installations
+   * 
+   * Scans for other OpenSCAD installations:
+   * - Windows: Scans Program Files for OpenSCAD* folders
+   * - macOS: Scans Applications for OpenSCAD*.app bundles
+   * - Linux/BSD: Returns empty (system paths, not siblings)
+   */
+  QVector<ResourceLocation> findSiblingInstallations() const;
+
+  /**
+   * @brief Platform-specific sibling installation discovery
+   * @param osType Operating system type
+   * @param applicationPath Current application path
+   * @param currentFolderName Current installation folder name
+   * @return Vector of discovered sibling installations
+   */
+  static QVector<ResourceLocation> findSiblingInstallationsForPlatform(
+      ExtnOSType osType,
+      const QString& applicationPath,
+      const QString& currentFolderName);
 };
 
 } // namespace platformInfo

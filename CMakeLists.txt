@@ -180,10 +180,6 @@ if(CLANG_TIDY)
   #  append ";--fix" to arguments above to apply automatic fix (if the given checks support it)
 endif(CLANG_TIDY)
 
-
-# Include directories
-include_directories(${CMAKE_SOURCE_DIR}/src)
-
 # Generate version source file from template
 configure_file(
     ${CMAKE_SOURCE_DIR}/src/scadtemplates_version.cpp.in
@@ -286,7 +282,11 @@ target_include_directories(scadtemplates_lib PUBLIC
 )
 
 # Link to resourceMgmt_lib and other dependencies
-target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui JsonReaderPortable resourceMgmt_lib)
+# Qt6::Gui moved to PRIVATE - headers don't expose GUI types (only std::string)
+target_link_libraries(scadtemplates_lib 
+    PUBLIC Qt6::Core JsonReaderPortable resourceMgmt_lib
+    PRIVATE Qt6::Gui
+)
 
 # Set library properties for Windows DLL export
 if(BUILD_SHARED_LIBS)
@@ -463,6 +463,13 @@ if(BUILD_TESTS)
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
+
+    # Exclude GoogleTest targets from default ALL build - only build when tests target is built
+    foreach(t gmock gmock_main gtest gtest_main)
+        if(TARGET ${t})
+            set_target_properties(${t} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+        endif()
+    endforeach()
 
     # Work around MSVC 14.44 internal compiler errors in gtest/gmock amalgamated sources
     # Disable optimization on these third-party translation units to avoid ICEs.
@@ -841,11 +848,9 @@ if(BUILD_TESTS)
         COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR} -C $<CONFIG> -LE "^GUI$" --output-on-failure
         USES_TERMINAL
     )
+    # Only depend on scadtemplates_tests (GTest suite) - CTest filtering handles Qt Test executables
     add_dependencies(non_gui_tests
         scadtemplates_tests
-        test_resourcescannerdirlisting
-        test_resourcestore
-        test_templatetreemodel
     )
     set_target_properties(non_gui_tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 

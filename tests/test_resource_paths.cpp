@@ -117,7 +117,7 @@ TEST(ResourcePathsDefaults, ExpandUserSearchPaths) {
     ResourcePaths paths;
     
     // Default paths may contain templates like ${HOME}, %APPDATA%, etc.
-    QStringList expanded = paths.expandedUserSearchPaths();
+    QStringList expanded = paths.expandedSearchPaths(resourceInfo::ResourceTier::User);
     
     // Should have at least some paths
     EXPECT_FALSE(expanded.isEmpty());
@@ -135,7 +135,7 @@ TEST(ResourcePathsDefaults, ExpandUserSearchPaths) {
 TEST(ResourcePathsDefaults, ExpandMachineSearchPaths) {
     ResourcePaths paths;
     
-    QStringList expanded = paths.expandedMachineSearchPaths();
+    QStringList expanded = paths.expandedSearchPaths(resourceInfo::ResourceTier::Machine);
     
     // Should have at least one path
     EXPECT_FALSE(expanded.isEmpty());

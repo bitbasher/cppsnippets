@@ -1,5 +1,5 @@
 {
-  "tests": 92,
+  "tests": 93,
   "name": "AllTests",
   "testsuites": [
     {
@@ -444,7 +444,7 @@
     },
     {
       "name": "ResourceLocationManagerEnabled",
-      "tests": 2,
+      "tests": 3,
       "testsuite": [
         {
           "name": "DefaultsIncludeInstallAndUser",
@@ -455,6 +455,11 @@
           "name": "EnableMaskFiltersTiers",
           "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_location_manager.cpp",
           "line": 93
+        },
+        {
+          "name": "StalePathsAreDetectedAndRemoved",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_location_manager.cpp",
+          "line": 126
         }
       ]
     },

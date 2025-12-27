@@ -122,3 +122,62 @@ TEST(ResourceLocationManagerEnabled, EnableMaskFiltersTiers) {
     ASSERT_FALSE(restored.user.isEmpty());
     EXPECT_EQ(restored.user.first().path, userPath);
 }
+
+TEST(ResourceLocationManagerEnabled, StalePathsAreDetectedAndRemoved) {
+    TestFixture fx;
+
+    // Build tiered once to get a valid installation path
+    auto tiered = fx.manager.enabledLocationsByTier();
+    ASSERT_FALSE(tiered.installation.isEmpty());
+    QString validInstallPath = tiered.installation.first().path;
+
+    // Inject fake/non-existent paths into QSettings
+    QStringList pathsWithStale;
+    pathsWithStale << validInstallPath;                              // Valid path
+    pathsWithStale << "C:/FakePath/DoesNotExist/Resources";          // Stale path 1
+    pathsWithStale << "D:/NonExistent/OpenSCAD/share";               // Stale path 2
+    pathsWithStale << fx.programData() + "/ScadTemplates";           // Valid machine path
+
+    fx.settings.setValue(QLatin1String("Resources/EnabledPaths"), pathsWithStale);
+    fx.settings.sync();
+
+    // Capture qInfo output by redirecting to a test message handler
+    QStringList logMessages;
+    static thread_local QStringList* messageSink = nullptr;
+    auto handler = [](QtMsgType type, const QMessageLogContext&, const QString& msg) {
+        if (type == QtInfoMsg && messageSink) {
+            messageSink->append(msg);
+        }
+    };
+    auto oldHandler = qInstallMessageHandler(handler);
+    messageSink = &logMessages;
+
+    // Trigger loading which should detect and remove stale paths
+    auto cleaned = fx.manager.enabledLocationsByTier();
+
+    // Restore original message handler
+    messageSink = nullptr;
+    qInstallMessageHandler(oldHandler);
+
+    // Verify the stale paths were removed from settings
+    QStringList persistedPaths = fx.settings.value(QLatin1String("Resources/EnabledPaths")).toStringList();
+    
+    // Should only contain valid paths now (stale ones removed)
+    EXPECT_FALSE(persistedPaths.contains("C:/FakePath/DoesNotExist/Resources"));
+    EXPECT_FALSE(persistedPaths.contains("D:/NonExistent/OpenSCAD/share"));
+    
+    // Valid paths should still be present
+    EXPECT_TRUE(persistedPaths.contains(validInstallPath));
+    EXPECT_TRUE(persistedPaths.contains(fx.programData() + "/ScadTemplates"));
+
+    // Verify we have fewer paths after cleanup (2 stale removed)
+    EXPECT_EQ(persistedPaths.size(), 2);
+
+    // Validate qInfo messages were emitted about the stale removals
+    const QString joined = logMessages.join("\n");
+    ASSERT_FALSE(logMessages.isEmpty());
+    EXPECT_TRUE(joined.contains("Removed"));
+    EXPECT_TRUE(joined.contains("missing path"));
+    EXPECT_TRUE(joined.contains("FakePath"));
+    EXPECT_TRUE(joined.contains("NonExistent"));
+}

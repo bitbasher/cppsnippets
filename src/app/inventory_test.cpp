@@ -103,19 +103,19 @@ int main(int argc, char *argv[])
     printSeparator("Default Search Paths (compile-time)");
     
     qDebug() << "Installation paths:";
-    for (const QString& path : pi::ResourcePaths::defaultInstallSearchPaths()) {
+    for (const QString& path : pi::ResourcePaths::defaultSearchPaths(resourceInfo::ResourceTier::Installation)) {
         qDebug() << "  " << path;
     }
     
     qDebug() << "";
     qDebug() << "Machine paths:";
-    for (const QString& path : pi::ResourcePaths::defaultMachineSearchPaths()) {
+    for (const QString& path : pi::ResourcePaths::defaultSearchPaths(resourceInfo::ResourceTier::Machine)) {
         qDebug() << "  " << path;
     }
     
     qDebug() << "";
     qDebug() << "User paths:";
-    for (const QString& path : pi::ResourcePaths::defaultUserSearchPaths()) {
+    for (const QString& path : pi::ResourcePaths::defaultSearchPaths(resourceInfo::ResourceTier::User)) {
         qDebug() << "  " << path;
     }
     

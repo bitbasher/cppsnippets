@@ -221,6 +221,17 @@ public:
      * enabled paths (Resources/EnabledPaths). Empty settings → all enabled.
      */
     TieredLocationSet enabledLocationsByTier() const;
+
+    /**
+     * @brief Get the full default enabled path list (install + machine + user + siblings)
+     * @return Ordered QStringList of default paths
+     */
+    QStringList defaultEnabledPaths() const;
+
+    /**
+     * @brief Reset enabled paths in settings to defaults and persist
+     */
+    void restoreEnabledPathsToDefaults() const;
     
     /**
      * @brief Get enabled sibling installation paths from QSettings
@@ -495,13 +506,13 @@ private:
     static void updateLocationStatus(ResourceLocation& loc);
     static void updateLocationStatuses(QVector<ResourceLocation>& locations);
     
-    // QSettings keys
-    static constexpr const char* KEY_ENABLED_PATHS = "Resources/EnabledPaths";
-    static constexpr const char* KEY_MACHINE_PATHS = "Resources/MachinePaths";
-    static constexpr const char* KEY_USER_PATHS = "Resources/UserPaths";
-    static constexpr const char* KEY_SIBLING_PATHS = "Resources/SiblingInstallPaths";
-    static constexpr const char* KEY_USER_INSTALL_PATH = "Resources/UserSpecifiedInstallPath";
-    static constexpr const char* CONFIG_FILENAME = "locations.json";
+    // QSettings keys (QLatin1StringView for zero-cost Qt6 string views)
+    static constexpr QLatin1StringView KEY_ENABLED_PATHS{"Resources/EnabledPaths"};
+    static constexpr QLatin1StringView KEY_MACHINE_PATHS{"Resources/MachinePaths"};
+    static constexpr QLatin1StringView KEY_USER_PATHS{"Resources/UserPaths"};
+    static constexpr QLatin1StringView KEY_SIBLING_PATHS{"Resources/SiblingInstallPaths"};
+    static constexpr QLatin1StringView KEY_USER_INSTALL_PATH{"Resources/UserSpecifiedInstallPath"};
+    static constexpr QLatin1StringView CONFIG_FILENAME{"locations.json"};
 };
 
 } // namespace platformInfo
