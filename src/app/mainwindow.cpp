@@ -86,6 +86,10 @@ MainWindow::MainWindow(QWidget *parent)
     restoreState(m_settings->value(QStringLiteral("MainWindow/state")).toByteArray());
     
     statusBar()->showMessage(tr("Ready"));
+
+    // Ensure initial button states after setup and scanning
+    updateTemplateButtons();
+    m_newBtn->setEnabled(true);
 }
 
 MainWindow::~MainWindow() {
@@ -1003,8 +1007,8 @@ void MainWindow::updateTemplateButtons() {
         }
     }
     
-    // New: disabled on startup, enabled when user tier location or user tier template selected, disabled while editing
-    m_newBtn->setEnabled(!isEditing && (isWritableTemplate || isUserTierLocation));
+    // New: enabled whenever not editing (allow creating templates anytime)
+    m_newBtn->setEnabled(!isEditing);
     
     // Copy: can copy from anywhere (not just writable), disabled while editing and when location selected
     m_copyBtn->setEnabled(!isEditing && hasSelection && isTemplate);
@@ -1015,21 +1019,12 @@ void MainWindow::updateTemplateButtons() {
     // Delete: only for writable templates, disabled for locations
     m_deleteBtn->setEnabled(!isEditing && isWritableTemplate);
     
-    // Save enabled only when editing AND a writable destination is selected
-    bool canSave = isEditing && (isWritableTemplate || isUserTierLocation);
-    m_saveBtn->setEnabled(canSave);
+    // Save enabled whenever editing (destination handling occurs on save)
+    m_saveBtn->setEnabled(isEditing);
     m_cancelBtn->setEnabled(isEditing);
     
     // Update tooltips
-    QString saveTooltip;
-    if (isEditing) {
-        saveTooltip = canSave
-            ? tr("Save changes")
-            : tr("Select a writable User location or template to enable Save");
-    } else {
-        saveTooltip = tr("Save only active in Edit mode");
-    }
-    m_saveBtn->setToolTip(saveTooltip);
+    m_saveBtn->setToolTip(isEditing ? tr("Save changes") : tr("Save only active in Edit mode"));
     m_cancelBtn->setToolTip(isEditing ? tr("Cancel changes") : tr("Cancel only active in Edit mode"));
 }
 

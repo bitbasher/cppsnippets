@@ -14,6 +14,7 @@
 #include <QJsonArray>
 #include <QStandardPaths>
 #include <QCoreApplication>
+#include <QSet>
 
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
 #include <shlobj.h>
@@ -34,6 +35,7 @@ ResourceLocationManager::ResourceLocationManager(QSettings* settings, const QStr
 {
     detectOSType();
     initializeSettings();
+    m_resourcePaths.setSuffix(suffix);
     
     // Load user-configured environment variables from settings
     if (m_settings) {
@@ -60,6 +62,204 @@ void ResourceLocationManager::initializeSettings() {
     }
 }
 
+QStringList ResourceLocationManager::canonicalizedPaths(const QStringList& paths) const {
+    QStringList result;
+    QSet<QString> seen;
+
+    for (const QString& path : paths) {
+        if (path.isEmpty()) continue;
+
+        QFileInfo fi(path);
+        QString canonical = fi.canonicalFilePath();
+        if (canonical.isEmpty()) {
+            canonical = fi.absoluteFilePath();
+        }
+        if (canonical.isEmpty() || seen.contains(canonical)) {
+            continue;
+        }
+
+        seen.insert(canonical);
+        result.append(canonical);
+    }
+
+    return result;
+}
+
+QStringList ResourceLocationManager::loadEnabledPaths() const {
+    if (!m_settings) {
+        return QStringList();
+    }
+
+    // Preferred unified key
+    QStringList paths = m_settings->value(QLatin1String(KEY_ENABLED_PATHS)).toStringList();
+
+    // Fallback to legacy per-tier keys and sibling key
+    if (paths.isEmpty()) {
+        paths = m_settings->value(QLatin1String(KEY_MACHINE_PATHS)).toStringList();
+        paths.append(m_settings->value(QLatin1String(KEY_USER_PATHS)).toStringList());
+        paths.append(m_settings->value(QLatin1String(KEY_SIBLING_PATHS)).toStringList());
+    }
+
+    QStringList canonical = canonicalizedPaths(paths);
+
+    // Always keep the primary installation path enabled when any settings exist
+    if (!canonical.isEmpty()) {
+        QStringList protect = canonicalizedPaths({ findInstallationResourceDir() });
+        if (protect.isEmpty()) {
+            const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+            for (const auto& elem : elements) {
+                if (elem.tier == resourceInfo::ResourceTier::Installation) {
+                    protect.append(elem.location.path);
+                    break;
+                }
+            }
+        }
+        for (const QString& keep : protect) {
+            if (!canonical.contains(keep)) {
+                canonical.append(keep);
+            }
+        }
+    }
+
+    return canonical;
+}
+
+void ResourceLocationManager::saveEnabledPaths(const QStringList& paths) const {
+    if (!m_settings) return;
+    QStringList canonical = canonicalizedPaths(paths);
+    m_settings->setValue(QLatin1String(KEY_ENABLED_PATHS), canonical);
+    m_settings->sync();
+}
+
+QList<ResourcePathElement> ResourceLocationManager::buildDefaultElementsWithSiblings() const {
+    QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+    QSet<QString> seen;
+    for (const auto& elem : elements) {
+        seen.insert(elem.location.path);
+    }
+
+    auto appendUnique = [&](const ResourcePathElement& elem) {
+        QString key = elem.location.path;
+        if (key.isEmpty() || seen.contains(key)) return;
+        seen.insert(key);
+        elements.append(elem);
+    };
+
+    // Ensure the current installation resource directory is present (highest priority)
+    QString installDir = findInstallationResourceDir();
+    if (!installDir.isEmpty()) {
+        QFileInfo fi(installDir);
+        QString finalPath = fi.canonicalFilePath();
+        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
+
+        ResourceLocation loc(finalPath,
+                             QStringLiteral("Application Resources"),
+                             QStringLiteral("Built-in resources from this installation"),
+                             resourceInfo::ResourceTier::Installation);
+        updateLocationStatus(loc);
+        appendUnique(ResourcePathElement(loc, resourceInfo::ResourceTier::Installation));
+    }
+
+    // Add sibling installations discovered on disk
+    QVector<ResourceLocation> siblings = findSiblingInstallations();
+    for (auto sibling : siblings) {
+        QFileInfo fi(sibling.path);
+        QString finalPath = fi.canonicalFilePath();
+        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
+        sibling.path = finalPath;
+        updateLocationStatus(sibling);
+        appendUnique(ResourcePathElement(sibling, resourceInfo::ResourceTier::Installation));
+    }
+
+    // Merge machine/user configured locations (includes defaults when no config exists)
+    const QVector<ResourceLocation> machineAvailable = availableMachineLocations();
+    for (const auto& loc : machineAvailable) {
+        appendUnique(ResourcePathElement(loc, resourceInfo::ResourceTier::Machine));
+    }
+
+    const QVector<ResourceLocation> userAvailable = availableUserLocations();
+    for (const auto& loc : userAvailable) {
+        appendUnique(ResourcePathElement(loc, resourceInfo::ResourceTier::User));
+    }
+
+    return elements;
+}
+
+QVector<ResourceLocation> ResourceLocationManager::collectTier(
+    const QList<ResourcePathElement>& elements,
+    resourceInfo::ResourceTier tier,
+    const QSet<QString>& enabledSet,
+    bool includeDisabled) const
+{
+    QVector<ResourceLocation> out;
+    bool enableAll = enabledSet.isEmpty();
+
+    for (const auto& elem : elements) {
+        if (elem.tier != tier) continue;
+
+        ResourceLocation loc = elem.location;
+        updateLocationStatus(loc);
+
+        bool enabled = enableAll || enabledSet.contains(loc.path);
+        loc.isEnabled = enabled;
+
+        if (!includeDisabled) {
+            if (!enabled) continue;
+            if (!loc.exists) continue;
+        }
+
+        out.append(loc);
+    }
+
+    return out;
+}
+
+ResourceLocationManager::TieredLocationSet ResourceLocationManager::buildEnabledTieredLocations() const {
+    TieredLocationSet set;
+    const QList<ResourcePathElement> elements = buildDefaultElementsWithSiblings();
+
+    const QStringList enabledPaths = loadEnabledPaths();
+    const QSet<QString> enabledSet = QSet<QString>(enabledPaths.cbegin(), enabledPaths.cend());
+
+    set.installation = collectTier(elements, resourceInfo::ResourceTier::Installation, enabledSet, false);
+    set.machine = collectTier(elements, resourceInfo::ResourceTier::Machine, enabledSet, false);
+    set.user = collectTier(elements, resourceInfo::ResourceTier::User, enabledSet, false);
+    return set;
+}
+
+ResourceLocationManager::TieredLocationSet ResourceLocationManager::enabledLocationsByTier() const {
+    return buildEnabledTieredLocations();
+}
+
+void ResourceLocationManager::updateEnabledForTier(resourceInfo::ResourceTier tier,
+                                                   const QStringList& enabledPaths,
+                                                   const QStringList& protectedPaths)
+{
+    if (!m_settings) return;
+
+    QStringList canonicalEnabled = canonicalizedPaths(enabledPaths);
+    QStringList canonicalProtected = canonicalizedPaths(protectedPaths);
+    QSet<QString> protectedSet = QSet<QString>(canonicalProtected.cbegin(), canonicalProtected.cend());
+
+    // Start from current enabled set
+    QSet<QString> enabledSet = QSet<QString>(loadEnabledPaths().cbegin(), loadEnabledPaths().cend());
+
+    // Remove existing entries for this tier (unless protected)
+    const QList<ResourcePathElement> elements = buildDefaultElementsWithSiblings();
+    for (const auto& elem : elements) {
+        if (elem.tier != tier) continue;
+        if (protectedSet.contains(elem.location.path)) continue;
+        enabledSet.remove(elem.location.path);
+    }
+
+    // Add new enabled paths for this tier
+    for (const QString& path : canonicalEnabled) {
+        enabledSet.insert(path);
+    }
+
+    saveEnabledPaths(enabledSet.values());
+}
+
 // ============================================================================
 // Basic Properties
 // ============================================================================
@@ -67,6 +267,7 @@ void ResourceLocationManager::initializeSettings() {
 void ResourceLocationManager::setApplicationPath(const QString& applicationPath) {
     if (m_applicationPath != applicationPath) {
         m_applicationPath = applicationPath;
+        m_resourcePaths.setApplicationPath(applicationPath);
         m_installDirCached = false;
         m_cachedInstallDir.clear();
     }
@@ -75,6 +276,7 @@ void ResourceLocationManager::setApplicationPath(const QString& applicationPath)
 void ResourceLocationManager::setSuffix(const QString& suffix) {
     if (m_suffix != suffix) {
         m_suffix = suffix;
+        m_resourcePaths.setSuffix(suffix);
         m_installDirCached = false;
         m_cachedInstallDir.clear();
         m_machineLocationsLoaded = false;
@@ -488,10 +690,26 @@ QStringList ResourceLocationManager::enabledSiblingPaths() const {
 }
 
 void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
-    if (m_settings) {
-        m_settings->setValue(QLatin1String(KEY_SIBLING_PATHS), paths);
-        m_settings->sync();
+    if (!m_settings) return;
+
+    QStringList canonical = canonicalizedPaths(paths);
+    QStringList protect = canonicalizedPaths({ findInstallationResourceDir() });
+
+    if (protect.isEmpty()) {
+        const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+        for (const auto& elem : elements) {
+            if (elem.tier == resourceInfo::ResourceTier::Installation) {
+                protect.append(elem.location.path);
+                break; // keep the primary installation default
+            }
+        }
     }
+
+    // Keep the current installation enabled while updating sibling selections
+    updateEnabledForTier(resourceInfo::ResourceTier::Installation, canonical, protect);
+
+    m_settings->setValue(QLatin1String(KEY_SIBLING_PATHS), canonical);
+    m_settings->sync();
 }
 
 // ============================================================================
@@ -499,7 +717,9 @@ void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
 // ============================================================================
 
 QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocations() const {
-    return defaultMachineLocationsForPlatform(m_osType);
+    const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+    const QSet<QString> none;
+    return collectTier(elements, resourceInfo::ResourceTier::Machine, none, true);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPlatform(
@@ -641,33 +861,14 @@ QVector<ResourceLocation> ResourceLocationManager::availableMachineLocations() c
 }
 
 QVector<ResourceLocation> ResourceLocationManager::enabledMachineLocations() const {
-    QVector<ResourceLocation> enabled;
-    if (!m_settings) return enabled;
-    
-    QStringList enabledPaths = m_settings->value(QLatin1String(KEY_MACHINE_PATHS)).toStringList();
-    
-    // If no settings yet, enable all available by default
-    if (enabledPaths.isEmpty()) {
-        return availableMachineLocations();
-    }
-    
-    const QVector<ResourceLocation>& available = availableMachineLocations();
-    for (const ResourceLocation& loc : available) {
-        if (enabledPaths.contains(loc.path)) {
-            ResourceLocation copy = loc;
-            copy.isEnabled = true;
-            enabled.append(copy);
-        }
-    }
-    
-    return enabled;
+    return buildEnabledTieredLocations().machine;
 }
 
 void ResourceLocationManager::setEnabledMachineLocations(const QStringList& paths) {
-    if (m_settings) {
-        m_settings->setValue(QLatin1String(KEY_MACHINE_PATHS), paths);
-        m_settings->sync();
-    }
+    if (!m_settings) return;
+    updateEnabledForTier(resourceInfo::ResourceTier::Machine, paths);
+    m_settings->setValue(QLatin1String(KEY_MACHINE_PATHS), canonicalizedPaths(paths));
+    m_settings->sync();
 }
 
 bool ResourceLocationManager::loadMachineLocationsConfig() {
@@ -709,7 +910,9 @@ bool ResourceLocationManager::saveMachineLocationsConfig(const QVector<ResourceL
 // ============================================================================
 
 QVector<ResourceLocation> ResourceLocationManager::defaultUserLocations() const {
-    return defaultUserLocationsForPlatform(m_osType);
+    const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+    const QSet<QString> none;
+    return collectTier(elements, resourceInfo::ResourceTier::User, none, true);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatform(
@@ -820,51 +1023,6 @@ QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatfo
         }
     }
     
-    // Always show OPENSCADPATH entry - disabled if env var not set
-    // This lets users know it's an option even if not currently configured
-    QString openscadPath = qEnvironmentVariable("OPENSCADPATH");
-    if (!openscadPath.isEmpty()) {
-        // Environment variable is set - add actual paths
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-        QChar separator = QLatin1Char(';');
-#else
-        QChar separator = QLatin1Char(':');
-#endif
-        const QStringList envPaths = openscadPath.split(separator, Qt::SkipEmptyParts);
-        for (const QString& envPath : envPaths) {
-            QString cleanPath = QDir::cleanPath(envPath.trimmed());
-            if (!cleanPath.isEmpty()) {
-                // Check for duplicates
-                bool isDuplicate = false;
-                for (const auto& loc : locations) {
-                    if (loc.path == cleanPath) {
-                        isDuplicate = true;
-                        break;
-                    }
-                }
-                if (!isDuplicate) {
-                    locations.append(ResourceLocation(
-                        cleanPath,
-                        QStringLiteral("OPENSCADPATH"),
-                        QStringLiteral("From OPENSCADPATH environment variable"),
-                        resourceInfo::ResourceTier::User
-                    ));
-                }
-            }
-        }
-    } else {
-        // Environment variable not set - show as informational placeholder
-        ResourceLocation envPlaceholder(
-            QStringLiteral("(not set)"),
-            QStringLiteral("OPENSCADPATH"),
-            QStringLiteral("Set OPENSCADPATH environment variable to add custom resource paths"),
-            resourceInfo::ResourceTier::User
-        );
-        envPlaceholder.exists = false;
-        envPlaceholder.isEnabled = false;
-        locations.append(envPlaceholder);
-    }
-    
     updateLocationStatuses(locations);
     return locations;
 }
@@ -911,33 +1069,14 @@ QVector<ResourceLocation> ResourceLocationManager::availableUserLocations() cons
 }
 
 QVector<ResourceLocation> ResourceLocationManager::enabledUserLocations() const {
-    QVector<ResourceLocation> enabled;
-    if (!m_settings) return enabled;
-    
-    QStringList enabledPaths = m_settings->value(QLatin1String(KEY_USER_PATHS)).toStringList();
-    
-    // If no settings yet, enable all available by default
-    if (enabledPaths.isEmpty()) {
-        return availableUserLocations();
-    }
-    
-    const QVector<ResourceLocation>& available = availableUserLocations();
-    for (const ResourceLocation& loc : available) {
-        if (enabledPaths.contains(loc.path)) {
-            ResourceLocation copy = loc;
-            copy.isEnabled = true;
-            enabled.append(copy);
-        }
-    }
-    
-    return enabled;
+    return buildEnabledTieredLocations().user;
 }
 
 void ResourceLocationManager::setEnabledUserLocations(const QStringList& paths) {
-    if (m_settings) {
-        m_settings->setValue(QLatin1String(KEY_USER_PATHS), paths);
-        m_settings->sync();
-    }
+    if (!m_settings) return;
+    updateEnabledForTier(resourceInfo::ResourceTier::User, paths);
+    m_settings->setValue(QLatin1String(KEY_USER_PATHS), canonicalizedPaths(paths));
+    m_settings->sync();
 }
 
 bool ResourceLocationManager::loadUserLocationsConfig() {
@@ -1039,49 +1178,12 @@ bool ResourceLocationManager::removeUserLocation(const QString& path) {
 
 QVector<ResourceLocation> ResourceLocationManager::allEnabledLocations() const {
     QVector<ResourceLocation> all;
-    
-    // 1. Installation location (if found)
-    QString installDir = findInstallationResourceDir();
-    if (!installDir.isEmpty()) {
-        ResourceLocation install(installDir, 
-            QStringLiteral("Application Resources"), 
-            QStringLiteral("Built-in resources from installation"),
-            resourceInfo::ResourceTier::Installation);
-        install.isEnabled = true;
-        install.exists = true;
-        install.isWritable = false;
-        all.append(install);
-    }
-    
-    // 1b. Sibling installations (if enabled by user)
-    QStringList enabledSiblings = enabledSiblingPaths();
-    if (!enabledSiblings.isEmpty()) {
-        QVector<ResourceLocation> siblings = findSiblingInstallations();
-        for (const ResourceLocation& sib : siblings) {
-            if (sib.exists && enabledSiblings.contains(sib.path)) {
-                ResourceLocation enabled = sib;
-                enabled.isEnabled = true;
-                all.append(enabled);
-            }
-        }
-    }
-    
-    // 2. Machine locations (only existing ones)
-    const QVector<ResourceLocation> machine = enabledMachineLocations();
-    for (const ResourceLocation& loc : machine) {
-        if (loc.exists) {
-            all.append(loc);
-        }
-    }
-    
-    // 3. User locations (only existing ones)
-    const QVector<ResourceLocation> user = enabledUserLocations();
-    for (const ResourceLocation& loc : user) {
-        if (loc.exists) {
-            all.append(loc);
-        }
-    }
-    
+    TieredLocationSet tiered = buildEnabledTieredLocations();
+
+    all += tiered.installation;
+    all += tiered.machine;
+    all += tiered.user;
+
     return all;
 }
 

@@ -46,47 +46,6 @@ bool MachineTab::isUserAdmin()
 #endif
 }
 
-QString MachineTab::openscadPathEnv()
-{
-    return QString::fromLocal8Bit(qgetenv("OPENSCAD_PATH"));
-}
-
-platformInfo::ResourceLocation MachineTab::openscadPathLocation()
-{
-    platformInfo::ResourceLocation loc;
-    QString envPath = openscadPathEnv();
-    
-    if (envPath.isEmpty()) {
-        // OPENSCAD_PATH is not defined
-        loc.path = QString();
-        loc.displayName = QObject::tr("OPENSCAD_PATH (not set)");
-        loc.description = QObject::tr("Set the OPENSCAD_PATH environment variable to add a custom search path");
-        loc.isEnabled = false;
-        loc.exists = false;
-        loc.isWritable = false;
-        loc.hasResourceFolders = false;
-    } else {
-        // OPENSCAD_PATH is defined
-        loc.path = envPath;
-        loc.displayName = QObject::tr("OPENSCAD_PATH");
-        loc.description = QObject::tr("From environment variable: %1").arg(envPath);
-        loc.isEnabled = true;  // User can toggle this
-        loc.exists = QDir(envPath).exists();
-        loc.isWritable = loc.exists;  // Simplified check
-        
-        // Check if it has resource folders
-        if (loc.exists) {
-            QDir dir(envPath);
-            loc.hasResourceFolders = dir.exists(QStringLiteral("examples")) ||
-                                      dir.exists(QStringLiteral("fonts")) ||
-                                      dir.exists(QStringLiteral("libraries")) ||
-                                      dir.exists(QStringLiteral("color-schemes"));
-        }
-    }
-    
-    return loc;
-}
-
 QString MachineTab::xdgDataDirsEnv()
 {
     return QString::fromLocal8Bit(qgetenv("XDG_DATA_DIRS"));

@@ -1,5 +1,5 @@
 {
-  "tests": 90,
+  "tests": 92,
   "name": "AllTests",
   "testsuites": [
     {
@@ -439,6 +439,22 @@
           "name": "ExpandMachineSearchPaths",
           "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_paths.cpp",
           "line": 135
+        }
+      ]
+    },
+    {
+      "name": "ResourceLocationManagerEnabled",
+      "tests": 2,
+      "testsuite": [
+        {
+          "name": "DefaultsIncludeInstallAndUser",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_location_manager.cpp",
+          "line": 67
+        },
+        {
+          "name": "EnableMaskFiltersTiers",
+          "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_location_manager.cpp",
+          "line": 93
         }
       ]
     },

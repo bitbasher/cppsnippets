@@ -1,6 +1,5 @@
 #include "gui/userTab.hpp"
 #include "gui/resourceLocationWidget.hpp"
-#include "gui/machineTab.hpp"  // For openscadPathEnv/openscadPathLocation
 
 #include <QVBoxLayout>
 #include <QDir>
@@ -15,18 +14,6 @@ UserTab::UserTab(QWidget* parent)
     QVBoxLayout* mainLayout = new QVBoxLayout;
     mainLayout->addWidget(m_locationWidget);
     setLayout(mainLayout);
-}
-
-QString UserTab::openscadPathEnv()
-{
-    // Delegate to MachineTab to avoid code duplication
-    return MachineTab::openscadPathEnv();
-}
-
-platformInfo::ResourceLocation UserTab::openscadPathLocation()
-{
-    // Delegate to MachineTab to avoid code duplication
-    return MachineTab::openscadPathLocation();
 }
 
 QString UserTab::xdgDataHomeEnv()

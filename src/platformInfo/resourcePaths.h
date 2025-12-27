@@ -266,15 +266,6 @@ public:
    * Installation paths are resolved relative to the application path.
    */
   QList<ResourcePathElement> defaultElements() const;
-  
-  /**
-   * @brief Build elements from OPENSCADPATH environment variable(s)
-   * @return Zero or more user-tier locations derived from env
-   *
-   * Supports list separators (';' on Windows, ':' on POSIX). Each entry is
-   * expanded for env vars and added as a User-tier location.
-   */
-  QList<ResourcePathElement> openscadEnvElements() const;
 
   // These static members are defined inline with #ifdef for each platform
 

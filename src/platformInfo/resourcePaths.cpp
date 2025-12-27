@@ -166,36 +166,6 @@ QList<ResourcePathElement> ResourcePaths::defaultElements() const {
         result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::User));
     }
 
-    // Env-derived elements (OPENSCADPATH)
-    const auto envElems = openscadEnvElements();
-    for (const auto& elem : envElems) {
-        result.append(elem);
-    }
-
-    return result;
-}
-
-QList<ResourcePathElement> ResourcePaths::openscadEnvElements() const {
-    QList<ResourcePathElement> result;
-    QString env = QString::fromLocal8Bit(qgetenv("OPENSCADPATH"));
-    if (env.isEmpty()) {
-        // Alternate variable sometimes referenced in GUI
-        env = QString::fromLocal8Bit(qgetenv("OPENSCAD_PATH"));
-    }
-    if (env.isEmpty()) {
-        return result;
-    }
-
-    const QChar sep = QDir::listSeparator();
-    const QStringList parts = env.split(sep, Qt::SkipEmptyParts);
-    for (const QString& part : parts) {
-        QString expanded = QDir::cleanPath(expandEnvVars(part));
-        QFileInfo fi(expanded);
-        QString finalPath = fi.canonicalFilePath();
-        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
-        ResourceLocation loc(finalPath, QStringLiteral("OPENSCADPATH"), QString(), resourceInfo::ResourceTier::User);
-        result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::User));
-    }
     return result;
 }
 

@@ -607,9 +607,10 @@ void ResourceInventoryManager::setUserLocations(const QVector<platformInfo::Reso
 
 void ResourceInventoryManager::setLocationsFrom(const platformInfo::ResourceLocationManager& manager)
 {
-    m_installLocs = manager.findSiblingInstallations();
-    m_machineLocs = manager.enabledMachineLocations();
-    m_userLocs = manager.enabledUserLocations();
+    const auto tiered = manager.enabledLocationsByTier();
+    m_installLocs = tiered.installation;
+    m_machineLocs = tiered.machine;
+    m_userLocs = tiered.user;
 }
 
 void ResourceInventoryManager::buildInventory(const platformInfo::ResourceLocationManager& manager)

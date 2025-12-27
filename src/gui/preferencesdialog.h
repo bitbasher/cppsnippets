@@ -21,6 +21,9 @@ class EnvVarsTab;
 namespace platformInfo {
 class ResourceLocationManager;
 }
+namespace resInventory {
+class ResourceInventoryManager;
+}
 
 /**
  * @brief Preferences dialog with resource location management
@@ -36,6 +39,9 @@ public:
                                QWidget* parent = nullptr);
     ~PreferencesDialog() override;
 
+    // Optional: set inventory manager to trigger rescan on accept
+    void setInventoryManager(resInventory::ResourceInventoryManager* inventory);
+
 public slots:
     void accept() override;
     void reject() override;
@@ -49,6 +55,7 @@ private:
     void saveSettings();
     
     platformInfo::ResourceLocationManager* m_manager;
+    resInventory::ResourceInventoryManager* m_inventoryManager = nullptr;
     
     // Widgets
     PlatformInfoWidget* m_platformInfoWidget;

@@ -22,6 +22,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
+#include <QSet>
 #include <QSettings>
 
 #include "resInventory/ResourceLocation.h"
@@ -76,6 +77,12 @@ namespace platformInfo {
  */
 class RESOURCEMGMT_API ResourceLocationManager {
 public:
+    struct TieredLocationSet {
+        QVector<ResourceLocation> installation;
+        QVector<ResourceLocation> machine;
+        QVector<ResourceLocation> user;
+    };
+
     /**
      * @brief Construct with optional settings
      * @param settings QSettings instance to use (nullptr = create default)
@@ -205,6 +212,15 @@ public:
         ExtnOSType osType,
         const QString& applicationPath,
         const QString& currentFolderName);
+
+    /**
+     * @brief Return enabled locations grouped by tier using unified defaults
+     *
+     * Builds from ResourcePaths::defaultElements() plus detected siblings,
+     * applies env expansion/canonicalization, then filters using persisted
+     * enabled paths (Resources/EnabledPaths). Empty settings → all enabled.
+     */
+    TieredLocationSet enabledLocationsByTier() const;
     
     /**
      * @brief Get enabled sibling installation paths from QSettings
@@ -456,6 +472,18 @@ private:
     
     void detectOSType();
     void initializeSettings();
+
+    TieredLocationSet buildEnabledTieredLocations() const;
+    QList<ResourcePathElement> buildDefaultElementsWithSiblings() const;
+    QVector<ResourceLocation> collectTier(const QList<ResourcePathElement>& elements,
+                                          resourceInfo::ResourceTier tier,
+                                          const QSet<QString>& enabledSet,
+                                          bool includeDisabled = false) const;
+    QStringList loadEnabledPaths() const;
+    void saveEnabledPaths(const QStringList& paths) const;
+    QStringList canonicalizedPaths(const QStringList& paths) const;
+    void updateEnabledForTier(resourceInfo::ResourceTier tier, const QStringList& enabledPaths,
+                              const QStringList& protectedPaths = {});
     
     // Config file I/O
     static QVector<ResourceLocation> loadLocationsFromJson(const QString& filePath,
@@ -468,6 +496,7 @@ private:
     static void updateLocationStatuses(QVector<ResourceLocation>& locations);
     
     // QSettings keys
+    static constexpr const char* KEY_ENABLED_PATHS = "Resources/EnabledPaths";
     static constexpr const char* KEY_MACHINE_PATHS = "Resources/MachinePaths";
     static constexpr const char* KEY_USER_PATHS = "Resources/UserPaths";
     static constexpr const char* KEY_SIBLING_PATHS = "Resources/SiblingInstallPaths";

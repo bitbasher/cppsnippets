@@ -124,9 +124,6 @@ int main(int argc, char *argv[])
     // ========================================
     printSeparator("Environment Variables");
     
-    QString openscadPath = MachineTab::openscadPathEnv();
-    qDebug() << "OPENSCAD_PATH:" << (openscadPath.isEmpty() ? "(not set)" : openscadPath);
-    
     QString xdgDataDirs = MachineTab::xdgDataDirsEnv();
     qDebug() << "XDG_DATA_DIRS:" << (xdgDataDirs.isEmpty() ? "(not set)" : xdgDataDirs);
     
@@ -173,10 +170,7 @@ int main(int argc, char *argv[])
     }
     
     // Add environment variable locations
-    machineLocs.append(MachineTab::openscadPathLocation());
     machineLocs.append(MachineTab::xdgDataDirsLocations());
-    
-    userLocs.append(UserTab::openscadPathLocation());
     userLocs.append(UserTab::xdgDataHomeLocations());
     
     printLocations("Installation", installLocs);

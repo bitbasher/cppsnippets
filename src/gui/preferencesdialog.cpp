@@ -6,6 +6,7 @@
  */
 
 #include "gui/preferencesdialog.h"
+#include "resInventory/resourceScanner.h"
 #include "gui/platformInfoWidget.hpp"
 #include "gui/dialogButtonBar.hpp"
 #include "gui/installationTab.hpp"
@@ -81,6 +82,11 @@ PreferencesDialog::PreferencesDialog(platformInfo::ResourceLocationManager* mana
 }
 
 PreferencesDialog::~PreferencesDialog() = default;
+void PreferencesDialog::setInventoryManager(resInventory::ResourceInventoryManager* inventory)
+{
+    m_inventoryManager = inventory;
+}
+
 
 void PreferencesDialog::onLocationsChanged()
 {
@@ -149,8 +155,6 @@ void PreferencesDialog::loadSettings() {
         }
     }
     
-    // Remove OPENSCAD_PATH; manager will handle OPENSCADPATH placeholder if present
-    
     // Add XDG_DATA_DIRS environment variable entries
     // On Windows: only shown if defined; On POSIX/Mac: shown as placeholder if not defined
     machineLocations.append(MachineTab::xdgDataDirsLocations());
@@ -160,14 +164,11 @@ void PreferencesDialog::loadSettings() {
     // ========== User Tab ==========
     QVector<platformInfo::ResourceLocation> userLocations = m_manager->availableUserLocations();
     // Disable and uncheck locations that don't exist or exist but have no resource folders
-    // Exception: OPENSCADPATH placeholder should remain disabled but visible
     for (auto& loc : userLocations) {
-        if (!loc.exists || (!loc.hasResourceFolders && !loc.path.startsWith(QLatin1Char('(')))) {
+        if (!loc.exists || !loc.hasResourceFolders) {
             loc.isEnabled = false;
         }
     }
-    
-    // Remove OPENSCAD_PATH from user tier; keep OPENSCADPATH only via manager
     
     // Add XDG_DATA_HOME environment variable entries
     // On Windows: only shown if defined; On POSIX/Mac: shown as placeholder if not defined
@@ -210,10 +211,30 @@ void PreferencesDialog::saveSettings() {
     m_manager->setEnabledSiblingPaths(enabledSiblings);
     
     // Save machine locations config and enabled state
-    m_manager->saveMachineLocationsConfig(m_machineTab->locationWidget()->locations());
+    {
+        const auto machineLocs = m_machineTab->locationWidget()->locations();
+        m_manager->saveMachineLocationsConfig(machineLocs);
+        QStringList enabledMachine;
+        for (const auto& loc : machineLocs) {
+            if (loc.isEnabled && !loc.path.isEmpty()) {
+                enabledMachine.append(loc.path);
+            }
+        }
+        m_manager->setEnabledMachineLocations(enabledMachine);
+    }
     
     // Save user locations config and enabled state
-    m_manager->saveUserLocationsConfig(m_userTab->locationWidget()->locations());
+    {
+        const auto userLocs = m_userTab->locationWidget()->locations();
+        m_manager->saveUserLocationsConfig(userLocs);
+        QStringList enabledUser;
+        for (const auto& loc : userLocs) {
+            if (loc.isEnabled && !loc.path.isEmpty()) {
+                enabledUser.append(loc.path);
+            }
+        }
+        m_manager->setEnabledUserLocations(enabledUser);
+    }
 }
 
 void PreferencesDialog::accept() {
@@ -222,6 +243,11 @@ void PreferencesDialog::accept() {
     // Save env vars if there are changes
     if (m_envVarsTab->hasUnsavedChanges()) {
         m_envVarsTab->saveEnvVars();
+    }
+    
+    // Trigger inventory rescan if manager set
+    if (m_inventoryManager && m_manager) {
+        m_inventoryManager->buildInventory(*m_manager);
     }
     
     QDialog::accept();
