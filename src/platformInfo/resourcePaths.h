@@ -165,39 +165,6 @@ public:
    */
   static QList<ResourceTypeInfo> allResourceTypes();
 
-  /**
-   * @brief Get info for a specific resource type
-   * @param type The resource type
-   * @return Pointer to resource type info, or nullptr if not found
-   */
-  static const ResourceTypeInfo *resourceTypeInfo(ResourceType type);
-
-  /**
-   * @brief Get the subdirectory name for a resource type
-   * @param type The resource type
-   * @return Subdirectory name (e.g., "examples", "fonts")
-   */
-  static QString resourceSubdirectory(ResourceType type);
-
-  /**
-   * @brief Get primary file extensions for a resource type
-   * @param type The resource type
-   * @return List of file extensions (e.g., {".scad"}, {".ttf", ".otf"})
-   */
-  static QStringList resourceExtensions(ResourceType type);
-
-  /**
-   * @brief Get all top-level resource types
-   * @return Immutable vector of top-level resource types that can be discovered
-   *
-   * Returns the list of resource types that can appear at the top level of
-   * resource directories and inside libraries. Excludes sub-resource types
-   * like EditorColors and RenderColors which are nested under ColorSchemes.
-   *
-   * @note This list is read-only and cannot be modified.
-   */
-  static QList<ResourceType> allTopLevelResourceTypes();
-
   // ========== Default Search Paths (Immutable) ==========
   //
   // These are compile-time constants defining where to look for resources.
@@ -357,54 +324,30 @@ public:
   // OpenSCAD PlatformUtils is available (e.g., during development/testing).
 
   /**
-   * @brief Get the user config base path (platform-specific)
-   * @return Path to writable config directory (without OpenSCAD folder)
+   * @brief Get the user config directory path (platform-specific)
+   * @return Path to writable user config directory
    *
-   * Platform behavior (matches OpenSCAD PlatformUtils::userConfigPath base):
-   * - Linux: $XDG_CONFIG_HOME, fallback $HOME/.config
-   * - Windows: CSIDL_LOCAL_APPDATA
+   * This is THE location where user configuration is stored:
+   * - Linux: $XDG_CONFIG_HOME or $HOME/.config
+   * - Windows: CSIDL_LOCAL_APPDATA (e.g., %LOCALAPPDATA%)
    * - macOS: NSApplicationSupportDirectory (~Library/Application Support)
    *
-   * @note This returns only the BASE path. OpenSCAD's userConfigPath()
-   * appends OPENSCAD_FOLDER_NAME to this.
+   * Returns the absolute path where user config files and settings should be stored.
    */
-  QString userConfigBasePath() const;
+  QString getUserConfigPath() const;
 
   /**
-   * @brief Get the user's OpenSCAD config directory
-   * @return Path to user's OpenSCAD folder (userConfigBasePath/folderName)
-   *
-   * @note Equivalent to OpenSCAD's PlatformUtils::userConfigPath()
-   */
-  QString userOpenSCADPath() const;
 
-  /**
-   * @brief Get the full path to a user resource type directory
-   * @param type The resource type
-   * @return Absolute path to the user resource type directory
-   *
-   * Returns the path even if it doesn't exist yet (for creation).
-   */
-  QString userResourcePath(ResourceType type) const;
-
-  /**
-   * @brief Check if a user resource directory exists
-   * @param type The resource type
-   * @return true if the user resource directory exists
-   */
-  bool hasUserResourceDirectory(ResourceType type) const;
-
-  /**
-   * @brief Get user config base path for a specific platform
+   * @brief Get user config path for a specific platform
    * @param osType The OS type
-   * @return Platform-specific config base path (without folder name)
+   * @return Platform-specific user config directory path
    *
    * Platform behavior:
    * - Linux: $XDG_CONFIG_HOME or $HOME/.config
    * - Windows: CSIDL_LOCAL_APPDATA
    * - macOS: NSApplicationSupportDirectory
    */
-  static QString userConfigBasePathForPlatform(ExtnOSType osType);
+  static QString userConfigPathForPlatform(ExtnOSType osType);
 
   /**
    * @brief Get user documents path for a specific platform
@@ -423,11 +366,11 @@ public:
   // ========== Combined Resource Paths ==========
 
   /**
-   * @brief Get all paths for a resource type (app + user)
+   * @brief Get all paths for a resource type (app only)
    * @param type The resource type
-   * @return List of paths to search (app path first, then user path)
+   * @return List of paths to search (app path if it exists)
    */
-  QStringList allResourcePaths(ResourceType type) const;
+  QStringList appResourcePaths(ResourceType type) const;
   // ========== Environment Variable Helpers ==========
   /**
    * @brief Get configured environment variable overrides
@@ -551,9 +494,9 @@ private:
   void detectOSType();
 
   /**
-   * @brief Resolve user config base path
+   * @brief Resolve user config path
    */
-  QString resolveUserConfigBasePath() const;
+  QString resolveUserConfigPath() const;
 
   /**
    * @brief Find sibling OpenSCAD installations on this system

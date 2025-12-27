@@ -369,12 +369,12 @@ bool ResourceLocationManager::isValidInstallation(const QString& path) {
     if (!hasExecutable) return false;
     
     // Check for at least one resource subdirectory
-    // Use the canonical list of top-level resource types from ResourcePaths
-    const QList<ResourceType> topLevelTypes = ResourcePaths::allTopLevelResourceTypes();
+    // Use the canonical list of top-level resource types
+    const QList<ResourceType> topLevelTypes = resourceInfo::ResourceTypeRegistry::topLevelTypes();
     
     // Check in the directory itself
     for (const ResourceType& type : topLevelTypes) {
-        QString subdir = ResourcePaths::resourceSubdirectory(type);
+        QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
         if (!subdir.isEmpty() && dir.exists(subdir)) {
             return true;
         }
@@ -391,7 +391,7 @@ bool ResourceLocationManager::isValidInstallation(const QString& path) {
         QDir resDir(dir.absoluteFilePath(resPath));
         if (resDir.exists()) {
             for (const ResourceType& type : topLevelTypes) {
-                QString subdir = ResourcePaths::resourceSubdirectory(type);
+                QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
                 if (!subdir.isEmpty() && resDir.exists(subdir)) {
                     return true;
                 }
@@ -1236,15 +1236,10 @@ QVector<ResourceLocation> ResourceLocationManager::allEnabledLocations() const {
 
 QStringList ResourceLocationManager::resourcePathsForType(ResourceType type) const {
     QStringList paths;
-    QString subdir = ResourcePaths::resourceSubdirectory(type);
-    
-    if (subdir.isEmpty()) {
-        return paths;
-    }
     
     const QVector<ResourceLocation> locations = allEnabledLocations();
     for (const ResourceLocation& loc : locations) {
-        QString typePath = QDir(loc.path).absoluteFilePath(subdir);
+        QString typePath = QDir(loc.path).absoluteFilePath(resourceInfo::ResourceTypeRegistry::subdir(type));
         if (QDir(typePath).exists()) {
             paths.append(typePath);
         }
@@ -1259,7 +1254,8 @@ QString ResourceLocationManager::findResourcePath(ResourceType type) const {
 }
 
 QString ResourceLocationManager::writableUserPath(ResourceType type) const {
-    QString subdir = ResourcePaths::resourceSubdirectory(type);
+    QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
+    
     if (subdir.isEmpty()) {
         return QString();
     }

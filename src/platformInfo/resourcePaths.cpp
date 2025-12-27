@@ -64,22 +64,6 @@ QList<ResourceTypeInfo> ResourcePaths::allResourceTypes() {
     return resourceInfo::ResourceTypeRegistry::allTypes();
 }
 
-const ResourceTypeInfo* ResourcePaths::resourceTypeInfo(ResourceType type) {
-    return resourceInfo::ResourceTypeRegistry::info(type);
-}
-
-QString ResourcePaths::resourceSubdirectory(ResourceType type) {
-    return resourceInfo::ResourceTypeRegistry::subdir(type);
-}
-
-QStringList ResourcePaths::resourceExtensions(ResourceType type) {
-    return resourceInfo::ResourceTypeRegistry::extensions(type);
-}
-
-QList<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
-    return resourceInfo::ResourceTypeRegistry::topLevelTypes();
-}
-
 // ============================================================================
 // Default Search Paths (Immutable, Compile-Time Constants)
 // ============================================================================
@@ -238,11 +222,11 @@ bool ResourcePaths::hasAppResourceDirectory(ResourceType type) const {
 
 // ========== User Resource Paths ==========
 
-QString ResourcePaths::resolveUserConfigBasePath() const {
-    return userConfigBasePathForPlatform(m_osType);
+QString ResourcePaths::resolveUserConfigPath() const {
+    return userConfigPathForPlatform(m_osType);
 }
 
-QString ResourcePaths::userConfigBasePathForPlatform(ExtnOSType osType) {
+QString ResourcePaths::userConfigPathForPlatform(ExtnOSType osType) {
     QString path;
     
     // These paths match OpenSCAD's PlatformUtils::userConfigPath() BASE directory
@@ -355,26 +339,13 @@ QString ResourcePaths::userDocumentsPathForPlatform(ExtnOSType osType) {
     return path;
 }
 
-QString ResourcePaths::userConfigBasePath() const {
-    return resolveUserConfigBasePath();
-}
-
-QString ResourcePaths::userOpenSCADPath() const {
-    QString configPath = userConfigBasePath();
-    if (configPath.isEmpty()) {
-        return QString();
-    }
-    
-    // This is equivalent to OpenSCAD's PlatformUtils::userConfigPath()
-    // which returns the config base path + "/" + OPENSCAD_FOLDER_NAME
-    // folderName() returns "OpenSCAD" + m_suffix
-    QDir dir(configPath);
-    return dir.absoluteFilePath(folderName());
+QString ResourcePaths::getUserConfigPath() const {
+    return resolveUserConfigPath();
 }
 
 QString ResourcePaths::userResourcePath(ResourceType type) const {
-    QString openscadPath = userOpenSCADPath();
-    if (openscadPath.isEmpty()) {
+    QString configPath = getUserConfigPath();
+    if (configPath.isEmpty()) {
         return QString();
     }
     
@@ -383,8 +354,8 @@ QString ResourcePaths::userResourcePath(ResourceType type) const {
         return QString();
     }
     
-    QDir dir(openscadPath);
-    return dir.absoluteFilePath(subdir);
+    QDir dir(configPath);
+    return dir.absoluteFilePath(folderName() + QLatin1Char('/') + subdir);
 }
 
 bool ResourcePaths::hasUserResourceDirectory(ResourceType type) const {
