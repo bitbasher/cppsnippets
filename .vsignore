@@ -1,0 +1,14 @@
+# Visual Studio ignore patterns for IntelliSense and indexing
+
+# Legacy TypeScript reference files - not part of C++ build
+src-orig/
+
+# Build artifacts
+build/
+vcpkg_installed/
+.vs/
+out/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt

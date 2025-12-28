@@ -1,8 +1,90 @@
 # Resource Location Enablement Refactoring
 
-**Date:** December 28, 2025  
+**Date:** December 28-29, 2025  
 **Project:** cppsnippets (OpenSCAD Resource Management)  
-**Components:** ResourceLocationManager, PreferencesDialog
+**Components:** ResourceLocationManager, PreferencesDialog  
+**Status:** Phase 1 Complete - Unified Discovery Architecture
+
+---
+
+## Refactoring Strategy
+
+### Phase 1: Unified Tier Discovery ✅ COMPLETE
+
+**Goal:** Create single discovery function that returns all locations tagged by tier
+
+**Rationale:**
+- Tiers are conceptual groupings, not file system structure
+- Discovery should operate on a single list of locations
+- Tier tag used only for UI grouping and applying tier-specific disabled lists
+- Eliminates duplicated discovery logic across tiers
+
+**Implementation:**
+- Added `discoverAllLocations()` - single entry point for ALL location discovery
+- Added tier-specific helpers: `discoverInstallationLocations()`, `discoverMachineLocations()`, `discoverUserLocations()`
+- Each helper returns locations with proper tier tag
+- Status checking (`exists`, `hasResourceFolders`) happens once at the end
+- Platform-specific logic remains in helpers (legitimate tier differences)
+
+**Benefits:**
+- ✅ One entry point for complete location discovery
+- ✅ Tier tags are simple enum markers, not separate code paths
+- ✅ Status checking centralized
+- ✅ Easy to apply disabled-only model in Phase 2
+
+### Phase 2: Disabled-Only Model (IN PROGRESS)
+
+**Goal:** Remove all enabled path tracking, use only disabled lists
+
+**Changes Required:**
+1. Remove enabled path persistence:
+   - `KEY_ENABLED_PATHS`
+   - `KEY_SIBLING_PATHS`
+   - `KEY_MACHINE_PATHS`
+   - `KEY_USER_PATHS`
+   - `loadEnabledPaths()`
+   - `saveEnabledPaths()`
+   - `setEnabledSiblingPaths()`
+   - `updateEnabledForTier()`
+
+2. Keep only disabled path tracking:
+   - `KEY_DISABLED_INSTALLATION`
+   - `KEY_DISABLED_MACHINE`
+   - `KEY_DISABLED_USER`
+   - `disabledPathsForTier()`
+   - `setDisabledPathsForTier()`
+
+3. Simplified enable state logic:
+```cpp
+QVector<ResourceLocation> availableLocations() const {
+    // 1. Discover everything
+    QVector<ResourceLocation> all = discoverAllLocations();
+    
+    // 2. Load disabled sets per tier
+    QSet<QString> disabledInstall = disabledPathsForTier(ResourceTier::Installation);
+    QSet<QString> disabledMachine = disabledPathsForTier(ResourceTier::Machine);
+    QSet<QString> disabledUser = disabledPathsForTier(ResourceTier::User);
+    
+    // 3. Apply disabled state
+    for (auto& loc : all) {
+        QSet<QString> disabled = (loc.tier == Installation ? disabledInstall :
+                                  loc.tier == Machine ? disabledMachine : disabledUser);
+        QString canonical = QFileInfo(loc.path).canonicalFilePath();
+        loc.isEnabled = !disabled.contains(canonical);
+    }
+    
+    return all;
+}
+```
+
+### Phase 3: UI Display Rules (PENDING)
+
+**Goal:** Visual feedback based on state + content
+
+**Rules:**
+- Disabled → gray background, dark gray text, unchecked
+- Enabled + no content → gray styling + "(no content)" label
+- Enabled + has content → black on white, checked
 
 ---
 

@@ -6,8 +6,8 @@
 src/*.old
 src/*.org
 
-
-
+# Legacy TypeScript reference files (not part of build)
+src-orig/
 
 # Test fixture backups
 testFileStructure/**/backups/**

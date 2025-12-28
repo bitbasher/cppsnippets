@@ -402,6 +402,23 @@ public:
     // ========== Combined Resource Resolution ==========
     
     /**
+     * @brief Discover all resource locations across all tiers
+     * @return All discovered locations with tier tags and status checked
+     * 
+     * Discovery order:
+     * 1. Installation: Current app + sibling installations
+     * 2. Machine: Platform defaults + config file
+     * 3. User: Platform defaults + config file + custom
+     * 
+     * Each location has:
+     * - tier tag (Installation/Machine/User)
+     * - exists status (checked on disk)
+     * - hasResourceFolders status (contains resources)
+     * - isEnabled = true (default, disabled list applied separately)
+     */
+    QVector<ResourceLocation> discoverAllLocations() const;
+    
+    /**
      * @brief Get all enabled locations in search order
      * @return Combined list: Installation → Machine → User
      * 
@@ -492,6 +509,11 @@ private:
     
     void detectOSType();
     void initializeSettings();
+
+    // Tier-specific discovery helpers
+    QVector<ResourceLocation> discoverInstallationLocations() const;
+    QVector<ResourceLocation> discoverMachineLocations() const;
+    QVector<ResourceLocation> discoverUserLocations() const;
 
     TieredLocationSet buildEnabledTieredLocations() const;
     QList<ResourcePathElement> buildDefaultElementsWithSiblings() const;

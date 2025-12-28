@@ -21,5 +21,64 @@
     },
     "C_Cpp.errorSquiggles": "enabled",
     "terminal.integrated.shellIntegration.enabled": true,
-    "terminal.integrated.shellIntegration.showWelcome": false
+    "terminal.integrated.shellIntegration.showWelcome": false,
+    
+    // Test Explorer configuration for Google Test and Qt Test
+    "testMate.cpp.test.executables": "{build,Build,BUILD,out}/**/*{test,Test,TEST}*.{exe,out}",
+    "testMate.cpp.discovery.testListCaching": {
+        "disable": true
+    },
+    "testMate.cpp.log.logpanel": true,
+    "testMate.cpp.debug.configTemplate": {
+        "type": "cppvsdbg",
+        "linux": {
+            "type": "cppdbg",
+            "MIMode": "gdb"
+        },
+        "darwin": {
+            "type": "cppdbg",
+            "MIMode": "lldb"
+        },
+        "win32": {
+            "type": "cppvsdbg"
+        }
+    },
+    
+    // JSON settings
+    "json.schemas": [],
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features",
+        "editor.formatOnSave": true
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    
+    // Markdown settings
+    "[markdown]": {
+        "editor.wordWrap": "on",
+        "editor.quickSuggestions": {
+            "comments": "on",
+            "strings": "off",
+            "other": "off"
+        }
+    },
+    "markdown.preview.breaks": true,
+    
+    // File Explorer settings - ensure important folders are visible
+    "files.exclude": {
+        "**/.git": false,
+        "**/.vscode": false,
+        "**/node_modules": true,
+        "**/.vs": true,
+        "**/src-orig": true
+    },
+    
+    // C++ IntelliSense exclusions
+    "C_Cpp.files.exclude": {
+        "**/src-orig/**": true,
+        "**/vcpkg_installed/**": true,
+        "**/.vs/**": true,
+        "**/build/**": true
+    }
 }

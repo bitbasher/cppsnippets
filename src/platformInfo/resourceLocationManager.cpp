@@ -794,12 +794,12 @@ void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
     // Keep the current installation enabled while updating sibling selections
     updateEnabledForTier(resourceInfo::ResourceTier::Installation, canonical, protect);
 
+    m_settings->setValue(KEY_SIBLING_PATHS, canonical);
+    m_settings->sync();
+}
 
 void ResourceLocationManager::setDisabledInstallationPaths(const QStringList& paths) {
     setDisabledPathsForTier(resourceInfo::ResourceTier::Installation, paths);
-}
-    m_settings->setValue(KEY_SIBLING_PATHS, canonical);
-    m_settings->sync();
 }
 
 // ============================================================================
@@ -1275,6 +1275,105 @@ bool ResourceLocationManager::removeUserLocation(const QString& path) {
 // ============================================================================
 // Combined Resource Resolution
 // ============================================================================
+
+QVector<ResourceLocation> ResourceLocationManager::discoverAllLocations() const {
+    QVector<ResourceLocation> all;
+    
+    // 1. Installation tier (current app + siblings)
+    all += discoverInstallationLocations();
+    
+    // 2. Machine tier (platform-specific defaults + env vars)
+    all += discoverMachineLocations();
+    
+    // 3. User tier (platform-specific defaults + custom)
+    all += discoverUserLocations();
+    
+    // 4. Update status for all locations
+    for (auto& loc : all) {
+        updateLocationStatus(loc);
+    }
+    
+    return all;
+}
+
+QVector<ResourceLocation> ResourceLocationManager::discoverInstallationLocations() const {
+    QVector<ResourceLocation> locs;
+    QSet<QString> seen;
+    
+    // Current installation resource directory
+    QString installDir = findInstallationResourceDir();
+    if (!installDir.isEmpty()) {
+        QFileInfo fi(installDir);
+        QString finalPath = fi.canonicalFilePath();
+        if (finalPath.isEmpty()) {
+            finalPath = fi.absoluteFilePath();
+        }
+        
+        ResourceLocation loc(finalPath,
+                             QStringLiteral("Application Resources"),
+                             QStringLiteral("Built-in resources from this installation"),
+                             resourceInfo::ResourceTier::Installation);
+        loc.isEnabled = true;
+        locs.append(loc);
+        seen.insert(finalPath);
+    }
+    
+    // Sibling installations
+    QVector<ResourceLocation> siblings = findSiblingInstallations();
+    for (auto sibling : siblings) {
+        QFileInfo fi(sibling.path);
+        QString finalPath = fi.canonicalFilePath();
+        if (finalPath.isEmpty()) {
+            finalPath = fi.absoluteFilePath();
+        }
+        
+        if (seen.contains(finalPath)) {
+            continue; // Skip duplicates
+        }
+        
+        sibling.path = finalPath;
+        sibling.tier = resourceInfo::ResourceTier::Installation;
+        sibling.isEnabled = true;
+        locs.append(sibling);
+        seen.insert(finalPath);
+    }
+    
+    return locs;
+}
+
+QVector<ResourceLocation> ResourceLocationManager::discoverMachineLocations() const {
+    // Load from config file if available, otherwise use platform defaults
+    if (!m_machineLocationsLoaded) {
+        const_cast<ResourceLocationManager*>(this)->loadMachineLocationsConfig();
+    }
+    
+    QVector<ResourceLocation> locs = m_machineLocations;
+    
+    // Ensure tier is set correctly
+    for (auto& loc : locs) {
+        loc.tier = resourceInfo::ResourceTier::Machine;
+        loc.isEnabled = true; // Default enabled, disabled list applied later
+    }
+    
+    return locs;
+}
+
+QVector<ResourceLocation> ResourceLocationManager::discoverUserLocations() const {
+    // Load from config file if available, otherwise use platform defaults
+    if (!m_userLocationsLoaded) {
+        const_cast<ResourceLocationManager*>(this)->loadUserLocationsConfig();
+    }
+    
+    QVector<ResourceLocation> locs = m_userLocations;
+    
+    // Ensure tier is set correctly
+    for (auto& loc : locs) {
+        loc.tier = resourceInfo::ResourceTier::User;
+        loc.isEnabled = true; // Default enabled, disabled list applied later
+    }
+    
+    return locs;
+}
 
 QVector<ResourceLocation> ResourceLocationManager::allEnabledLocations() const {
     QVector<ResourceLocation> all;
