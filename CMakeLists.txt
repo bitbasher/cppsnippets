@@ -308,6 +308,8 @@ if(BUILD_APP)
         src/app/mainwindow.h
         src/gui/preferencesdialog.cpp
         src/gui/preferencesdialog.h
+        src/gui/resourceLocationModel.h
+        src/gui/resourceLocationModel.cpp
         src/gui/resourcelocationwidget.cpp
         src/gui/resourceLocationWidget.hpp
         src/gui/locationInputWidget.cpp
@@ -354,6 +356,8 @@ if(BUILD_APP)
         src/gui/machineTab.hpp
         src/gui/userTab.cpp
         src/gui/userTab.hpp
+        src/gui/resourceLocationModel.h
+        src/gui/resourceLocationModel.cpp
         src/gui/resourcelocationwidget.cpp
         src/gui/resourceLocationWidget.hpp
         src/gui/locationInputWidget.cpp
@@ -660,6 +664,8 @@ if(BUILD_TESTS)
             src/app/mainwindow.h
             src/gui/preferencesdialog.cpp
             src/gui/preferencesdialog.h
+            src/gui/resourceLocationModel.h
+            src/gui/resourceLocationModel.cpp
             src/gui/resourcelocationwidget.cpp
             src/gui/resourceLocationWidget.hpp
             src/gui/locationInputWidget.cpp

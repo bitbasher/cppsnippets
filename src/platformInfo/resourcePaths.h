@@ -168,7 +168,7 @@ public:
   // ========== Default Search Paths (Immutable) ==========
   //
   // These are compile-time constants defining where to look for resources.
-  // Used as the "Restore Defaults" source in preferences.
+  // Used by makeLocationsList() to build the available locations.
   // User cannot modify these - they modify their selection in ResLocMap.
 
   /**
@@ -197,13 +197,18 @@ public:
   QStringList expandedSearchPaths(resourceInfo::ResourceTier tier) const;
 
   /**
-   * @brief Build default location elements with tier tags
+   * @brief Build location elements list from default search paths
    * @return Ordered list of locations from Installation → Machine → User
    *
-   * Expands env vars at runtime and applies install-tier suffix rules.
-   * Installation paths are resolved relative to the application path.
+   * Constructs concrete absolute paths from compile-time template defaults:
+   * - Expands environment variables in paths
+   * - Applies install-tier suffix rules
+   * - Discovers sibling installations
+   * - Resolves relative paths against application path
+   *
+   * Returns locations for all three tiers in priority order.
    */
-  QList<ResourcePathElement> defaultElements() const;
+  QList<ResourcePathElement> makeLocationsList() const;
 
   // Unified default search paths structure indexed by tier
   // These are compile-time platform-specific constants
@@ -497,6 +502,21 @@ private:
    * @brief Resolve user config path
    */
   QString resolveUserConfigPath() const;
+
+  /**
+   * @brief Resolve a single raw path template to absolute path
+   * @param raw Raw path template (may contain env vars)
+   * @param baseDir Base directory for relative path resolution
+   * @param applyInstallSuffix If true, append app name + m_suffix to paths ending with /
+   * @return Canonical or absolute path; empty if cannot be determined
+   *
+   * Common logic for all three tiers:
+   * 1. Expands environment variables
+   * 2. Optionally applies install folder rules (Installation tier only)
+   * 3. Resolves relative paths against baseDir
+   * 4. Attempts canonical path (follows symlinks), falls back to absolute
+   */
+  QString resolveSinglePath(const QString& raw, const QDir& baseDir, bool applyInstallSuffix) const;
 
   /**
    * @brief Find sibling OpenSCAD installations on this system

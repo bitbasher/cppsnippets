@@ -9,6 +9,7 @@
 #include "extnOSVersRef.h"
 #include <QString>
 #include <QList>
+#include <QCoreApplication>
 
 // Forward declarations
 class QScreen;
@@ -55,49 +56,68 @@ public:
      * @brief Get the product type (e.g., "windows", "macos", "linux")
      * @return Product type string
      */
-    static QString productType();
+    static QString productType() { return QSysInfo::productType(); }
     
     /**
      * @brief Get the product version (e.g., "10.0", "14.0")
      * @return Product version string
      */
-    static QString productVersion();
+    static QString productVersion() { return QSysInfo::productVersion(); }
     
     /**
      * @brief Get the kernel type (e.g., "winnt", "darwin", "linux")
      * @return Kernel type string
      */
-    static QString kernelType();
+    static QString kernelType() { return QSysInfo::kernelType(); }
     
     /**
      * @brief Get the kernel version
      * @return Kernel version string
      */
-    static QString kernelVersion();
+    static QString kernelVersion() { return QSysInfo::kernelVersion(); }
     
     /**
      * @brief Get the CPU architecture (e.g., "x86_64", "arm64")
      * @return CPU architecture string
      */
-    static QString cpuArchitecture();
+    static QString cpuArchitecture() { return QSysInfo::currentCpuArchitecture(); }
     
     /**
      * @brief Get the build CPU architecture
      * @return Build architecture string
      */
-    static QString buildCpuArchitecture();
+    static QString buildCpuArchitecture() { return QSysInfo::buildCpuArchitecture(); }
     
     /**
      * @brief Get the pretty product name (e.g., "Windows 11", "macOS Sonoma")
      * @return Human-readable product name
      */
-    static QString prettyProductName();
+    static QString prettyProductName() { return QSysInfo::prettyProductName(); }
     
     /**
      * @brief Get the machine host name
      * @return Host name string
      */
-    static QString machineHostName();
+    static QString machineHostName() { return QSysInfo::machineHostName(); }
+    
+    /**
+     * @brief Get the full path to the currently running executable
+     * @return Absolute path to the executable file
+     * 
+     * Uses QCoreApplication::applicationFilePath() to get the full path
+     * to the executable that is currently running. This is reliable across
+     * all platforms and works even for renamed or moved executables.
+     */
+    static QString getCurrentExecutablePath() { return QCoreApplication::applicationFilePath(); }
+
+    /**
+     * @brief Get the directory containing the currently running executable
+     * @return Absolute path to the executable's directory
+     *
+     * Wraps QCoreApplication::applicationDirPath(), which already returns
+     * an absolute directory path for the running application.
+     */
+    static QString getCurrentExecutableDirPath() { return QCoreApplication::applicationDirPath(); }
     
     /**
      * @brief Get all available screens

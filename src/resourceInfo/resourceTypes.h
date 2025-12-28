@@ -72,10 +72,11 @@ private:
 
   inline static const QList<ResourceType> s_nonContainer = {
       ResourceType::Fonts, ResourceType::ColorSchemes,
+      ResourceType::EditorColors, ResourceType::RenderColors,
       ResourceType::Shaders, ResourceType::Templates};
 
   inline static const QList<ResourceType> s_exampleSub = {
-      ResourceType::Group, ResourceType::Templates};
+      ResourceType::Group, ResourceType::Templates, ResourceType::Tests};
 
   inline static const QList<ResourceType> s_testSub = {ResourceType::Templates};
 

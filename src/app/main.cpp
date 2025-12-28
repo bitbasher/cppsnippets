@@ -41,13 +41,13 @@ static void installConsoleLogging()
 
 int main(int argc, char *argv[]) {
     installConsoleLogging();
-    qDebug() << "Starting ScadTemplates application...";
+    qDebug() << "Starting OpenSCAD application...";
     
     QApplication app(argc, argv);
     
-    app.setApplicationName("ScadTemplates");
+    app.setApplicationName("OpenSCAD");
     app.setApplicationVersion(scadtemplates::getVersion());
-    app.setOrganizationName("Jartisan");
+    app.setOrganizationName("OpenSCAD");
     
     qDebug() << "Creating main window...";
     MainWindow window;

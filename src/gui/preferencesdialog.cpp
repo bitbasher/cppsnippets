@@ -95,36 +95,50 @@ void PreferencesDialog::onLocationsChanged()
 
 void PreferencesDialog::loadSettings() {
     // ========== Installation Tab ==========
-    bool isValidInstall = m_manager->isRunningFromValidInstallation();
+    QString effectiveInstallPath = m_manager->effectiveInstallationPath();
+    bool hasEffectiveInstall = !effectiveInstallPath.isEmpty();
     QString userInstallPath = m_manager->userSpecifiedInstallationPath();
     bool hasUserInstallPath = !userInstallPath.isEmpty() && 
                                platformInfo::ResourceLocationManager::isValidInstallation(userInstallPath);
     
-    QVector<platformInfo::ResourceLocation> installLocations;
+    QList<platformInfo::ResourceLocation> installLocations;
     ResourceLocationWidget* installWidget = m_installationTab->locationWidget();
     
-    if (isValidInstall || hasUserInstallPath) {
+    if (hasEffectiveInstall || hasUserInstallPath) {
         // We have a valid installation - show it and any siblings
         QString installDir = m_manager->findInstallationResourceDir();
-        
+
+        auto canonical = [](const QString& path) {
+            QFileInfo fi(path);
+            QString canon = fi.canonicalFilePath();
+            return canon.isEmpty() ? fi.absoluteFilePath() : canon;
+        };
+
+        const QSet<QString> enabledSiblings = QSet<QString>(m_manager->enabledSiblingPaths().cbegin(), m_manager->enabledSiblingPaths().cend());
+        const QSet<QString> disabledInstall = QSet<QString>(m_manager->disabledInstallationPaths().cbegin(), m_manager->disabledInstallationPaths().cend());
+
         if (!installDir.isEmpty()) {
             platformInfo::ResourceLocation loc(installDir, 
                 tr("Application Resources"), 
                 tr("Built-in resources from this installation"));
-            loc.isEnabled = true;
+            loc.isEnabled = !disabledInstall.contains(canonical(installDir));
             loc.exists = true;
             loc.isWritable = false;
             installLocations.append(loc);
         }
-        
-        // Add sibling installations
-        QStringList enabledSiblings = m_manager->enabledSiblingPaths();
+
+        // Add sibling installations (no deduplication; user may disable any)
         QVector<platformInfo::ResourceLocation> siblings = m_manager->findSiblingInstallations();
         for (auto& sibling : siblings) {
-            sibling.isEnabled = enabledSiblings.contains(sibling.path);
+            const QString key = canonical(sibling.path);
+            if (disabledInstall.contains(key)) {
+                sibling.isEnabled = false;
+            } else if (enabledSiblings.contains(sibling.path)) {
+                sibling.isEnabled = true;
+            } // else keep default (typically true)
             installLocations.append(sibling);
         }
-        
+
         // Hide input widget since we have a valid installation
         m_installationTab->setFallbackMode(false);
     } else {
@@ -148,9 +162,9 @@ void PreferencesDialog::loadSettings() {
     // ========== Machine Tab ==========
     // Use the manager's locations (which already checks existence)
     QVector<platformInfo::ResourceLocation> machineLocations = m_manager->availableMachineLocations();
-    // Disable and uncheck locations that don't exist or exist but have no resource folders
+    // Disable locations that don't exist; keep checkbox enabled otherwise
     for (auto& loc : machineLocations) {
-        if (!loc.exists || !loc.hasResourceFolders) {
+        if (!loc.exists) {
             loc.isEnabled = false;
         }
     }
@@ -159,13 +173,13 @@ void PreferencesDialog::loadSettings() {
     // On Windows: only shown if defined; On POSIX/Mac: shown as placeholder if not defined
     machineLocations.append(MachineTab::xdgDataDirsLocations());
     
-    m_machineTab->locationWidget()->setLocations(machineLocations);
+    m_machineTab->locationWidget()->setLocations(machineLocations.toList());
     
     // ========== User Tab ==========
     QVector<platformInfo::ResourceLocation> userLocations = m_manager->availableUserLocations();
-    // Disable and uncheck locations that don't exist or exist but have no resource folders
+    // Disable locations that don't exist; keep checkbox enabled otherwise
     for (auto& loc : userLocations) {
-        if (!loc.exists || !loc.hasResourceFolders) {
+        if (!loc.exists) {
             loc.isEnabled = false;
         }
     }
@@ -174,66 +188,66 @@ void PreferencesDialog::loadSettings() {
     // On Windows: only shown if defined; On POSIX/Mac: shown as placeholder if not defined
     userLocations.append(UserTab::xdgDataHomeLocations());
     
-    m_userTab->locationWidget()->setLocations(userLocations);
+    m_userTab->locationWidget()->setLocations(userLocations.toList());
 }
 
 void PreferencesDialog::saveSettings() {
-    if (!m_manager) return;
-    
-    ResourceLocationWidget* installWidget = m_installationTab->locationWidget();
-    
-    // Save user-specified installation path if not running from valid installation
-    if (!m_manager->isRunningFromValidInstallation()) {
-        QVector<platformInfo::ResourceLocation> installLocs = installWidget->locations();
-        if (!installLocs.isEmpty()) {
-            QString userPath = installLocs.first().path;
-            if (platformInfo::ResourceLocationManager::isValidInstallation(userPath)) {
-                m_manager->setUserSpecifiedInstallationPath(userPath);
+    // Save installation tier (siblings only)
+    {
+        ResourceLocationWidget* installWidget = m_installationTab->locationWidget();
+        const auto installLocs = installWidget->locations();
+        m_manager->saveMachineLocationsConfig(installLocs);
+        
+        QStringList enabledSiblings;
+        QStringList disabledInstall;
+        QString currentInstallDir = m_manager->findInstallationResourceDir();
+        QString userInstallPath = m_manager->userSpecifiedInstallationPath();
+        
+        for (const auto& loc : installLocs) {
+            if (!loc.path.isEmpty()) {
+                if (loc.path == currentInstallDir || loc.path == userInstallPath) {
+                    if (!loc.isEnabled) {
+                        disabledInstall.append(loc.path);
+                    }
+                } else {
+                    if (loc.isEnabled) {
+                        enabledSiblings.append(loc.path);
+                    } else {
+                        disabledInstall.append(loc.path);
+                    }
+                }
             }
         }
+        m_manager->setEnabledSiblingPaths(enabledSiblings);
+        m_manager->setDisabledInstallationPaths(disabledInstall);
     }
-    
-    // Save sibling installation enabled state
-    // Get the installation locations and extract which siblings are enabled
-    QVector<platformInfo::ResourceLocation> installLocs = installWidget->locations();
-    QStringList enabledSiblings;
-    QString currentInstallDir = m_manager->findInstallationResourceDir();
-    for (const auto& loc : installLocs) {
-        // Skip the current installation (always enabled, not a sibling)
-        if (loc.path == currentInstallDir) continue;
-        // Skip if this is the user-specified path (not a sibling)
-        if (loc.path == m_manager->userSpecifiedInstallationPath()) continue;
-        // This is a sibling - check if enabled
-        if (loc.isEnabled) {
-            enabledSiblings.append(loc.path);
-        }
-    }
-    m_manager->setEnabledSiblingPaths(enabledSiblings);
     
     // Save machine locations config and enabled state
     {
         const auto machineLocs = m_machineTab->locationWidget()->locations();
         m_manager->saveMachineLocationsConfig(machineLocs);
-        QStringList enabledMachine;
+        m_manager->setEnabledMachineLocations(m_machineTab->locationWidget()->enabledPaths());
+        QStringList disabled;
         for (const auto& loc : machineLocs) {
-            if (loc.isEnabled && !loc.path.isEmpty()) {
-                enabledMachine.append(loc.path);
+            if (!loc.isEnabled && !loc.path.isEmpty()) {
+                disabled.append(loc.path);
             }
         }
-        m_manager->setEnabledMachineLocations(enabledMachine);
+        m_manager->setDisabledMachineLocations(disabled);
     }
     
     // Save user locations config and enabled state
     {
         const auto userLocs = m_userTab->locationWidget()->locations();
         m_manager->saveUserLocationsConfig(userLocs);
-        QStringList enabledUser;
+        m_manager->setEnabledUserLocations(m_userTab->locationWidget()->enabledPaths());
+        QStringList disabled;
         for (const auto& loc : userLocs) {
-            if (loc.isEnabled && !loc.path.isEmpty()) {
-                enabledUser.append(loc.path);
+            if (!loc.isEnabled && !loc.path.isEmpty()) {
+                disabled.append(loc.path);
             }
         }
-        m_manager->setEnabledUserLocations(enabledUser);
+        m_manager->setDisabledUserLocations(disabled);
     }
 }
 

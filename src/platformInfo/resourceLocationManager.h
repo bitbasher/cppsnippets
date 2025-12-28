@@ -142,12 +142,6 @@ public:
     static bool isValidInstallation(const QString& path);
     
     /**
-     * @brief Check if this app is running from a valid OpenSCAD installation
-     * @return true if current application path is a valid installation
-     */
-    bool isRunningFromValidInstallation() const;
-    
-    /**
      * @brief Get the default installation search path for file dialogs
      * @return Platform-specific default (e.g., "C:/Program Files/OpenSCAD")
      */
@@ -161,7 +155,22 @@ public:
      * to QSettings and restored on next run.
      */
     QString userSpecifiedInstallationPath() const;
+    
+    /**
+     * @brief Set the user-specified installation path
+     * @param path Non-empty path to set; must be a valid installation directory
+     * 
+     * Saves to QSettings and syncs immediately.
+     * To clear the setting, use clearUserSpecifiedInstallationPath().
+     */
     void setUserSpecifiedInstallationPath(const QString& path);
+    
+    /**
+     * @brief Clear the user-specified installation path
+     * 
+     * Removes the setting from QSettings and syncs immediately.
+     */
+    void clearUserSpecifiedInstallationPath();
     
     /**
      * @brief Get the effective installation path
@@ -238,12 +247,14 @@ public:
      * @return List of paths that have been enabled by the user
      */
     QStringList enabledSiblingPaths() const;
+    QStringList disabledInstallationPaths() const;
     
     /**
      * @brief Set which sibling installations are enabled
      * @param paths List of paths to enable
      */
     void setEnabledSiblingPaths(const QStringList& paths);
+    void setDisabledInstallationPaths(const QStringList& paths);
     
     // ========== Machine Locations (Tier 2) ==========
     
@@ -294,6 +305,7 @@ public:
      * Saves to system-level QSettings (requires admin on some platforms).
      */
     void setEnabledMachineLocations(const QStringList& paths);
+    void setDisabledMachineLocations(const QStringList& paths);
     
     /**
      * @brief Load machine locations from config file
@@ -357,6 +369,7 @@ public:
      * Saves to user-level QSettings.
      */
     void setEnabledUserLocations(const QStringList& paths);
+    void setDisabledUserLocations(const QStringList& paths);
     
     /**
      * @brief Load user locations from config file
@@ -477,10 +490,6 @@ private:
     mutable bool m_machineLocationsLoaded = false;
     mutable bool m_userLocationsLoaded = false;
     
-    // Cached installation resource dir
-    mutable QString m_cachedInstallDir;
-    mutable bool m_installDirCached = false;
-    
     void detectOSType();
     void initializeSettings();
 
@@ -489,12 +498,18 @@ private:
     QVector<ResourceLocation> collectTier(const QList<ResourcePathElement>& elements,
                                           resourceInfo::ResourceTier tier,
                                           const QSet<QString>& enabledSet,
+                                          const QSet<QString>& disabledSet,
                                           bool includeDisabled = false) const;
     QStringList loadEnabledPaths() const;
     void saveEnabledPaths(const QStringList& paths) const;
     QStringList canonicalizedPaths(const QStringList& paths) const;
     void updateEnabledForTier(resourceInfo::ResourceTier tier, const QStringList& enabledPaths,
                               const QStringList& protectedPaths = {});
+
+    QStringList enabledPathsForTier(resourceInfo::ResourceTier tier) const;
+    QStringList disabledPathsForTier(resourceInfo::ResourceTier tier) const;
+    void setDisabledPathsForTier(resourceInfo::ResourceTier tier, const QStringList& paths) const;
+    void applyEnabledState(QVector<ResourceLocation>& locs, resourceInfo::ResourceTier tier) const;
     
     // Config file I/O
     static QVector<ResourceLocation> loadLocationsFromJson(const QString& filePath,
@@ -511,6 +526,9 @@ private:
     static constexpr QLatin1StringView KEY_MACHINE_PATHS{"Resources/MachinePaths"};
     static constexpr QLatin1StringView KEY_USER_PATHS{"Resources/UserPaths"};
     static constexpr QLatin1StringView KEY_SIBLING_PATHS{"Resources/SiblingInstallPaths"};
+    static constexpr QLatin1StringView KEY_DISABLED_INSTALLATION{"Resources/DisabledPaths/Installation"};
+    static constexpr QLatin1StringView KEY_DISABLED_MACHINE{"Resources/DisabledPaths/Machine"};
+    static constexpr QLatin1StringView KEY_DISABLED_USER{"Resources/DisabledPaths/User"};
     static constexpr QLatin1StringView KEY_USER_INSTALL_PATH{"Resources/UserSpecifiedInstallPath"};
     static constexpr QLatin1StringView CONFIG_FILENAME{"locations.json"};
 };

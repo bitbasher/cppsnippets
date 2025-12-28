@@ -2,14 +2,15 @@
 #define RESOURCELOCATIONWIDGET_HPP
 
 #include <QWidget>
-#include <QVector>
+#include <QList>
 
 #include <resInventory/ResourceLocation.h>
 
-class QListWidget;
+class QListView;
 class QPushButton;
 class QGroupBox;
 class LocationInputWidget;
+class ResourceLocationModel;
 
 /**
  * @brief Widget for displaying and editing resource locations for a single tier
@@ -17,6 +18,9 @@ class LocationInputWidget;
  * This widget provides a list view of resource locations with controls for
  * adding, removing, and browsing for new locations. Each location can be
  * enabled/disabled via checkboxes.
+ * 
+ * Uses model/view architecture with ResourceLocationModel for proper
+ * separation of data management from presentation.
  */
 class ResourceLocationWidget : public QWidget {
     Q_OBJECT
@@ -27,9 +31,11 @@ public:
                                      bool allowRemove = true,
                                      QWidget* parent = nullptr);
     
-    void setLocations(const QVector<platformInfo::ResourceLocation>& locations);
-    QVector<platformInfo::ResourceLocation> locations() const;
+    void setLocations(const QList<platformInfo::ResourceLocation>& locations);
+    QList<platformInfo::ResourceLocation> locations() const;
     QStringList enabledPaths() const;
+    
+    ResourceLocationModel* model() const;
     
     void setReadOnly(bool readOnly);
     
@@ -47,7 +53,6 @@ signals:
 private slots:
     void onAddLocation();
     void onRemoveLocation();
-    void onItemChanged();
     void onSelectionChanged();
 
 private:
@@ -55,14 +60,13 @@ private:
     void updateButtons();
     
     QGroupBox* m_groupBox;
-    QListWidget* m_listWidget;
+    QListView* m_listView;
+    ResourceLocationModel* m_model;
     LocationInputWidget* m_inputWidget;
     QPushButton* m_removeButton;
     QPushButton* m_rescanButton;
     bool m_readOnly = false;
     bool m_allowAdd = true;
-    
-    QVector<platformInfo::ResourceLocation> m_locations;
 };
 
 #endif // RESOURCELOCATIONWIDGET_HPP

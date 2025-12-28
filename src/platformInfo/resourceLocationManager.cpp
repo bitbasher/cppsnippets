@@ -136,26 +136,101 @@ QStringList ResourceLocationManager::loadEnabledPaths() const {
         saveEnabledPaths(canonical);
     }
 
-    // Always keep the primary installation path enabled when any settings exist
-    if (!canonical.isEmpty()) {
-        QStringList protect = canonicalizedPaths({ findInstallationResourceDir() });
-        if (protect.isEmpty()) {
-            const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
-            for (const auto& elem : elements) {
-                if (elem.tier == resourceInfo::ResourceTier::Installation) {
-                    protect.append(elem.location.path);
-                    break;
-                }
-            }
-        }
-        for (const QString& keep : protect) {
-            if (!canonical.contains(keep)) {
-                canonical.append(keep);
-            }
-        }
+    return canonical;
+}
+
+QStringList ResourceLocationManager::enabledPathsForTier(resourceInfo::ResourceTier tier) const {
+    if (!m_settings) return {};
+
+    QString key;
+    switch (tier) {
+    case resourceInfo::ResourceTier::Installation:
+        key = KEY_SIBLING_PATHS;
+        break;
+    case resourceInfo::ResourceTier::Machine:
+        key = KEY_MACHINE_PATHS;
+        break;
+    case resourceInfo::ResourceTier::User:
+    default:
+        key = KEY_USER_PATHS;
+        break;
     }
 
-    return canonical;
+    QStringList paths = m_settings->value(key).toStringList();
+
+    // Fallback to unified list for backward compatibility
+    if (paths.isEmpty()) {
+        paths = loadEnabledPaths();
+    }
+
+    return canonicalizedPaths(paths);
+}
+
+QStringList ResourceLocationManager::disabledPathsForTier(resourceInfo::ResourceTier tier) const {
+    if (!m_settings) return {};
+
+    QString key;
+    switch (tier) {
+    case resourceInfo::ResourceTier::Installation:
+        key = KEY_DISABLED_INSTALLATION;
+        break;
+    case resourceInfo::ResourceTier::Machine:
+        key = KEY_DISABLED_MACHINE;
+        break;
+    case resourceInfo::ResourceTier::User:
+    default:
+        key = KEY_DISABLED_USER;
+        break;
+    }
+
+    QStringList paths = m_settings->value(key).toStringList();
+    return canonicalizedPaths(paths);
+}
+
+void ResourceLocationManager::setDisabledPathsForTier(resourceInfo::ResourceTier tier, const QStringList& paths) const {
+    if (!m_settings) return;
+
+    QString key;
+    switch (tier) {
+    case resourceInfo::ResourceTier::Installation:
+        key = KEY_DISABLED_INSTALLATION;
+        break;
+    case resourceInfo::ResourceTier::Machine:
+        key = KEY_DISABLED_MACHINE;
+        break;
+    case resourceInfo::ResourceTier::User:
+    default:
+        key = KEY_DISABLED_USER;
+        break;
+    }
+
+    m_settings->setValue(key, canonicalizedPaths(paths));
+    m_settings->sync();
+}
+
+void ResourceLocationManager::applyEnabledState(QVector<ResourceLocation>& locs, resourceInfo::ResourceTier tier) const {
+    const QStringList enabledList = enabledPathsForTier(tier);
+    const QStringList disabledList = disabledPathsForTier(tier);
+    const QSet<QString> enabledSet(enabledList.cbegin(), enabledList.cend());
+    const QSet<QString> disabledSet(disabledList.cbegin(), disabledList.cend());
+
+    auto canonical = [](const QString& path) {
+        QFileInfo fi(path);
+        QString canon = fi.canonicalFilePath();
+        return canon.isEmpty() ? fi.absoluteFilePath() : canon;
+    };
+
+    for (auto& loc : locs) {
+        const QString key = canonical(loc.path);
+        if (disabledSet.contains(key)) {
+            loc.isEnabled = false;
+            continue;
+        }
+        if (enabledSet.contains(key)) {
+            loc.isEnabled = true;
+        }
+        // else leave existing loc.isEnabled as default
+    }
 }
 
 void ResourceLocationManager::saveEnabledPaths(const QStringList& paths) const {
@@ -166,7 +241,7 @@ void ResourceLocationManager::saveEnabledPaths(const QStringList& paths) const {
 }
 
 QList<ResourcePathElement> ResourceLocationManager::buildDefaultElementsWithSiblings() const {
-    QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+    QList<ResourcePathElement> elements = m_resourcePaths.makeLocationsList();
     QSet<QString> seen;
     for (const auto& elem : elements) {
         seen.insert(elem.location.path);
@@ -223,10 +298,15 @@ QVector<ResourceLocation> ResourceLocationManager::collectTier(
     const QList<ResourcePathElement>& elements,
     resourceInfo::ResourceTier tier,
     const QSet<QString>& enabledSet,
+    const QSet<QString>& disabledSet,
     bool includeDisabled) const
 {
     QVector<ResourceLocation> out;
-    bool enableAll = enabledSet.isEmpty();
+    auto canonical = [](const QString& path) {
+        QFileInfo fi(path);
+        QString canon = fi.canonicalFilePath();
+        return canon.isEmpty() ? fi.absoluteFilePath() : canon;
+    };
 
     for (const auto& elem : elements) {
         if (elem.tier != tier) continue;
@@ -234,7 +314,14 @@ QVector<ResourceLocation> ResourceLocationManager::collectTier(
         ResourceLocation loc = elem.location;
         updateLocationStatus(loc);
 
-        bool enabled = enableAll || enabledSet.contains(loc.path);
+        const QString key = canonical(loc.path);
+
+        bool enabled = loc.isEnabled;
+        if (disabledSet.contains(key)) {
+            enabled = false;
+        } else if (enabledSet.contains(key)) {
+            enabled = true;
+        }
         loc.isEnabled = enabled;
 
         if (!includeDisabled) {
@@ -252,12 +339,17 @@ ResourceLocationManager::TieredLocationSet ResourceLocationManager::buildEnabled
     TieredLocationSet set;
     const QList<ResourcePathElement> elements = buildDefaultElementsWithSiblings();
 
-    const QStringList enabledPaths = loadEnabledPaths();
-    const QSet<QString> enabledSet = QSet<QString>(enabledPaths.cbegin(), enabledPaths.cend());
+    const QSet<QString> installEnabled = QSet<QString>(enabledPathsForTier(resourceInfo::ResourceTier::Installation).cbegin(), enabledPathsForTier(resourceInfo::ResourceTier::Installation).cend());
+    const QSet<QString> machineEnabled = QSet<QString>(enabledPathsForTier(resourceInfo::ResourceTier::Machine).cbegin(), enabledPathsForTier(resourceInfo::ResourceTier::Machine).cend());
+    const QSet<QString> userEnabled = QSet<QString>(enabledPathsForTier(resourceInfo::ResourceTier::User).cbegin(), enabledPathsForTier(resourceInfo::ResourceTier::User).cend());
 
-    set.installation = collectTier(elements, resourceInfo::ResourceTier::Installation, enabledSet, false);
-    set.machine = collectTier(elements, resourceInfo::ResourceTier::Machine, enabledSet, false);
-    set.user = collectTier(elements, resourceInfo::ResourceTier::User, enabledSet, false);
+    const QSet<QString> installDisabled = QSet<QString>(disabledPathsForTier(resourceInfo::ResourceTier::Installation).cbegin(), disabledPathsForTier(resourceInfo::ResourceTier::Installation).cend());
+    const QSet<QString> machineDisabled = QSet<QString>(disabledPathsForTier(resourceInfo::ResourceTier::Machine).cbegin(), disabledPathsForTier(resourceInfo::ResourceTier::Machine).cend());
+    const QSet<QString> userDisabled = QSet<QString>(disabledPathsForTier(resourceInfo::ResourceTier::User).cbegin(), disabledPathsForTier(resourceInfo::ResourceTier::User).cend());
+
+    set.installation = collectTier(elements, resourceInfo::ResourceTier::Installation, installEnabled, installDisabled, false);
+    set.machine = collectTier(elements, resourceInfo::ResourceTier::Machine, machineEnabled, machineDisabled, false);
+    set.user = collectTier(elements, resourceInfo::ResourceTier::User, userEnabled, userDisabled, false);
     return set;
 }
 
@@ -315,8 +407,6 @@ void ResourceLocationManager::setApplicationPath(const QString& applicationPath)
     if (m_applicationPath != applicationPath) {
         m_applicationPath = applicationPath;
         m_resourcePaths.setApplicationPath(applicationPath);
-        m_installDirCached = false;
-        m_cachedInstallDir.clear();
     }
 }
 
@@ -324,8 +414,6 @@ void ResourceLocationManager::setSuffix(const QString& suffix) {
     if (m_suffix != suffix) {
         m_suffix = suffix;
         m_resourcePaths.setSuffix(suffix);
-        m_installDirCached = false;
-        m_cachedInstallDir.clear();
         m_machineLocationsLoaded = false;
         m_userLocationsLoaded = false;
     }
@@ -342,87 +430,39 @@ QString ResourceLocationManager::folderName() const {
 
 bool ResourceLocationManager::isValidInstallation(const QString& path) {
     if (path.isEmpty()) return false;
-    
-    QDir dir(path);
-    if (!dir.exists()) return false;
-    
-    // Check for OpenSCAD executable
-    // Windows: openscad.com or openscad.exe
-    // macOS: Inside .app bundle, check for openscad in Contents/MacOS
-    // Linux: openscad executable
-    bool hasExecutable = false;
-    
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-    hasExecutable = QFile::exists(dir.absoluteFilePath(QStringLiteral("openscad.com"))) ||
-                    QFile::exists(dir.absoluteFilePath(QStringLiteral("openscad.exe")));
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-    // For .app bundles, we might be pointing to the .app or inside it
-    if (path.endsWith(QStringLiteral(".app"), Qt::CaseInsensitive)) {
-        hasExecutable = QFile::exists(dir.absoluteFilePath(QStringLiteral("Contents/MacOS/OpenSCAD")));
-    } else {
-        hasExecutable = QFile::exists(dir.absoluteFilePath(QStringLiteral("openscad")));
-    }
-#else
-    hasExecutable = QFile::exists(dir.absoluteFilePath(QStringLiteral("openscad")));
-#endif
 
-    if (!hasExecutable) return false;
-    
-    // Check for at least one resource subdirectory
-    // Use the canonical list of top-level resource types
+    QDir baseDir(path);
+    if (!baseDir.exists()) return false;
+
+    // Validate by looking for any known resource subdirectory in the expected installation paths
+    const QStringList relPaths = ResourcePaths::defaultSearchPaths(resourceInfo::ResourceTier::Installation);
     const QList<ResourceType> topLevelTypes = resourceInfo::ResourceTypeRegistry::topLevelTypes();
-    
-    // Check in the directory itself
-    for (const ResourceType& type : topLevelTypes) {
-        QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
-        if (!subdir.isEmpty() && dir.exists(subdir)) {
-            return true;
+
+    for (const QString& rel : relPaths) {
+        const QString candidate = baseDir.absoluteFilePath(rel);
+        QDir dir(candidate);
+        if (!dir.exists()) {
+            continue;
         }
-    }
-    
-    // Check in common resource locations
-    QStringList resourcePaths = {
-        QStringLiteral("share/openscad"),
-        QStringLiteral("Resources"),          // macOS .app bundle
-        QStringLiteral("Contents/Resources")  // macOS .app bundle from outside
-    };
-    
-    for (const QString& resPath : resourcePaths) {
-        QDir resDir(dir.absoluteFilePath(resPath));
-        if (resDir.exists()) {
-            for (const ResourceType& type : topLevelTypes) {
-                QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
-                if (!subdir.isEmpty() && resDir.exists(subdir)) {
-                    return true;
-                }
+        for (const ResourceType& type : topLevelTypes) {
+            const QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
+            if (dir.exists(subdir)) {
+                return true;
             }
         }
     }
-    
+
+    // Fallback: check the base directory itself for resource subdirectories
+    for (const ResourceType& type : topLevelTypes) {
+        const QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
+        if (baseDir.exists(subdir)) {
+            return true;
+        }
+    }
+
     return false;
 }
 
-bool ResourceLocationManager::isRunningFromValidInstallation() const {
-    if (m_applicationPath.isEmpty()) return false;
-    
-    // Navigate up from application path to find the installation root
-    QDir appDir(m_applicationPath);
-    
-    // Check current directory and parent directories
-    QString current = appDir.absolutePath();
-    for (int i = 0; i < 3; ++i) { // Check up to 3 levels up
-        if (isValidInstallation(current)) {
-            return true;
-        }
-        QDir dir(current);
-        if (!dir.cdUp()) break;
-        QString parent = dir.absolutePath();
-        if (parent == current) break;
-        current = parent;
-    }
-    
-    return false;
-}
 
 QString ResourceLocationManager::defaultInstallationSearchPath() const {
     switch (m_osType) {
@@ -444,18 +484,19 @@ QString ResourceLocationManager::userSpecifiedInstallationPath() const {
 }
 
 void ResourceLocationManager::setUserSpecifiedInstallationPath(const QString& path) {
-    if (m_settings) {
-        if (path.isEmpty()) {
-            m_settings->remove(KEY_USER_INSTALL_PATH);
-        } else {
-            m_settings->setValue(KEY_USER_INSTALL_PATH, path);
-        }
-        m_settings->sync();
-        
-        // Invalidate caches since installation path changed
-        m_installDirCached = false;
-        m_cachedInstallDir.clear();
-    }
+    if (path.isEmpty()) return;  // Refuse to set empty path; use clearUserSpecifiedInstallationPath()
+    
+    if (!m_settings) return;
+    
+    m_settings->setValue(KEY_USER_INSTALL_PATH, path);
+    m_settings->sync();
+}
+
+void ResourceLocationManager::clearUserSpecifiedInstallationPath() {
+    if (!m_settings) return;
+    
+    m_settings->remove(KEY_USER_INSTALL_PATH);
+    m_settings->sync();
 }
 
 QString ResourceLocationManager::effectiveInstallationPath() const {
@@ -465,8 +506,9 @@ QString ResourceLocationManager::effectiveInstallationPath() const {
         return userPath;
     }
     
-    // Then try application path
-    if (isRunningFromValidInstallation()) {
+    // Then try application path if it's a valid installation
+    QString execDir = PlatformInfo::getCurrentExecutableDirPath();
+    if (!execDir.isEmpty() && isValidInstallation(execDir)) {
         return m_applicationPath;
     }
     
@@ -491,10 +533,6 @@ QStringList ResourceLocationManager::installationSearchPaths() const {
 }
 
 QString ResourceLocationManager::findInstallationResourceDir() const {
-    if (m_installDirCached) {
-        return m_cachedInstallDir;
-    }
-    
     // Try effective installation path first (user-specified or app path)
     QString effectivePath = effectiveInstallationPath();
     QString searchBase = effectivePath.isEmpty() ? m_applicationPath : effectivePath;
@@ -517,14 +555,11 @@ QString ResourceLocationManager::findInstallationResourceDir() const {
                 testDir.exists(QStringLiteral("fonts")) ||
                 testDir.exists(QStringLiteral("locale")) ||
                 testDir.exists(QStringLiteral("libraries"))) {
-                m_cachedInstallDir = testDir.absolutePath();
-                m_installDirCached = true;
-                return m_cachedInstallDir;
+                return testDir.absolutePath();
             }
         }
     }
     
-    m_installDirCached = true;
     return QString();
 }
 
@@ -736,6 +771,10 @@ QStringList ResourceLocationManager::enabledSiblingPaths() const {
     return m_settings->value(KEY_SIBLING_PATHS).toStringList();
 }
 
+QStringList ResourceLocationManager::disabledInstallationPaths() const {
+    return disabledPathsForTier(resourceInfo::ResourceTier::Installation);
+}
+
 void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
     if (!m_settings) return;
 
@@ -743,7 +782,7 @@ void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
     QStringList protect = canonicalizedPaths({ findInstallationResourceDir() });
 
     if (protect.isEmpty()) {
-        const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+        const QList<ResourcePathElement> elements = m_resourcePaths.makeLocationsList();
         for (const auto& elem : elements) {
             if (elem.tier == resourceInfo::ResourceTier::Installation) {
                 protect.append(elem.location.path);
@@ -755,6 +794,10 @@ void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
     // Keep the current installation enabled while updating sibling selections
     updateEnabledForTier(resourceInfo::ResourceTier::Installation, canonical, protect);
 
+
+void ResourceLocationManager::setDisabledInstallationPaths(const QStringList& paths) {
+    setDisabledPathsForTier(resourceInfo::ResourceTier::Installation, paths);
+}
     m_settings->setValue(KEY_SIBLING_PATHS, canonical);
     m_settings->sync();
 }
@@ -764,9 +807,9 @@ void ResourceLocationManager::setEnabledSiblingPaths(const QStringList& paths) {
 // ============================================================================
 
 QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocations() const {
-    const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+    const QList<ResourcePathElement> elements = m_resourcePaths.makeLocationsList();
     const QSet<QString> none;
-    return collectTier(elements, resourceInfo::ResourceTier::Machine, none, true);
+    return collectTier(elements, resourceInfo::ResourceTier::Machine, none, none, true);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::defaultMachineLocationsForPlatform(
@@ -918,6 +961,10 @@ void ResourceLocationManager::setEnabledMachineLocations(const QStringList& path
     m_settings->sync();
 }
 
+void ResourceLocationManager::setDisabledMachineLocations(const QStringList& paths) {
+    setDisabledPathsForTier(resourceInfo::ResourceTier::Machine, paths);
+}
+
 bool ResourceLocationManager::loadMachineLocationsConfig() {
     QString configPath = machineConfigFilePath();
     
@@ -929,6 +976,7 @@ bool ResourceLocationManager::loadMachineLocationsConfig() {
     }
     
     updateLocationStatuses(m_machineLocations);
+    applyEnabledState(m_machineLocations, resourceInfo::ResourceTier::Machine);
     m_machineLocationsLoaded = true;
     return !m_machineLocations.isEmpty();
 }
@@ -957,9 +1005,9 @@ bool ResourceLocationManager::saveMachineLocationsConfig(const QVector<ResourceL
 // ============================================================================
 
 QVector<ResourceLocation> ResourceLocationManager::defaultUserLocations() const {
-    const QList<ResourcePathElement> elements = m_resourcePaths.defaultElements();
+    const QList<ResourcePathElement> elements = m_resourcePaths.makeLocationsList();
     const QSet<QString> none;
-    return collectTier(elements, resourceInfo::ResourceTier::User, none, true);
+    return collectTier(elements, resourceInfo::ResourceTier::User, none, none, true);
 }
 
 QVector<ResourceLocation> ResourceLocationManager::defaultUserLocationsForPlatform(
@@ -1126,6 +1174,10 @@ void ResourceLocationManager::setEnabledUserLocations(const QStringList& paths) 
     m_settings->sync();
 }
 
+void ResourceLocationManager::setDisabledUserLocations(const QStringList& paths) {
+    setDisabledPathsForTier(resourceInfo::ResourceTier::User, paths);
+}
+
 bool ResourceLocationManager::loadUserLocationsConfig() {
     QString configPath = userConfigFilePath();
     
@@ -1137,6 +1189,7 @@ bool ResourceLocationManager::loadUserLocationsConfig() {
     }
     
     updateLocationStatuses(m_userLocations);
+    applyEnabledState(m_userLocations, resourceInfo::ResourceTier::User);
     m_userLocationsLoaded = true;
     return !m_userLocations.isEmpty();
 }
@@ -1293,16 +1346,13 @@ QString ResourceLocationManager::writableUserPath(ResourceType type) const {
 void ResourceLocationManager::refreshLocationStatus() {
     updateLocationStatuses(m_machineLocations);
     updateLocationStatuses(m_userLocations);
-    m_installDirCached = false;
 }
 
 void ResourceLocationManager::reloadConfiguration() {
     m_machineLocationsLoaded = false;
     m_userLocationsLoaded = false;
-    m_installDirCached = false;
     m_machineLocations.clear();
     m_userLocations.clear();
-    m_cachedInstallDir.clear();
     
     loadMachineLocationsConfig();
     loadUserLocationsConfig();

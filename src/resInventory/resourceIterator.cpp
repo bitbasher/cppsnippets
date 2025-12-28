@@ -50,7 +50,7 @@ bool ResourceIteratorFlat::scan()
         
         // Check for each resource type subdirectory
         for (const auto& resType : m_resourceTypes) {
-            QString subdir = platformInfo::ResourcePaths::resourceSubdirectory(resType);
+            QString subdir = resourceInfo::ResourceTypeRegistry::subdir(resType);
             if (subdir.isEmpty()) {
                 continue;
             }
@@ -117,7 +117,7 @@ bool ResourceIteratorTree::scan()
         
         // Check for each resource type subdirectory
         for (const auto& resType : m_resourceTypes) {
-            QString subdir = platformInfo::ResourcePaths::resourceSubdirectory(resType);
+            QString subdir = resourceInfo::ResourceTypeRegistry::subdir(resType);
             if (subdir.isEmpty()) {
                 continue;
             }

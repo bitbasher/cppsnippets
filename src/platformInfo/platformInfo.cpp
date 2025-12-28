@@ -6,6 +6,7 @@
 #include <platformInfo/platformInfo.h>
 #include <QSysInfo>
 #include <QGuiApplication>
+#include <QCoreApplication>
 #include <QScreen>
 #include <QDebug>
 
@@ -70,38 +71,6 @@ ExtnOSType PlatformInfo::currentOSType() const {
 
 const ExtnOSVersRef* PlatformInfo::currentOSVersionRef() const {
     return ExtnOSVersRef::findByOSType(m_osVersionRef.osType());
-}
-
-QString PlatformInfo::productType() {
-    return QSysInfo::productType();
-}
-
-QString PlatformInfo::productVersion() {
-    return QSysInfo::productVersion();
-}
-
-QString PlatformInfo::kernelType() {
-    return QSysInfo::kernelType();
-}
-
-QString PlatformInfo::kernelVersion() {
-    return QSysInfo::kernelVersion();
-}
-
-QString PlatformInfo::cpuArchitecture() {
-    return QSysInfo::currentCpuArchitecture();
-}
-
-QString PlatformInfo::buildCpuArchitecture() {
-    return QSysInfo::buildCpuArchitecture();
-}
-
-QString PlatformInfo::prettyProductName() {
-    return QSysInfo::prettyProductName();
-}
-
-QString PlatformInfo::machineHostName() {
-    return QSysInfo::machineHostName();
 }
 
 QList<QScreen*> PlatformInfo::screens() {

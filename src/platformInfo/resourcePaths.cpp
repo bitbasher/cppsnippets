@@ -94,50 +94,62 @@ QStringList ResourcePaths::expandedSearchPaths(resourceInfo::ResourceTier tier) 
     return expanded;
 }
 
-QList<ResourcePathElement> ResourcePaths::defaultElements() const {
+QString ResourcePaths::resolveSinglePath(const QString& raw, const QDir& baseDir, bool applyInstallSuffix) const {
+    // Expand environment variables in the raw path template
+    const QString expanded = expandEnvVars(raw);
+    
+    // Apply install-specific suffix rules: paths ending with "/" get app folder name + suffix appended
+    // Example: "%PROGRAMFILES%/" becomes "%PROGRAMFILES%/openscad" or "%PROGRAMFILES%/openscad (Nightly)"
+    const QString pathToResolve = (applyInstallSuffix && expanded.endsWith(QStringLiteral("/")))
+        ? QDir::cleanPath(expanded + QStringLiteral("openscad") + m_suffix)
+        : QDir::cleanPath(expanded);
+    
+    // Resolve relative paths against baseDir, or use as-is if already absolute
+    const QString absolutePath = baseDir.absoluteFilePath(pathToResolve);
+    
+    // Try to get the canonical path (resolves symlinks, removes .. and .)
+    // If the path doesn't exist or symlinks are broken, canonicalFilePath() returns empty
+    const QString canonical = QFileInfo(absolutePath).canonicalFilePath();
+    
+    // Fallback: use absolute path even if non-canonical (path may not exist yet)
+    return canonical.isEmpty() ? absolutePath : canonical;
+}
+
+QList<ResourcePathElement> ResourcePaths::makeLocationsList() const {
     QList<ResourcePathElement> result;
+    QDir appDir(m_applicationPath);
 
-    // Installation tier (relative to application path, with suffix rules)
-    if (!m_applicationPath.isEmpty()) {
-        QDir appDir(m_applicationPath);
-        for (const QString& raw : defaultSearchPaths(resourceInfo::ResourceTier::Installation)) {
-            QString base = expandEnvVars(raw);
-            QString rel = base.endsWith(QStringLiteral("/"))
-                ? QDir::cleanPath(base + QStringLiteral("openscad") + m_suffix)
-                : QDir::cleanPath(base);
-            QString abs = appDir.absoluteFilePath(rel);
-            QFileInfo fi(abs);
-            QString finalPath = fi.canonicalFilePath();
-            if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
-            ResourceLocation loc(finalPath, QStringLiteral("Installation"), QString(), resourceInfo::ResourceTier::Installation);
-            result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::Installation));
-        }
-        
-        // Add sibling installations discovered on this platform
-        const QVector<ResourceLocation> siblings = findSiblingInstallations();
-        for (const ResourceLocation& sib : siblings) {
-            result.append(ResourcePathElement(sib, resourceInfo::ResourceTier::Installation));
-        }
+    // Installation tier: relative to app path, with install-specific suffix rules
+    for (const QString& raw : defaultSearchPaths(resourceInfo::ResourceTier::Installation)) {
+        const QString path = resolveSinglePath(raw, appDir, true); // applyInstallSuffix = true
+        result.append(ResourcePathElement(
+            ResourceLocation(path, QStringLiteral("Installation"), QString(), resourceInfo::ResourceTier::Installation),
+            resourceInfo::ResourceTier::Installation
+        ));
+    }
+    
+    // Add sibling installations discovered on this platform
+    const QVector<ResourceLocation> siblings = findSiblingInstallations();
+    for (const ResourceLocation& sib : siblings) {
+        result.append(ResourcePathElement(sib, resourceInfo::ResourceTier::Installation));
     }
 
-    // Machine tier
+    // Machine tier: system-wide, no installation suffix rules
     for (const QString& raw : defaultSearchPaths(resourceInfo::ResourceTier::Machine)) {
-        QString expanded = QDir::cleanPath(expandEnvVars(raw));
-        QFileInfo fi(expanded);
-        QString finalPath = fi.canonicalFilePath();
-        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
-        ResourceLocation loc(finalPath, QStringLiteral("Machine"), QString(), resourceInfo::ResourceTier::Machine);
-        result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::Machine));
+        const QString path = resolveSinglePath(raw, QDir("/"), false); // applyInstallSuffix = false
+        result.append(ResourcePathElement(
+            ResourceLocation(path, QStringLiteral("Machine"), QString(), resourceInfo::ResourceTier::Machine),
+            resourceInfo::ResourceTier::Machine
+        ));
     }
 
-    // User tier
+    // User tier: user-specific, no installation suffix rules
     for (const QString& raw : defaultSearchPaths(resourceInfo::ResourceTier::User)) {
-        QString expanded = QDir::cleanPath(expandEnvVars(raw));
-        QFileInfo fi(expanded);
-        QString finalPath = fi.canonicalFilePath();
-        if (finalPath.isEmpty()) finalPath = fi.absoluteFilePath();
-        ResourceLocation loc(finalPath, QStringLiteral("User"), QString(), resourceInfo::ResourceTier::User);
-        result.append(ResourcePathElement(loc, resourceInfo::ResourceTier::User));
+        const QString path = resolveSinglePath(raw, QDir("/"), false); // applyInstallSuffix = false
+        result.append(ResourcePathElement(
+            ResourceLocation(path, QStringLiteral("User"), QString(), resourceInfo::ResourceTier::User),
+            resourceInfo::ResourceTier::User
+        ));
     }
 
     return result;
@@ -200,7 +212,7 @@ QString ResourcePaths::appResourcePath(ResourceType type) const {
         return QString();
     }
     
-    QString subdir = resourceSubdirectory(type);
+    QString subdir = resourceInfo::ResourceTypeRegistry::subdir(type);
     if (subdir.isEmpty()) {
         return QString();
     }
@@ -341,46 +353,6 @@ QString ResourcePaths::userDocumentsPathForPlatform(ExtnOSType osType) {
 
 QString ResourcePaths::getUserConfigPath() const {
     return resolveUserConfigPath();
-}
-
-QString ResourcePaths::userResourcePath(ResourceType type) const {
-    QString configPath = getUserConfigPath();
-    if (configPath.isEmpty()) {
-        return QString();
-    }
-    
-    QString subdir = resourceSubdirectory(type);
-    if (subdir.isEmpty()) {
-        return QString();
-    }
-    
-    QDir dir(configPath);
-    return dir.absoluteFilePath(folderName() + QLatin1Char('/') + subdir);
-}
-
-bool ResourcePaths::hasUserResourceDirectory(ResourceType type) const {
-    QString path = userResourcePath(type);
-    return !path.isEmpty() && QDir(path).exists();
-}
-
-// ========== Combined Resource Paths ==========
-
-QStringList ResourcePaths::allResourcePaths(ResourceType type) const {
-    QStringList paths;
-    
-    // App resources first (primary)
-    QString appPath = appResourcePath(type);
-    if (!appPath.isEmpty()) {
-        paths << appPath;
-    }
-    
-    // User resources second (can override/extend)
-    QString userPath = userResourcePath(type);
-    if (!userPath.isEmpty() && QDir(userPath).exists()) {
-        paths << userPath;
-    }
-    
-    return paths;
 }
 
 // ========== Environment Variable Helpers ==========

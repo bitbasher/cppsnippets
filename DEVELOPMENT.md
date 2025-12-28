@@ -1,13 +1,48 @@
 # Development Guide & Build Configuration
 
-## Critical Build & Environment Settings
+---
+applyTo: "**"
+---
+# Project general coding standards
 
-**This file documents essential configuration decisions and workarounds. Read this before building or asking an AI agent for help.**
+## Naming Conventions
+- Use PascalCase for File names and Class names
+- Use camelCase for variables, functions, and methods
+- Prefix private class members with "m_"
 
+## Error Handling
+- Use try/catch blocks for async operations
+- Always log errors with contextual information
 ---
 
-## 1. Parallel Build Limits (CMakeLists.txt, Lines 3-6)
+---
+applyTo: "cpp, cc, cxx, c++, h, hh, hpp, h++"
+---
 
+## C++ guidelines
+
+- prefer `nullptr` over `NULL` or `0` for pointers
+- use `override` keyword for overridden virtual functions
+- prefer .cpp extension for source files
+- prefer .hpp extension for header files
+- prefer inline member functions in header files for small functions
+- always provide a no argument constructor to a class
+- always provide a copy constructor to a class
+- always provide an operator = method to a class
+- use `explicit` keyword for single-argument constructors
+- use `final` keyword for classes that should not be inherited from
+- an enum class should have an Unknown item of value 0
+- prefer `QList` over `QVector` for dynamic arrays
+- replace `QVector` with `QList` when refactoring
+- prefer `QStringLiteral` for string constants
+- use `const` and `&` for function parameters where appropriate
+- use `auto` for type inference where appropriate
+
+---
+applyTo: "CMakeLists.txt"
+---
+## 1. Parallel Build Limits (CMakeLists.txt, Lines 3-6)
+- Add the following code block after the first comment block in the file
 ```cmake
 # Job pool configuration to prevent system crashes
 # Limit compilation to -j4 and linking to -j2 to reduce memory pressure
@@ -16,15 +51,20 @@ set(CMAKE_JOB_POOL_COMPILE compile_pool)
 set(CMAKE_JOB_POOL_LINK link_pool)
 ```
 
-**Important:** 
-- **DO NOT** use `cmake --build . --parallel 8` or higher
-- The CMakeLists.txt already restricts builds to 4 compile jobs and 2 link jobs
-- This prevents memory exhaustion and system crashes during full builds
-- Use: `cmake --build . ` (no parallel flag—respects pool defaults)
-- Or: `cmake --build . --parallel 4` (OK, matches pool limit)
+**Why:** Full parallel builds can exhaust system memory, causing crashes. Limiting to 4 compile jobs and 2 link jobs balances speed and stability.
+---
 
-**For Agents:** When instructing AI agents to build, use the form without explicit parallel flag or with `--parallel` ≤ 4.
+---
+applyTo: "cmake"
+---
+- Use maximum 4 on --parallel option to cmake command
+- `cmake --build . ` (limits enforced by defaults set in CMakeLists.txt)
+- `cmake --build . --parallel 4` (OK, matches pool limit)
 
+**For Agents:** When instructing AI agents to "cmake --build ..." use EITHER 
+  NO --parallel option OR  `--parallel 4` at most
+
+**Why:** parallel builds using all available cores can exhaust system memory, causing crashes. Limiting to 4 compile jobs and 2 link jobs balances speed and stability.
 ---
 
 ## 2. Architecture: Windows MSVC + Visual Studio Generator
@@ -66,37 +106,30 @@ cmake --build "d:\repositories\cppsnippets\cppsnippets\build"
 - `${workspaceFolder}/src/**` - Source files
 
 With `ms-vscode.cmake-tools`, these are sufficient; no need to manually list every library header.
-
 ---
 
+
+---
+applyTo: "pwsh"
+---
 ## 4. PowerShell Environment Notes
 
-**This is a Windows PowerShell environment, NOT Bash/Linux.**
+** Do ONLY commands for PowerShell, unix shell commands are not supported and waste references **
+- Use ONLY native PowerShell cmdlets (`Get-ChildItem`, `Select-Object`, etc.)
 
 ### Commands That DON'T Work in PowerShell
-- `head -20` — NOT available (Unix utility)
-- `tail -50` — NOT available (Unix utility)
-- `ls -la` — `ls` is aliased to `Get-ChildItem`, but flags differ
-- Unix pipes and filters often behave unpredictably
+- `head` — NOT available (Unix utility)
+- `tail` — NOT available (Unix utility)
+- `ls -la` — NOT available
 
-### PowerShell Equivalents
-| Unix | PowerShell |
-|------|-----------|
-| `head -n 20` | `Select-Object -First 20` |
-| `tail -n 50` | `Select-Object -Last 50` |
-| `ls -la file` | `Get-Item file` or `Test-Path file` |
-| `grep pattern` | `Select-String -Pattern "pattern"` |
-| `\| wc -l` | `\| Measure-Object` |
-
-### For Agents
-**When an agent needs to run commands in this environment:**
-1. Use native PowerShell cmdlets (`Get-ChildItem`, `Select-Object`, etc.)
-2. Avoid Unix utilities (head, tail, grep, wc, etc.)
-3. Use `Select-Object -Last N` for showing output tails
-4. Use `Select-Object -First N` for showing output heads
-5. The ^ line continuation does not work in powershell - no multi-line commands
-
-**Agent Instruction:** "This is a PowerShell environment. Avoid Unix commands; use native PowerShell cmdlets instead."
+### Unix pipes and filters do not work and waste references
+- replace `head -n 20` with `Select-Object -First 20`
+- replace `tail -n 50` with `Select-Object -Last 50`
+- replace `ls -la file` with `Get-Item file`
+- replace `ls -la file` with `Test-Path file` 
+- replace `grep pattern` with `Select-String -Pattern "pattern"`
+- replace `\| wc -l`     with `\| Measure-Object`
+- The ^ line continuation does not work in powershell - no multi-line commands
 
 ---
 
@@ -146,218 +179,14 @@ buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
 
      setWindowTitle(tr("Tab Dialog"));
 }
-
-class GeneralTab : public QWidget
-{
-    Q_OBJECT
-
-public:
-    explicit GeneralTab(const QFileInfo &fileInfo, QWidget *parent = nullptr);
-};
-```
-### GeneralTab Class Implementation
-
-The GeneralTab widget simply displays some information about the file passed by the TabDialog. Various widgets for this purpose, and these are arranged within a vertical layout:
-```cpp
-GeneralTab::GeneralTab(const QFileInfo &fileInfo, QWidget *parent)
-    : QWidget(parent)
-{
-    QLabel *fileNameLabel = new QLabel(tr("File Name:"));
-    QLineEdit *fileNameEdit = new QLineEdit(fileInfo.fileName());
-
-    QLabel *pathLabel = new QLabel(tr("Path:"));
-    QLabel *pathValueLabel = new QLabel(fileInfo.absoluteFilePath());
-    pathValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    QLabel *sizeLabel = new QLabel(tr("Size:"));
-    qlonglong size = fileInfo.size()/1024;
-    QLabel *sizeValueLabel = new QLabel(tr("%1 K").arg(size));
-    sizeValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    QLabel *lastReadLabel = new QLabel(tr("Last Read:"));
-    QLabel *lastReadValueLabel = new QLabel(fileInfo.lastRead().toString());
-    lastReadValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    QLabel *lastModLabel = new QLabel(tr("Last Modified:"));
-    QLabel *lastModValueLabel = new QLabel(fileInfo.lastModified().toString());
-    lastModValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(fileNameLabel);
-    mainLayout->addWidget(fileNameEdit);
-    mainLayout->addWidget(pathLabel);
-    mainLayout->addWidget(pathValueLabel);
-    mainLayout->addWidget(sizeLabel);
-    mainLayout->addWidget(sizeValueLabel);
-    mainLayout->addWidget(lastReadLabel);
-    mainLayout->addWidget(lastReadValueLabel);
-    mainLayout->addWidget(lastModLabel);
-    mainLayout->addWidget(lastModValueLabel);
-    mainLayout->addStretch(1);
-    setLayout(mainLayout);
-}
-```
-### PermissionsTab Class Definition
-
-Like the GeneralTab, the PermissionsTab is just used as a placeholder widget for its children:
-```cpp
-class PermissionsTab : public QWidget
-{
-    Q_OBJECT
-
-public:
-    explicit PermissionsTab(const QFileInfo &fileInfo, QWidget *parent = nullptr);
-};
-```
-### PermissionsTab Class Implementation
-
-The PermissionsTab shows information about the file's access information, displaying details of the file permissions and owner in widgets that are arranged in nested layouts:
-```cpp
-PermissionsTab::PermissionsTab(const QFileInfo &fileInfo, QWidget *parent)
-    : QWidget(parent)
-{
-    QGroupBox *permissionsGroup = new QGroupBox(tr("Permissions"));
-
-    QCheckBox *readable = new QCheckBox(tr("Readable"));
-    if (fileInfo.isReadable())
-        readable->setChecked(true);
-
-    QCheckBox *writable = new QCheckBox(tr("Writable"));
-    if ( fileInfo.isWritable() )
-        writable->setChecked(true);
-
-    QCheckBox *executable = new QCheckBox(tr("Executable"));
-    if ( fileInfo.isExecutable() )
-        executable->setChecked(true);
-
-    QGroupBox *ownerGroup = new QGroupBox(tr("Ownership"));
-
-    QLabel *ownerLabel = new QLabel(tr("Owner"));
-    QLabel *ownerValueLabel = new QLabel(fileInfo.owner());
-    ownerValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    QLabel *groupLabel = new QLabel(tr("Group"));
-    QLabel *groupValueLabel = new QLabel(fileInfo.group());
-    groupValueLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-
-    QVBoxLayout *permissionsLayout = new QVBoxLayout;
-    permissionsLayout->addWidget(readable);
-    permissionsLayout->addWidget(writable);
-    permissionsLayout->addWidget(executable);
-    permissionsGroup->setLayout(permissionsLayout);
-
-    QVBoxLayout *ownerLayout = new QVBoxLayout;
-    ownerLayout->addWidget(ownerLabel);
-    ownerLayout->addWidget(ownerValueLabel);
-    ownerLayout->addWidget(groupLabel);
-    ownerLayout->addWidget(groupValueLabel);
-    ownerGroup->setLayout(ownerLayout);
-
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(permissionsGroup);
-    mainLayout->addWidget(ownerGroup);
-    mainLayout->addStretch(1);
-    setLayout(mainLayout);
-}
-```
-### ApplicationsTab
-
-The ApplicationsTab is another placeholder widget that is mostly cosmetic:
-```cpp
-class ApplicationsTab : public QWidget
-{
-    Q_OBJECT
-
-public:
-    explicit ApplicationsTab(const QFileInfo &fileInfo, QWidget *parent = nullptr);
-};
-```
-### ApplicationsTab Class Implementation
-
-The ApplicationsTab does not show any useful information, but could be used as a template for a more complicated example:
-```cpp
-ApplicationsTab::ApplicationsTab(const QFileInfo &fileInfo, QWidget *parent)
-    : QWidget(parent)
-{
-    QLabel *topLabel = new QLabel(tr("Open with:"));
-
-    QListWidget *applicationsListBox = new QListWidget;
-    QStringList applications;
-
-    for (int i = 1; i <= 30; ++i)
-        applications.append(tr("Application %1").arg(i));
-    applicationsListBox->insertItems(0, applications);
-
-    QCheckBox *alwaysCheckBox;
-
-    if (fileInfo.suffix().isEmpty())
-        alwaysCheckBox = new QCheckBox(tr("Always use this application to "
-            "open this type of file"));
-    else
-        alwaysCheckBox = new QCheckBox(tr("Always use this application to "
-            "open files with the extension '%1'").arg(fileInfo.suffix()));
-
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->addWidget(topLabel);
-    layout->addWidget(applicationsListBox);
-    layout->addWidget(alwaysCheckBox);
-    setLayout(layout);
-}
-```
-you see how the layouts are applied last ?
-
-that is how our app needs to it
-
 ---
 
-## 6. Resource Paths Configuration (resourcePaths.cpp)
-
-### Suffix Indicator Pattern
-Paths ending with `/` → app name + suffix appended  
-Paths without `/` → scanned directly without suffix
-
-**Example:**
-- `../share/` → becomes `../share/openscad` (or `../share/openscad (Nightly)` if suffix = " (Nightly)")
-- `../..` → used as-is, no suffix appended
-
-### User-Level Search Paths (Platform-Specific)
-
-**Windows:**
-```cpp
-QStringLiteral("."),        // OpenSCAD config folder
-QStringLiteral("../")       // Documents base (CSIDL_PERSONAL) with suffix
-```
-
-**macOS:**
-```cpp
-QStringLiteral("."),                  // OpenSCAD config folder
-QStringLiteral("../../Documents/")    // NSDocumentDirectory with suffix
-```
-
-**Linux:**
-```cpp
-QStringLiteral("."),                    // OpenSCAD config folder
-QStringLiteral("../../.local/share/")   // $HOME/.local/share with suffix
-```
-
----
-
-## 7. Template Tree Model Columns
-
-**Three columns in TemplateTreeModel:**
-| Column | Header | Content |
-|--------|--------|---------|
-| 0 | "Tier" | Display name |
-| 1 | "Location" | resource location |
-| 2 | "Name" | Template name from JSON object |
-
-**Not "Path"!** Column 2 shows the name of the JSON object, not the content of prefix.
 
 ---
 
 ## 8. Test Suite
 
-there is an ongoing issue with test discovery reporting problems .. the ctest section of the cmakelists is looking for tests that have not yet been built
+There is an ongoing issue with test discovery reporting problems .. the ctest section of the cmakelists is looking for tests that have not yet been built
 
 The build now succeeds with Ninja. The fix was using `DISCOVERY_MODE PRE_TEST` which defers test discovery until `ctest` runs instead of during the build.
 
@@ -393,9 +222,7 @@ ctest -C Debug --output-on-failure
 
 **When working with this project, an agent should:**
 
-1. **Use correct build command:** `cmake --build . ` (respects pool limits)
-2. **Avoid Unix commands in PowerShell:** Use `Select-Object -Last N`, not `tail -N`
-3. **Acknowledge MSVC/Visual Studio:** Don't suggest Clang, Ninja, or Unix generators
+3. **Acknowledge MSVC/Visual Studio:** Don't suggest Clang, or Unix generators
 4. **Check c_cpp_properties.json:** Verify `ms-vscode.cmake-tools` is the provider
 5. **Run full test suite after changes:** `ctest -C Debug --output-on-failure`
 6. **Commit with clear messages** referencing what was changed and why
