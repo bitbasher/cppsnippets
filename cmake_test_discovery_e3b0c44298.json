@@ -452,14 +452,14 @@
           "line": 67
         },
         {
-          "name": "EnableMaskFiltersTiers",
+          "name": "DiscoveryFindsAllTiers",
           "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_location_manager.cpp",
           "line": 93
         },
         {
-          "name": "StalePathsAreDetectedAndRemoved",
+          "name": "TierTagsAreCorrect",
           "file": "D:\\repositories\\cppsnippets\\cppsnippets\\tests\\test_resource_location_manager.cpp",
-          "line": 126
+          "line": 120
         }
       ]
     },

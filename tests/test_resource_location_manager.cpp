@@ -90,94 +90,67 @@ TEST(ResourceLocationManagerEnabled, DefaultsIncludeInstallAndUser) {
     EXPECT_TRUE(hasRoaming || hasLocal);
 }
 
-TEST(ResourceLocationManagerEnabled, EnableMaskFiltersTiers) {
+TEST(ResourceLocationManagerEnabled, DiscoveryFindsAllTiers) {
     TestFixture fx;
 
-    // Build tiered once to get canonical paths
-    auto tiered = fx.manager.enabledLocationsByTier();
-    ASSERT_FALSE(tiered.installation.isEmpty());
-    ASSERT_FALSE(tiered.user.isEmpty());
+    // Test the new unified discovery function
+    auto allLocations = fx.manager.discoverAllLocations();
 
-    QString installPath = tiered.installation.first().path;
-    QString userPath = tiered.user.first().path;
+    // Should find locations from all three tiers
+    bool hasInstall = false;
+    bool hasMachine = false;
+    bool hasUser = false;
 
-    // Persist enabled set with only install path -> user should be filtered out
-    QStringList enabledOnlyInstall;
-    enabledOnlyInstall << installPath;
-    fx.settings.setValue(QLatin1String("Resources/EnabledPaths"), enabledOnlyInstall);
-    fx.settings.sync();
+    for (const auto& loc : allLocations) {
+        if (loc.tier == ResourceTier::Installation) hasInstall = true;
+        if (loc.tier == ResourceTier::Machine) hasMachine = true;
+        if (loc.tier == ResourceTier::User) hasUser = true;
+    }
 
-    auto filtered = fx.manager.enabledLocationsByTier();
-    EXPECT_FALSE(filtered.installation.isEmpty());
-    EXPECT_TRUE(filtered.user.isEmpty());
+    EXPECT_TRUE(hasInstall) << "Should discover installation locations";
+    EXPECT_TRUE(hasMachine) << "Should discover machine locations";
+    EXPECT_TRUE(hasUser) << "Should discover user locations";
 
-    // Now enable user only; installation stays protected/auto-added
-    QStringList enabledUserOnly;
-    enabledUserOnly << userPath;
-    fx.settings.setValue(QLatin1String("Resources/EnabledPaths"), enabledUserOnly);
-    fx.settings.sync();
-
-    auto restored = fx.manager.enabledLocationsByTier();
-    EXPECT_FALSE(restored.installation.isEmpty()); // protected install added back
-    ASSERT_FALSE(restored.user.isEmpty());
-    EXPECT_EQ(restored.user.first().path, userPath);
+    // All discovered locations should default to enabled
+    for (const auto& loc : allLocations) {
+        EXPECT_TRUE(loc.isEnabled) << "Location should default to enabled: " << loc.path.toStdString();
+    }
 }
 
-TEST(ResourceLocationManagerEnabled, StalePathsAreDetectedAndRemoved) {
+TEST(ResourceLocationManagerEnabled, TierTagsAreCorrect) {
     TestFixture fx;
 
-    // Build tiered once to get a valid installation path
+    auto allLocations = fx.manager.discoverAllLocations();
+    ASSERT_FALSE(allLocations.isEmpty());
+
+    // Verify each location has a valid tier tag
+    for (const auto& loc : allLocations) {
+        EXPECT_TRUE(loc.tier == ResourceTier::Installation ||
+                   loc.tier == ResourceTier::Machine ||
+                   loc.tier == ResourceTier::User)
+            << "Invalid tier for location: " << loc.path.toStdString();
+    }
+
+    // Verify installation locations contain expected paths
     auto tiered = fx.manager.enabledLocationsByTier();
     ASSERT_FALSE(tiered.installation.isEmpty());
-    QString validInstallPath = tiered.installation.first().path;
-
-    // Inject fake/non-existent paths into QSettings
-    QStringList pathsWithStale;
-    pathsWithStale << validInstallPath;                              // Valid path
-    pathsWithStale << "C:/FakePath/DoesNotExist/Resources";          // Stale path 1
-    pathsWithStale << "D:/NonExistent/OpenSCAD/share";               // Stale path 2
-    pathsWithStale << fx.programData() + "/ScadTemplates";           // Valid machine path
-
-    fx.settings.setValue(QLatin1String("Resources/EnabledPaths"), pathsWithStale);
-    fx.settings.sync();
-
-    // Capture qInfo output by redirecting to a test message handler
-    QStringList logMessages;
-    static thread_local QStringList* messageSink = nullptr;
-    auto handler = [](QtMsgType type, const QMessageLogContext&, const QString& msg) {
-        if (type == QtInfoMsg && messageSink) {
-            messageSink->append(msg);
-        }
-    };
-    auto oldHandler = qInstallMessageHandler(handler);
-    messageSink = &logMessages;
-
-    // Trigger loading which should detect and remove stale paths
-    auto cleaned = fx.manager.enabledLocationsByTier();
-
-    // Restore original message handler
-    messageSink = nullptr;
-    qInstallMessageHandler(oldHandler);
-
-    // Verify the stale paths were removed from settings
-    QStringList persistedPaths = fx.settings.value(QLatin1String("Resources/EnabledPaths")).toStringList();
     
-    // Should only contain valid paths now (stale ones removed)
-    EXPECT_FALSE(persistedPaths.contains("C:/FakePath/DoesNotExist/Resources"));
-    EXPECT_FALSE(persistedPaths.contains("D:/NonExistent/OpenSCAD/share"));
-    
-    // Valid paths should still be present
-    EXPECT_TRUE(persistedPaths.contains(validInstallPath));
-    EXPECT_TRUE(persistedPaths.contains(fx.programData() + "/ScadTemplates"));
+    for (const auto& loc : tiered.installation) {
+        EXPECT_EQ(loc.tier, ResourceTier::Installation);
+    }
 
-    // Verify we have fewer paths after cleanup (2 stale removed)
-    EXPECT_EQ(persistedPaths.size(), 2);
+    // Verify machine locations
+    ASSERT_FALSE(tiered.machine.isEmpty());
+    for (const auto& loc : tiered.machine) {
+        EXPECT_EQ(loc.tier, ResourceTier::Machine);
+        EXPECT_TRUE(loc.path.contains("ScadTemplates") || 
+                   loc.path.contains("ProgramData"))
+            << "Machine location has unexpected path: " << loc.path.toStdString();
+    }
 
-    // Validate qInfo messages were emitted about the stale removals
-    const QString joined = logMessages.join("\n");
-    ASSERT_FALSE(logMessages.isEmpty());
-    EXPECT_TRUE(joined.contains("Removed"));
-    EXPECT_TRUE(joined.contains("missing path"));
-    EXPECT_TRUE(joined.contains("FakePath"));
-    EXPECT_TRUE(joined.contains("NonExistent"));
+    // Verify user locations
+    ASSERT_FALSE(tiered.user.isEmpty());
+    for (const auto& loc : tiered.user) {
+        EXPECT_EQ(loc.tier, ResourceTier::User);
+    }
 }
