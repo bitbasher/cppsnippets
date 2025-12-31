@@ -75,6 +75,7 @@ QString resourceTypeToString(ResourceType type)
         case ResourceType::Template:    return QStringLiteral("Template");
         case ResourceType::Shader:      return QStringLiteral("Shader");
         case ResourceType::Translation: return QStringLiteral("Translation");
+        case ResourceType::ColorSchemes: return QStringLiteral("ColorSchemes");
     }
     return QStringLiteral("Unknown");
 }
@@ -90,6 +91,7 @@ ResourceType stringToResourceType(const QString& str)
     if (str == QLatin1String("Template"))    return ResourceType::Template;
     if (str == QLatin1String("Shader"))      return ResourceType::Shader;
     if (str == QLatin1String("Translation")) return ResourceType::Translation;
+    if (str == QLatin1String("ColorSchemes")) return ResourceType::ColorSchemes;
     return ResourceType::Unknown;
 }
 

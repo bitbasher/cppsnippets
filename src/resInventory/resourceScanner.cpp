@@ -39,6 +39,7 @@ ResourceScanner::ResourceScanner(QObject* parent)
 QString ResourceScanner::resourceSubfolder(ResourceType type)
 {
     switch (type) {
+        case ResourceType::ColorSchemes: return QStringLiteral("color-schemes");
         case ResourceType::RenderColors: return QStringLiteral("color-schemes/render");
         case ResourceType::EditorColors: return QStringLiteral("color-schemes/editor");
         case ResourceType::Font:        return QStringLiteral("fonts");
@@ -55,6 +56,7 @@ QString ResourceScanner::resourceSubfolder(ResourceType type)
 QStringList ResourceScanner::resourceExtensions(ResourceType type)
 {
     switch (type) {
+        case ResourceType::ColorSchemes:
         case ResourceType::RenderColors:
         case ResourceType::EditorColors:
             return {QStringLiteral(".json")};
@@ -100,6 +102,8 @@ QVector<ResourceItem> ResourceScanner::scanLocation(
     }
     
     switch (type) {
+        case ResourceType::ColorSchemes:
+            return scanColorSchemes(basePath, tier, locationKey);
         case ResourceType::RenderColors:
             return scanRenderColors(basePath, tier, locationKey);
         case ResourceType::EditorColors:
@@ -248,8 +252,46 @@ void ResourceScanner::scanLibraries(
                     tree->addChildResource(libNode, tmpl);
                 }
             }
+
+            // Color schemes bundled with the library
+            const QString colorSchemesPath = libDir.absoluteFilePath(QStringLiteral("color-schemes"));
+            if (QDir(colorSchemesPath).exists()) {
+                QVector<ResourceItem> colorSchemes = scanColorSchemes(colorSchemesPath, tier, loc.displayName);
+                for (auto scheme : colorSchemes) {
+                    scheme.setCategory(libName);
+                    tree->addChildResource(libNode, scheme);
+                }
+            }
         }
     }
+}
+
+QVector<ResourceItem> ResourceScanner::scanColorSchemes(
+    const QString& basePath, ResourceTier tier, const QString& locationKey)
+{
+    QVector<ResourceItem> results;
+    
+    // ColorSchemes is a container type that scans for both editor and render colors
+    // Scan for .json files at the basePath level and categorize them
+    QDir dir(basePath);
+    if (!dir.exists()) return results;
+    
+    QStringList filters = {QStringLiteral("*.json")};
+    QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
+    
+    // For now, create ColorSchemes items but a more sophisticated approach
+    // could parse the JSON to determine if they're editor or render colors
+    for (const QFileInfo& fi : files) {
+        ResourceItem item(fi.absoluteFilePath(), ResourceType::ColorSchemes, tier);
+        item.setName(fi.baseName());
+        item.setDisplayName(fi.baseName());
+        item.setSourcePath(fi.absoluteFilePath());
+        item.setSourceLocationKey(locationKey);
+        item.setAccess(ResourceAccess::ReadOnly);
+        results.append(item);
+    }
+    
+    return results;
 }
 
 QVector<ResourceItem> ResourceScanner::scanRenderColors(

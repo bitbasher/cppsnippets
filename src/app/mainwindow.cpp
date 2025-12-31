@@ -9,6 +9,9 @@
 #include <platformInfo/resourceLocationManager.h>
 #include <resInventory/resourceScanner.h>
 #include <resInventory/resourceTreeWidget.h>
+#include <resInventory/resourceStore.h>
+#include <resInventory/resourceScannerDirListing.h>
+#include <resInventory/templateTreeModel.h>
 
 #include <QMenuBar>
 #include <QMenu>
@@ -16,6 +19,8 @@
 #include <QToolBar>
 #include <QStatusBar>
 #include <QSplitter>
+#include <QTreeView>
+#include <QHeaderView>
 #include <QTextEdit>
 #include <QPlainTextEdit>
 #include <QLineEdit>
@@ -43,6 +48,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_resourceManager(std::make_unique<platformInfo::ResourceLocationManager>())
     , m_inventoryManager(std::make_unique<resInventory::ResourceInventoryManager>())
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
+    , m_resourceStore(std::make_unique<resInventory::ResourceStore>())
+    , m_scanner(std::make_unique<resInventory::ResourceScannerDirListing>())
 {
     // Set application path for resource manager
     m_resourceManager->setApplicationPath(QCoreApplication::applicationDirPath());
@@ -52,6 +59,9 @@ MainWindow::MainWindow(QWidget *parent)
     
     setupUi();
     setupMenus();
+    
+    // Perform initial template scan
+    refreshInventory();
     
     updateWindowTitle();
     resize(1200, 800);
@@ -92,12 +102,23 @@ void MainWindow::setupUi() {
     connect(m_searchEdit, &QLineEdit::textChanged, this, &MainWindow::onSearch);
     listLayout->addWidget(m_searchEdit);
     
-    // Get the pre-populated template tree from inventory manager
-    m_templateTree = m_inventoryManager->inventory(resInventory::ResourceType::Template);
+    // Create QTreeView with TemplateTreeModel
+    m_templateTree = new QTreeView(this);
+    m_templateModel = new resInventory::TemplateTreeModel(this);
+    m_templateModel->setResourceStore(m_resourceStore.get());
+    m_templateTree->setModel(m_templateModel);
     m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
-    m_templateTree->setColumnHidden(2, true);  // Hide Category column
-    connect(m_templateTree, &resInventory::ResourceTreeWidget::itemSelectionChanged,
+    m_templateTree->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_templateTree->setAlternatingRowColors(true);
+    m_templateTree->setUniformRowHeights(true);
+    m_templateTree->setAnimated(true);
+    m_templateTree->header()->setStretchLastSection(false);
+        m_templateTree->header()->setSectionResizeMode(0, QHeaderView::Stretch); // Group (tier/location)
+        m_templateTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents); // Category
+        m_templateTree->header()->setSectionResizeMode(2, QHeaderView::Stretch); // Name
+        // Hide Category for now (templates don't use it yet)
+        m_templateTree->setColumnHidden(1, true);
+    connect(m_templateTree->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &MainWindow::onInventorySelectionChanged);
     listLayout->addWidget(m_templateTree);
     
@@ -142,6 +163,11 @@ void MainWindow::setupUi() {
     m_sourceEdit = new QLineEdit(this);
     m_sourceEdit->setReadOnly(true);
     sourceLayout->addWidget(m_sourceEdit);
+        sourceLayout->addSpacing(12);
+        sourceLayout->addWidget(new QLabel(tr("Version:"), this));
+        m_versionEdit = new QLineEdit(this);
+        m_versionEdit->setReadOnly(true);
+        sourceLayout->addWidget(m_versionEdit);
     editorLayout->addLayout(sourceLayout);
     
     editorLayout->addWidget(new QLabel(tr("Description:"), this));
@@ -436,42 +462,100 @@ void MainWindow::onInventoryItemSelected(const resInventory::ResourceItem& item)
         case resInventory::ResourceTier::User: tierName = tr("User"); break;
     }
     m_sourceEdit->setText(tierName);
+        m_versionEdit->clear();
     populateEditorFromSelection(item);
 }
 
 void MainWindow::onInventorySelectionChanged() {
-    resInventory::ResourceItem item = m_templateTree->selectedItem();
-    if (!item.path().isEmpty()) {
-        onInventoryItemSelected(item);
+    QModelIndexList indexes = m_templateTree->selectionModel()->selectedRows();
+    if (indexes.isEmpty()) {
+        m_prefixEdit->clear();
+        m_bodyEdit->clear();
+        m_descriptionEdit->clear();
+        m_sourceEdit->clear();
+        m_selectedItem = resInventory::ResourceItem();
+        updateTemplateButtons();
+        return;
     }
+    
+    QModelIndex index = indexes.first();
+    
+    // Only handle template leaf nodes
+    auto nodeType = m_templateModel->data(index, resInventory::TemplateTreeModel::NodeTypeRole).toInt();
+    if (nodeType != static_cast<int>(resInventory::TemplateTreeNode::NodeType::Template)) {
+        return;
+    }
+    
+    // Get the full DiscoveredResource
+    QVariant resourceVar = m_templateModel->data(index, resInventory::TemplateTreeModel::ResourceRole);
+    if (!resourceVar.isValid()) {
+        return;
+    }
+    
+    auto discoveredRes = resourceVar.value<resInventory::DiscoveredResource>();
+    
+    // Convert to ResourceItem for compatibility with existing code
+    resInventory::ResourceItem item;
+    item.setPath(discoveredRes.path);
+    item.setDisplayName(discoveredRes.name);
+    item.setType(discoveredRes.type);
+    item.setTier(discoveredRes.tier);
+    item.setCategory(discoveredRes.category);
+    item.setEnabled(true);
+    
+    m_selectedItem = item;
+    onInventoryItemSelected(item);
+    updateTemplateButtons();
 }
 
 void MainWindow::refreshInventory() {
-    // Get the old tree to remove from layout
-    QLayout* parentLayout = m_templateTree->parentWidget() 
-        ? m_templateTree->parentWidget()->layout() : nullptr;
+    // Clear the resource store
+    m_resourceStore->clear();
     
-    if (parentLayout) {
-        parentLayout->removeWidget(m_templateTree);
+    // Scan installation tier
+    QString installPath = m_resourceManager->effectiveInstallationPath();
+    if (!installPath.isEmpty()) {
+        m_resourceStore->scanTypeAndStore(*m_scanner, installPath,
+                                          resInventory::ResourceType::Template,
+                                          resInventory::ResourceTier::Installation,
+                                          installPath);
     }
     
-    // Refresh creates a new widget
-    m_inventoryManager->refreshInventory(resInventory::ResourceType::Template);
-    
-    // Get the new widget and update our pointer
-    m_templateTree = m_inventoryManager->inventory(resInventory::ResourceType::Template);
-    m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
-    m_templateTree->setColumnHidden(2, true);  // Hide Category column
-    
-    // Reconnect signals
-    connect(m_templateTree, &resInventory::ResourceTreeWidget::itemSelectionChanged,
-            this, &MainWindow::onInventorySelectionChanged);
-    
-    // Re-add to layout
-    if (parentLayout) {
-        parentLayout->addWidget(m_templateTree);
+    // Scan sibling installations
+    auto siblingLocs = m_resourceManager->findSiblingInstallations();
+    for (const auto& loc : siblingLocs) {
+        if (loc.exists && loc.isEnabled) {
+            m_resourceStore->scanTypeAndStore(*m_scanner, loc.path,
+                                              resInventory::ResourceType::Template,
+                                              resInventory::ResourceTier::Installation,
+                                              loc.path);
+        }
     }
+    
+    // Scan machine tier
+    auto machineLocs = m_resourceManager->availableMachineLocations();
+    for (const auto& loc : machineLocs) {
+        if (loc.exists && loc.isEnabled) {
+            m_resourceStore->scanTypeAndStore(*m_scanner, loc.path,
+                                              resInventory::ResourceType::Template,
+                                              resInventory::ResourceTier::Machine,
+                                              loc.path);
+        }
+    }
+    
+    // Scan user tier
+    auto userLocs = m_resourceManager->availableUserLocations();
+    for (const auto& loc : userLocs) {
+        if (loc.exists && loc.isEnabled) {
+            m_resourceStore->scanTypeAndStore(*m_scanner, loc.path,
+                                              resInventory::ResourceType::Template,
+                                              resInventory::ResourceTier::User,
+                                              loc.path);
+        }
+    }
+    
+    // Model automatically rebuilds via signals
+    m_templateTree->expandAll();
 }
 
 void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& item) {
@@ -537,6 +621,10 @@ void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& i
                     m_bodyEdit->setPlainText(bodyText);
                     m_descriptionEdit->setText(desc);
                     m_sourceEdit->setText(sourceTag);
+                        // Version
+                        const auto verVal = selectedObj.value(QStringLiteral("version"));
+                        if (verVal.isString()) m_versionEdit->setText(verVal.toString());
+                        else if (verVal.isDouble()) m_versionEdit->setText(QString::number(verVal.toDouble()));
                 } else {
                     // Fallback: treat as plain text
                     m_bodyEdit->setPlainText(QString::fromUtf8(data));

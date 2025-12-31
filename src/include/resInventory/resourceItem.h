@@ -22,6 +22,7 @@ enum class ResourceTier {
  */
 enum class ResourceType {
     Unknown,
+    ColorSchemes,   ///< Color scheme container folder (contains EditorColors and RenderColors)
     RenderColors,   ///< Render color scheme (.json)
     EditorColors,   ///< Editor color scheme (.json)
     Font,           ///< Font file (.ttf, .otf)
