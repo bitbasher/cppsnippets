@@ -6,8 +6,8 @@
 src/*.old
 src/*.org
 
-
-
+# Legacy TypeScript reference files (not part of build)
+src-orig/
 
 # Test fixture backups
 testFileStructure/**/backups/**
@@ -15,10 +15,8 @@ testFileStructure/**/backups/**
 testFileStructure/**/ttf/**
 
 # CMake build directories
-build/
-/build*/
+/build/
 /build-*/
-cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
 CTestTestfile.cmake
@@ -37,6 +35,8 @@ _codeql_detected_source_root
 *.slo
 *.o
 *.obj
+objects
+/out/
 
 # Compiled Static libraries
 *.a
@@ -64,6 +64,7 @@ _codeql_detected_source_root
 *.suo
 *.sln
 *.vcxproj*
+/.vs/
 
 # Linker files
 *.ilk
@@ -85,50 +86,25 @@ ui_*.h
 qrc_*.cpp
 .qmake.stash
 *.pro.user*
-moc_*.cpp
 
 
 # Release Packages
-*.dmg
+*.dmg             # Mac OS distribution package - do not
+*.msi             # Windows installation package
 
-# Stuff that should be kept
-/*.amf
-/*.blend
-/*.csg
-/*.dat
-/*.dump
-/.dir-locals.el
-/b/
-/c/
-object_script.openscad.Debug
-object_script.openscad.Release
-objects
-resources/CMakeFiles
-*.new
-.clangd
-.clangd/
-.gcov/
-.gdbinit
-.tags*
-.uuid
-.vs/
-/openscad_adaptor.cpp
-/openscad_interface.cpp
-/release
+# other unneeded stuff
+.clangd/           # Clang language server cache
+.gcov/             # Code coverage output
+.gdbinit           # GDB debugger config
+.tags*             # Code navigation tags
+*.new              # Temporary files
+
 /vcpkg_installed
 
 # Temporary structures and files
-scripts/run-clang-tidy-cached
-.cache/
-/locale/*.mo
-/locale/*/*/*.mo
-/locale/POTFILES
-/resources/*.rc
-/resources/common.qrc
-/resources/mac.qrc
-/tmp
-/lexer_lex.cpp
-/parser_yacc.cpp
+
+lexer_lex.cpp
+parser_yacc.cpp
 src/*.debug
 
 # Testing artifacts
@@ -137,20 +113,12 @@ src/*.debug
 **/project.xcworkspace
 **/xcuserdata
 tests/__pycache__/
-/Testing
-/DartConfiguration.tcl
-tests/DartConfiguration.tcl
-tests/data/python/gen_issue2342.py
-tests/data/python/gen_svg_viewbox_tests.py
-tests/data/scad/2D/features/import_dxf-tests.scad
-tests/data/scad/3D/features/import_3mf-tests.scad
-tests/data/scad/3D/features/import_stl-tests.scad
-tests/data/scad/issues/issue2342.scad
-tests/data/scad/misc/include-tests.scad
-tests/data/scad/misc/use-tests.scad
-tests/data/svg/viewbox/viewbox_*.svg
-tests/regression/export-pdf-fill/*.pdf
-tests/regression/pdfexporttest/*.pdf
+Testing
+tests/*.tcl
+tests/data/python/
+tests/data/scad/
+tests/data/large_file.*
+tests/data/large/
+tests/data/svg/
+tests/regression/
 tests/venv
-/tests/data/large_file.*
-/tests/data/large/*

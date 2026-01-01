@@ -109,6 +109,13 @@ find_package(Qt6 COMPONENTS Core Gui REQUIRED)
 message(STATUS "Found Qt6::Core at ${Qt6_DIR}")
 message(STATUS "Found Qt6::Gui at ${Qt6Gui_DIR}")
 
+# Find JSON libraries (nlohmann-json required by json-schema-validator)
+find_package(nlohmann_json REQUIRED)
+message(STATUS "Found nlohmann_json at ${nlohmann_json_DIR}")
+
+find_package(nlohmann_json_schema_validator REQUIRED)
+message(STATUS "Found nlohmann_json_schema_validator at ${nlohmann_json_schema_validator_DIR}")
+
 # JsonReaderPortable integration (static library for JSON file reading with error reporting)
 add_subdirectory(src/jsonreader-portable)
 
