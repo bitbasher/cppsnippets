@@ -1,4 +1,4 @@
-#include "resInventory/resLocTree.h"
+#include "resLocTree.hpp"
 
 // ============================================================================
 // ResLocTreeItem

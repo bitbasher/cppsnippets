@@ -5,8 +5,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-#include "resInventory/resourceScanner.h"
-#include "resInventory/resourceItem.h"
+#include "resInventory/resourceScanner.hpp"
+#include "resInventory/resourceItem.hpp"
 #include "platformInfo/resourceLocationManager.h"
 #include "platformInfo/ResourceLocation.h"
 

@@ -7,7 +7,7 @@
  * (hierarchical) storage structures.
  */
 
-#include "resInventory/resourceIterator.h"
+#include "resourceIterator.hpp"
 
 #include <QDir>
 #include <QFileInfo>

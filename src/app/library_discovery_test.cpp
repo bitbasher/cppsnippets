@@ -6,9 +6,9 @@
 #include <iostream>
 #include <QApplication>
 #include <QDir>
-#include "resInventory/resourceScanner.h"
-#include "resInventory/resourceTreeWidget.h"
-#include "resInventory/resourceItem.h"
+#include "resInventory/resourceScanner.hpp"
+#include "resInventory/resourceTreeWidget.hpp"
+#include "resInventory/resourceItem.hpp"
 #include "platformInfo/ResourceLocation.h"
 
 namespace ri = resInventory;

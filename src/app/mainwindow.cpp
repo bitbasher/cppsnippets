@@ -7,8 +7,8 @@
 #include "gui/preferencesdialog.h"
 #include <scadtemplates/scadtemplates.h>
 #include <platformInfo/resourceLocationManager.h>
-#include <resInventory/resourceScanner.h>
-#include <resInventory/resourceTreeWidget.h>
+#include <resInventory/resourceScanner.hpp>
+#include <resInventory/resourceTreeWidget.hpp>
 
 #include <QMenuBar>
 #include <QMenu>

@@ -183,7 +183,9 @@ endif(CLANG_TIDY)
 
 
 # Include directories
-include_directories(${CMAKE_SOURCE_DIR}/src/include)
+# Note: src/include is removed - headers are now co-located with .cpp files
+# Add src/ to include path so headers in src/resInventory, src/gui, src/platformInfo can be found
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Generate version source file from template
 configure_file(
@@ -276,11 +278,11 @@ if(BUILD_APP)
         src/include/gui/sysInfoDialog.h
         # Resource inventory classes
         src/resInventory/resourceItem.cpp
-        src/include/resInventory/resourceItem.h
+        src/resInventory/resourceItem.hpp
         src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceTreeWidget.h
+        src/resInventory/resourceTreeWidget.hpp
         src/resInventory/resourceScanner.cpp
-        src/include/resInventory/resourceScanner.h
+        src/resInventory/resourceScanner.hpp
     )
     
     add_executable(scadtemplates_app ${APP_SOURCES})
@@ -307,11 +309,11 @@ if(BUILD_APP)
         src/include/gui/locationInputWidget.hpp
         # Resource inventory classes
         src/resInventory/resourceItem.cpp
-        src/include/resInventory/resourceItem.h
+        src/resInventory/resourceItem.hpp
         src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceTreeWidget.h
+        src/resInventory/resourceTreeWidget.hpp
         src/resInventory/resourceScanner.cpp
-        src/include/resInventory/resourceScanner.h
+        src/resInventory/resourceScanner.hpp
     )
     
     add_executable(inventory_test ${INVENTORY_TEST_SOURCES})
@@ -352,9 +354,9 @@ if(BUILD_APP)
         src/resInventory/resourceScanner.cpp
         src/resInventory/resourceItem.cpp
         src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceScanner.h
-        src/include/resInventory/resourceItem.h
-        src/include/resInventory/resourceTreeWidget.h
+        src/resInventory/resourceScanner.hpp
+        src/resInventory/resourceItem.hpp
+        src/resInventory/resourceTreeWidget.hpp
     )
     target_link_libraries(library_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(library_discovery_test PRIVATE
@@ -427,9 +429,9 @@ if(BUILD_TESTS)
         src/resInventory/resourceScanner.cpp
         src/resInventory/resourceItem.cpp
         src/resInventory/resourceTreeWidget.cpp
-        src/include/resInventory/resourceScanner.h
-        src/include/resInventory/resourceItem.h
-        src/include/resInventory/resourceTreeWidget.h
+        src/resInventory/resourceScanner.hpp
+        src/resInventory/resourceItem.hpp
+        src/resInventory/resourceTreeWidget.hpp
     )
     
     target_link_libraries(scadtemplates_tests PRIVATE

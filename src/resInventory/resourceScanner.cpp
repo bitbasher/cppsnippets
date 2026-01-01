@@ -1,5 +1,5 @@
-#include "resInventory/resourceScanner.h"
-#include "resInventory/resourceTreeWidget.h"
+#include "resourceScanner.hpp"
+#include "resourceTreeWidget.hpp"
 #include <platformInfo/resourceLocationManager.h>
 #include <QDir>
 #include <QFileInfo>

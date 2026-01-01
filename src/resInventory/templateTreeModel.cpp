@@ -3,7 +3,7 @@
  * @brief Implementation of TemplateTreeModel
  */
 
-#include "resInventory/templateTreeModel.h"
+#include "templateTreeModel.hpp"
 #include <QIcon>
 #include <QFileInfo>
 #include <QFile>

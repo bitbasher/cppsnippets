@@ -6,7 +6,7 @@
 #include <QVector>
 #include <QMap>
 #include <functional>
-#include "resInventory/resourceItem.h"
+#include "resourceItem.hpp"
 #include "platformInfo/ResourceLocation.h"
 
 namespace platformInfo {

@@ -1,4 +1,4 @@
-#include "resInventory/resourceTreeWidget.h"
+#include "resourceTreeWidget.hpp"
 #include <QHeaderView>
 #include <QDir>
 #include <QFileInfo>

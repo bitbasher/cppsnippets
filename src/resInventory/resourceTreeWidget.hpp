@@ -2,7 +2,7 @@
 #define RESOURCETREEITEM_H
 
 #include <QTreeWidgetItem>
-#include "resInventory/resourceItem.h"
+#include "resourceItem.hpp"
 
 namespace resInventory {
 

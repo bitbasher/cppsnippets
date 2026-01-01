@@ -1,4 +1,4 @@
-#include "resInventory/resourceItem.h"
+#include "resourceItem.hpp"
 #include <QFileInfo>
 #include <QMetaType>
 

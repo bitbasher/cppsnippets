@@ -1,4 +1,4 @@
-#include "resInventory/resLocMap.h"
+#include "resLocMap.hpp"
 
 ResLocMap::ResLocMap() {
 }

@@ -7,7 +7,7 @@
 
 #include <QMainWindow>
 #include <scadtemplates/template.h>
-#include <resInventory/resourceItem.h>
+#include <resInventory/resourceItem.hpp>
 #include <memory>
 
 class QTextEdit;
