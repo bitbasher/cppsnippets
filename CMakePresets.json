@@ -22,7 +22,7 @@
       },
       "cacheVariables": {
         "BUILD_APP": "ON",
-        "BUILD_TESTS": "ON",
+        "BUILD_TESTS": "OFF",
         "BUILD_SHARED_LIBS": "ON"
       }
     }

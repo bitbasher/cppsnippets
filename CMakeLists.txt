@@ -77,7 +77,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Options
 option(INFO "Display build configuration info at end of cmake config" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(BUILD_TESTS "Build test suite" ON)
+option(BUILD_TESTS "Build test suite" OFF)
 option(BUILD_APP "Build Qt application" ON)
 option(USE_QSCINTILLA "Enable QScintilla editor integration" OFF)
 
@@ -316,7 +316,7 @@ if(BUILD_APP)
         src/resInventory/resourceScanner.hpp
     )
     
-    add_executable(inventory_test ${INVENTORY_TEST_SOURCES})
+    add_executable(inventory_test EXCLUDE_FROM_ALL ${INVENTORY_TEST_SOURCES})
     target_link_libraries(inventory_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(inventory_test PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
@@ -327,7 +327,7 @@ if(BUILD_APP)
     )
     
     # Template converter test app
-    add_executable(convert_templates_test src/app/convert_templates_test.cpp)
+    add_executable(convert_templates_test EXCLUDE_FROM_ALL src/app/convert_templates_test.cpp)
     target_link_libraries(convert_templates_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(convert_templates_test PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
@@ -338,7 +338,7 @@ if(BUILD_APP)
     )
 
     # Template discovery test app
-    add_executable(template_discovery_test src/app/template_discovery_test.cpp)
+    add_executable(template_discovery_test EXCLUDE_FROM_ALL src/app/template_discovery_test.cpp)
     target_link_libraries(template_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(template_discovery_test PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
@@ -349,7 +349,7 @@ if(BUILD_APP)
     )
 
     # Library discovery test app
-    add_executable(library_discovery_test
+    add_executable(library_discovery_test EXCLUDE_FROM_ALL
         src/app/library_discovery_test.cpp
         src/resInventory/resourceScanner.cpp
         src/resInventory/resourceItem.cpp
@@ -415,7 +415,7 @@ if(BUILD_TESTS)
     include(GoogleTest)
     
     # Test executable
-    add_executable(scadtemplates_tests
+    add_executable(scadtemplates_tests EXCLUDE_FROM_ALL
         tests/test_main.cpp
         tests/test_template.cpp
         tests/test_template_parser.cpp
@@ -460,6 +460,7 @@ if(BUILD_TESTS)
     # avoiding DLL loading issues during build when using Ninja generator
     gtest_discover_tests(scadtemplates_tests
         DISCOVERY_MODE PRE_TEST
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 endif()
 

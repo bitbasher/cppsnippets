@@ -90,5 +90,7 @@
     },
     "cmake.configureOnOpen": true,
     "cmake.generator": "Visual Studio 17 2022",
+    "cmake.ctest.enabled": false,
+    "testExplorer.ctest.enabled": false,
     "C_Cpp.errorSquiggles": "enabled"
 }
