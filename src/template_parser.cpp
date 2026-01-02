@@ -3,8 +3,8 @@
  * @brief TemplateParser class implementation
  */
 
-#include "scadtemplates/template_parser.h"
-#include "JsonReader/JsonReader.h"
+#include "scadtemplates/template_parser.hpp"
+#include "jsonreader/JsonReader.hpp"
 #include <fstream>
 #include <sstream>
 #include <QJsonDocument>

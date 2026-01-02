@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "template.h"
+#include "template.hpp"
 
 #ifdef HAS_QSCINTILLA
 #include <Qsci/qsciscintilla.h>

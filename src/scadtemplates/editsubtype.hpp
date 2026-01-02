@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "export.h"
+#include "export.hpp"
 #include <QString>
 
 namespace scadtemplates {

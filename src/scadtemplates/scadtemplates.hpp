@@ -49,10 +49,10 @@
 
 #pragma once
 
-#include "export.h"
-#include "template.h"
-#include "template_parser.h"
-#include "template_manager.h"
+#include "export.hpp"
+#include "template.hpp"
+#include "template_parser.hpp"
+#include "template_manager.hpp"
 
 /**
  * @namespace scadtemplates

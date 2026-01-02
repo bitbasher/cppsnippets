@@ -116,9 +116,6 @@ message(STATUS "Found nlohmann_json at ${nlohmann_json_DIR}")
 find_package(nlohmann_json_schema_validator REQUIRED)
 message(STATUS "Found nlohmann_json_schema_validator at ${nlohmann_json_schema_validator_DIR}")
 
-# JsonReaderPortable integration (static library for JSON file reading with error reporting)
-add_subdirectory(src/jsonreader-portable)
-
 # Find Qt6 Widgets for application (optional)
 if(BUILD_APP)
     find_package(Qt6 COMPONENTS Widgets QUIET)
@@ -197,6 +194,7 @@ configure_file(
 # Library source files
 set(LIB_SOURCES
     ${CMAKE_BINARY_DIR}/generated/scadtemplates_version.cpp
+    src/jsonreader/JsonReader.cpp
     src/template.cpp
     src/template_parser.cpp
     src/template_manager.cpp
@@ -212,15 +210,16 @@ set(LIB_SOURCES
 )
 
 set(LIB_HEADERS
-    src/include/scadtemplates/scadtemplates.h
-    src/include/scadtemplates/template.h
-    src/include/scadtemplates/template_parser.h
-    src/include/scadtemplates/template_manager.h
-    src/include/scadtemplates/scad_template_session.h
-    src/include/scadtemplates/export.h
-    src/include/scadtemplates/editsubtype.h
-    src/include/scadtemplates/edittype.h
-    src/include/scadtemplates/filesubtype.h
+    src/jsonreader/JsonReader.hpp
+    src/scadtemplates/scadtemplates.hpp
+    src/scadtemplates/template.hpp
+    src/scadtemplates/template_parser.hpp
+    src/scadtemplates/template_manager.hpp
+    src/scadtemplates/scad_template_session.hpp
+    src/scadtemplates/export.hpp
+    src/scadtemplates/editsubtype.hpp
+    src/scadtemplates/edittype.hpp
+    src/scadtemplates/filesubtype.hpp
     src/platformInfo/export.hpp
     src/platformInfo/extnOSVersRef.hpp
     src/platformInfo/platformInfo.hpp
@@ -236,7 +235,8 @@ target_include_directories(scadtemplates_lib PUBLIC
 )
 
 # Link Qt6::Core and Qt6::Gui for QString, QVector, QSysInfo, QScreen support in library
-target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui JsonReaderPortable)
+# JsonReader is integrated directly into library, no separate dependency needed
+target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui)
 
 # Set library properties for Windows DLL export
 if(BUILD_SHARED_LIBS)
@@ -257,25 +257,25 @@ if(BUILD_APP)
         src/app/mainwindow.cpp
         src/app/mainwindow.h
         src/gui/preferencesdialog.cpp
-        src/include/gui/preferencesdialog.h
+        src/gui/preferencesdialog.hpp
         src/gui/resourcelocationwidget.cpp
-        src/include/gui/resourceLocationWidget.hpp
+        src/gui/resourceLocationWidget.hpp
         src/gui/locationInputWidget.cpp
-        src/include/gui/locationInputWidget.hpp
+        src/gui/locationInputWidget.hpp
         src/gui/platformInfoWidget.cpp
-        src/include/gui/platformInfoWidget.hpp
+        src/gui/platformInfoWidget.hpp
         src/gui/dialogButtonBar.cpp
-        src/include/gui/dialogButtonBar.hpp
+        src/gui/dialogButtonBar.hpp
         src/gui/installationTab.cpp
-        src/include/gui/installationTab.hpp
+        src/gui/installationTab.hpp
         src/gui/machineTab.cpp
-        src/include/gui/machineTab.hpp
+        src/gui/machineTab.hpp
         src/gui/userTab.cpp
-        src/include/gui/userTab.hpp
+        src/gui/userTab.hpp
         src/gui/aboutDialog.cpp
-        src/include/gui/aboutDialog.h
+        src/gui/aboutDialog.hpp
         src/gui/sysInfoDialog.cpp
-        src/include/gui/sysInfoDialog.h
+        src/gui/sysInfoDialog.hpp
         # Resource inventory classes
         src/resInventory/resourceItem.cpp
         src/resInventory/resourceItem.hpp
@@ -300,13 +300,13 @@ if(BUILD_APP)
         src/app/inventory_test.cpp
         # GUI classes needed for env var helpers
         src/gui/machineTab.cpp
-        src/include/gui/machineTab.hpp
+        src/gui/machineTab.hpp
         src/gui/userTab.cpp
-        src/include/gui/userTab.hpp
+        src/gui/userTab.hpp
         src/gui/resourcelocationwidget.cpp
-        src/include/gui/resourceLocationWidget.hpp
+        src/gui/resourceLocationWidget.hpp
         src/gui/locationInputWidget.cpp
-        src/include/gui/locationInputWidget.hpp
+        src/gui/locationInputWidget.hpp
         # Resource inventory classes
         src/resInventory/resourceItem.cpp
         src/resInventory/resourceItem.hpp

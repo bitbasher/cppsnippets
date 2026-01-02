@@ -6,7 +6,7 @@
 #include <QApplication>
 #include <QDebug>
 #include "mainwindow.h"
-#include <scadtemplates/scadtemplates.h>
+#include <scadtemplates/scadtemplates.hpp>
 
 int main(int argc, char *argv[]) {
     qDebug() << "Starting CppSnippets application...";

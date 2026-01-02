@@ -1,10 +1,10 @@
-#include "gui/aboutDialog.h"
+#include "gui/aboutDialog.hpp"
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QDialogButtonBox>
-#include <scadtemplates/scadtemplates.h>
+#include <scadtemplates/scadtemplates.hpp>
 #include <platformInfo/resourceLocationManager.hpp>
 
 AboutDialog::AboutDialog(QWidget* parent, const QString& version, const QString& platform, const QString& resourceDir)

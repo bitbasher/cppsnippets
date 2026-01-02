@@ -1,4 +1,4 @@
-#include "gui/sysInfoDialog.h"
+#include "gui/sysInfoDialog.hpp"
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QLabel>

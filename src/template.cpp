@@ -3,7 +3,7 @@
  * @brief Template class implementation
  */
 
-#include "scadtemplates/template.h"
+#include "scadtemplates/template.hpp"
 
 namespace scadtemplates {
 

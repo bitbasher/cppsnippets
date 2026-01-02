@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "export.h"
-#include "edittype.h"
-#include "editsubtype.h"
+#include "export.hpp"
+#include "edittype.hpp"
+#include "editsubtype.hpp"
 #include <string>
 #include <vector>
 

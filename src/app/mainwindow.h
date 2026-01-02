@@ -6,7 +6,7 @@
 #pragma once
 
 #include <QMainWindow>
-#include <scadtemplates/template.h>
+#include <scadtemplates/template.hpp>
 #include <resInventory/resourceItem.hpp>
 #include <memory>
 

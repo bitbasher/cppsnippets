@@ -1,5 +1,5 @@
 // TemplateSession.cpp
-#include "scadtemplates/scad_template_session.h"
+#include "scadtemplates/scad_template_session.hpp"
 #include <regex>
 
 #ifdef HAS_QSCINTILLA

@@ -7,7 +7,7 @@
 #include <QDebug>
 #include <QString>
 #include <iostream>
-#include <scadtemplates/legacy_template_converter.h>
+#include <scadtemplates/legacy_template_converter.hpp>
 #include <platformInfo/resourceLocationManager.hpp>
 
 int main(int argc, char** argv) {

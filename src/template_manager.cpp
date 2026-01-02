@@ -3,8 +3,8 @@
  * @brief TemplateManager class implementation
  */
 
-#include "scadtemplates/template_manager.h"
-#include "scadtemplates/template_parser.h"
+#include "scadtemplates/template_manager.hpp"
+#include "scadtemplates/template_parser.hpp"
 #include <algorithm>
 #include <fstream>
 

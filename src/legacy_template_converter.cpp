@@ -3,10 +3,10 @@
  * @brief Implementation of legacy template converter
  */
 
-#include "scadtemplates/legacy_template_converter.h"
-#include "scadtemplates/template.h"
+#include "scadtemplates/legacy_template_converter.hpp"
+#include "scadtemplates/template.hpp"
 #include "platformInfo/resourceLocationManager.hpp"
-#include "JsonReader/JsonReader.h"
+#include "jsonreader/JsonReader.hpp"
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>

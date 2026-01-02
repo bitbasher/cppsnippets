@@ -4,8 +4,8 @@
  */
 
 #include "mainwindow.h"
-#include "gui/preferencesdialog.h"
-#include <scadtemplates/scadtemplates.h>
+#include "gui/preferencesdialog.hpp"
+#include <scadtemplates/scadtemplates.hpp>
 #include <platformInfo/resourceLocationManager.hpp>
 #include <resInventory/resourceScanner.hpp>
 #include <resInventory/resourceTreeWidget.hpp>

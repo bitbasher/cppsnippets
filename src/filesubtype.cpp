@@ -3,7 +3,7 @@
  * @brief Implementation of FileSubtype class methods
  */
 
-#include <scadtemplates/filesubtype.h>
+#include "scadtemplates/filesubtype.hpp"
 #include <QFileInfo>
 
 namespace scadtemplates {

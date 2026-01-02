@@ -5,7 +5,7 @@
  * Follows Qt TabDialog pattern where each tab is its own QWidget subclass.
  */
 
-#include "gui/preferencesdialog.h"
+#include "gui/preferencesdialog.hpp"
 #include "gui/platformInfoWidget.hpp"
 #include "gui/dialogButtonBar.hpp"
 #include "gui/installationTab.hpp"

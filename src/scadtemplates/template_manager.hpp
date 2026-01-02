@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "export.h"
-#include "template.h"
+#include "export.hpp"
+#include "template.hpp"
 #include <string>
 #include <vector>
 #include <memory>

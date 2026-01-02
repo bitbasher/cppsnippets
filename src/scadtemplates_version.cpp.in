@@ -6,7 +6,7 @@
  * Do not edit directly - modify the .in template or CMakeLists.txt instead.
  */
 
-#include "scadtemplates/scadtemplates.h"
+#include "scadtemplates/scadtemplates.hpp"
 
 namespace scadtemplates {
 

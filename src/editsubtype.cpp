@@ -3,7 +3,7 @@
  * @brief Implementation of EditSubtype utility functions
  */
 
-#include <scadtemplates/editsubtype.h>
+#include "scadtemplates/editsubtype.hpp"
 
 namespace scadtemplates {
 

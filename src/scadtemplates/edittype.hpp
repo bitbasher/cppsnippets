@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "export.h"
-#include "editsubtype.h"
+#include "export.hpp"
+#include "editsubtype.hpp"
 #include <QString>
 #include <QVector>
 
