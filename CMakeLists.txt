@@ -29,12 +29,10 @@ if(POLICY CMP0200) # Since CMake 3.30
   cmake_policy(SET CMP0200 NEW)
 endif()
 
-# Version: MAJOR.MINOR.PATCH
-# - MAJOR: Manual (breaking changes)
-# - MINOR: Auto-incremented from Git commit count  
-# - PATCH: Manual (features/fixes within a release)
-set(SCADTEMPLATES_VERSION_MAJOR 2)
-set(SCADTEMPLATES_VERSION_PATCH 0)
+# ============================================================================
+# Application Metadata - Load from AppInfo.cmake
+# ============================================================================
+include(${CMAKE_SOURCE_DIR}/AppInfo.cmake)
 
 # Get Git commit count for auto-incrementing minor version
 find_package(Git QUIET)
@@ -53,19 +51,34 @@ if(Git_FOUND)
 else()
     set(GIT_COMMIT_COUNT 0)
 endif()
-set(SCADTEMPLATES_VERSION_MINOR ${GIT_COMMIT_COUNT})
+set(APP_VERSION_MINOR ${GIT_COMMIT_COUNT})
 
 # Compose full version string
-set(SCADTEMPLATES_VERSION "${SCADTEMPLATES_VERSION_MAJOR}.${SCADTEMPLATES_VERSION_MINOR}.${SCADTEMPLATES_VERSION_PATCH}")
+set(APP_VERSION "${APP_VERSION_MAJOR}.${APP_VERSION_MINOR}.${APP_VERSION_PATCH}")
+
+# Build display suffix (add space and parentheses if suffix is provided)
+if(APP_SUFFIX)
+    set(APP_DISPLAY_SUFFIX " (${APP_SUFFIX})")
+    set(APP_DISPLAY_NAME "${APP_NAME}${APP_DISPLAY_SUFFIX}")
+else()
+    set(APP_DISPLAY_SUFFIX "")
+    set(APP_DISPLAY_NAME "${APP_NAME}")
+endif()
+
+# Legacy compatibility - keep SCADTEMPLATES_* variables
+set(SCADTEMPLATES_VERSION_MAJOR ${APP_VERSION_MAJOR})
+set(SCADTEMPLATES_VERSION_MINOR ${APP_VERSION_MINOR})
+set(SCADTEMPLATES_VERSION_PATCH ${APP_VERSION_PATCH})
+set(SCADTEMPLATES_VERSION ${APP_VERSION})
 
 project(scadtemplates
-  VERSION ${SCADTEMPLATES_VERSION}
+  VERSION ${APP_VERSION}
   DESCRIPTION "A code template solution for OpenSCAD"
   HOMEPAGE_URL "https://jartisan.com/"
   LANGUAGES CXX
 )
 
-message(STATUS "ScadTemplates version: ${SCADTEMPLATES_VERSION} (Git commits: ${GIT_COMMIT_COUNT})")
+message(STATUS "${APP_DISPLAY_NAME} version: ${APP_VERSION} (Git commits: ${GIT_COMMIT_COUNT})")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -183,6 +196,14 @@ endif(CLANG_TIDY)
 # Note: src/include is removed - headers are now co-located with .cpp files
 # Add src/ to include path so headers in src/resInventory, src/gui, src/platformInfo can be found
 include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_BINARY_DIR}/generated)
+
+# Generate application metadata header from template
+configure_file(
+    ${CMAKE_SOURCE_DIR}/src/app/applicationNameInfo.hpp.in
+    ${CMAKE_BINARY_DIR}/generated/applicationNameInfo.hpp
+    @ONLY
+)
 
 # Generate version source file from template
 configure_file(
@@ -195,18 +216,17 @@ configure_file(
 set(LIB_SOURCES
     ${CMAKE_BINARY_DIR}/generated/scadtemplates_version.cpp
     src/jsonreader/JsonReader.cpp
-    src/template.cpp
-    src/template_parser.cpp
-    src/template_manager.cpp
-    src/legacy_template_converter.cpp
-    src/scad_template_session.cpp
-    src/editsubtype.cpp
-    src/edittype.cpp
-    src/filesubtype.cpp
-    src/extnOSVersRef.cpp
-    src/platformInfo.cpp
-    src/resourcePaths.cpp
-    src/resourceLocationManager.cpp
+    src/scadtemplates/template.cpp
+    src/scadtemplates/template_parser.cpp
+    src/scadtemplates/template_manager.cpp
+    src/scadtemplates/legacy_template_converter.cpp
+    src/scadtemplates/scad_template_session.cpp
+    src/scadtemplates/editsubtype.cpp
+    src/scadtemplates/edittype.cpp
+    src/scadtemplates/filesubtype.cpp
+    src/platformInfo/platformInfo.cpp
+    src/platformInfo/resourcePaths.cpp
+    src/platformInfo/resourceLocationManager.cpp
 )
 
 set(LIB_HEADERS
@@ -221,7 +241,6 @@ set(LIB_HEADERS
     src/scadtemplates/edittype.hpp
     src/scadtemplates/filesubtype.hpp
     src/platformInfo/export.hpp
-    src/platformInfo/extnOSVersRef.hpp
     src/platformInfo/platformInfo.hpp
     src/platformInfo/resourcePaths.hpp
     src/platformInfo/resourceLocationManager.hpp

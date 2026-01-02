@@ -3,175 +3,15 @@
  * @brief Implementation of ResourcePaths class
  */
 
-#include "platformInfo/resourcePaths.hpp"
-#include "platformInfo/platformInfo.hpp"
+#include "resourcePaths.hpp"
+#include "platformInfo.hpp"
+
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QCoreApplication>
 
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-#include <shlobj.h>
-#include <windows.h>
-#endif
-
 namespace platformInfo {
-
-// All top-level resource types that can be discovered/scanned
-//   excludes EditorColors/RenderColors which are sub-resources)
-static const QVector<ResourceType> allTopLevelResTypes = {
-    ResourceType::Examples,
-    ResourceType::Tests,
-    ResourceType::Fonts,
-    ResourceType::ColorSchemes,
-    ResourceType::Shaders,
-    ResourceType::Templates,
-    ResourceType::Libraries,
-    ResourceType::Translations
-};
-
-// Static resource type definitions with file extensions
-static const QVector<ResourceTypeInfo> s_resourceTypes = {
-    { ResourceType::Examples,     
-      QStringLiteral("examples"),       
-      QStringLiteral("Example scripts"),
-      {},  // no sub-resources
-      { QStringLiteral(".scad") },
-      { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") } },
-      
-    { ResourceType::Tests,        
-      QStringLiteral("tests"),          
-      QStringLiteral("Test OpenSCAD scripts"),
-      {},  // no sub-resources
-      { QStringLiteral(".scad") },
-      { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") } },
-      
-    { ResourceType::Fonts,        
-      QStringLiteral("fonts"),          
-      QStringLiteral("Font files (supplements OS fonts)"),
-      {},  // no sub-resources
-      { QStringLiteral(".ttf"), QStringLiteral(".otf") },
-      {} },
-      
-    { ResourceType::ColorSchemes, 
-      QStringLiteral("color-schemes"),  
-      QStringLiteral("Color scheme definitions"),
-      { ResourceType::EditorColors, ResourceType::RenderColors },  // contains editor and render colors
-      {},  // no primary extensions (container only)
-      {} },
-      
-    { ResourceType::EditorColors, 
-      QStringLiteral("color-schemes"),  
-      QStringLiteral("Editor color schemes"),
-      {},  // no sub-resources
-      { QStringLiteral(".json") },
-      {} },
-      
-    { ResourceType::RenderColors, 
-      QStringLiteral("color-schemes"),  
-      QStringLiteral("Render color schemes"),
-      {},  // no sub-resources
-      { QStringLiteral(".json") },
-      {} },
-      
-    { ResourceType::Shaders,      
-      QStringLiteral("shaders"),        
-      QStringLiteral("OpenGL shader files"),
-      {},  // no sub-resources
-      { QStringLiteral(".frag"), QStringLiteral(".vert") },
-      {} },
-      
-    { ResourceType::Templates,    
-      QStringLiteral("templates"),      
-      QStringLiteral("Template files"),
-      {},  // no sub-resources
-      { QStringLiteral(".json") },
-      {} },
-      
-    { ResourceType::Libraries,    
-      QStringLiteral("libraries"),      
-      QStringLiteral("OpenSCAD library scripts that extend features"),
-      allTopLevelResTypes,  // libraries can contain any top-level resource
-      { QStringLiteral(".scad") },
-      {} },
-      
-    { ResourceType::Translations, 
-      QStringLiteral("locale"),         
-      QStringLiteral("Translation files"),
-      {},  // no sub-resources
-      { QStringLiteral(".qm"), QStringLiteral(".ts") },
-      {} }
-};
-
-ResourcePaths::ResourcePaths()
-    : m_suffix()  // Empty suffix = release build, otherwise "(Nightly)"
-    , m_osType(ExtnOSType::Unknown)
-{
-    detectOSType();
-}
-
-ResourcePaths::ResourcePaths(const QString& applicationPath, const QString& suffix)
-    : m_applicationPath(applicationPath)
-    , m_suffix(suffix)
-    , m_osType(ExtnOSType::Unknown)
-{
-    detectOSType();
-}
-
-void ResourcePaths::setApplicationPath(const QString& path) {
-    if (m_applicationPath != path) {
-        m_applicationPath = path;
-        m_appResourceDirCached = false;
-        m_cachedAppResourceDir.clear();
-    }
-}
-
-void ResourcePaths::setSuffix(const QString& suffix) {
-    if (m_suffix != suffix) {
-        m_suffix = suffix;
-        m_appResourceDirCached = false;
-        m_cachedAppResourceDir.clear();
-        m_userConfigPathCached = false;
-        m_cachedUserConfigPath.clear();
-    }
-}
-
-QString ResourcePaths::folderName() const {
-    // OPENSCAD_FOLDER_NAME = "OpenSCAD" + OPENSCAD_SUFFIX
-    return QStringLiteral("OpenSCAD") + m_suffix;
-}
-
-void ResourcePaths::detectOSType() {
-    PlatformInfo info;
-    m_osType = info.currentOSType();
-}
-
-QVector<ResourceTypeInfo> ResourcePaths::allResourceTypes() {
-    return s_resourceTypes;
-}
-
-const ResourceTypeInfo* ResourcePaths::resourceTypeInfo(ResourceType type) {
-    for (const auto& info : s_resourceTypes) {
-        if (info.type == type) {
-            return &info;
-        }
-    }
-    return nullptr;
-}
-
-QString ResourcePaths::resourceSubdirectory(ResourceType type) {
-    const auto* info = resourceTypeInfo(type);
-    return info ? info->subdirectory : QString();
-}
-
-QStringList ResourcePaths::resourceExtensions(ResourceType type) {
-    const auto* info = resourceTypeInfo(type);
-    return info ? info->primaryExtensions : QStringList();
-}
-
-QVector<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
-    return allTopLevelResTypes;
-}
 
 // ============================================================================
 // Default Search Paths (Immutable, Compile-Time Constants)
@@ -520,12 +360,6 @@ QStringList ResourcePaths::allResourcePaths(ResourceType type) const {
     }
     
     return paths;
-}
-
-// ========== Validation ==========
-
-bool ResourcePaths::isValid() const {
-    return !findAppResourceDirectory().isEmpty();
 }
 
 } // namespace platformInfo

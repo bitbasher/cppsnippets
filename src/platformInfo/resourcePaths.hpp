@@ -13,7 +13,7 @@
 #pragma once
 
 #include "export.hpp"
-#include "extnOSVersRef.hpp"
+
 #include <QString>
 #include <QStringList>
 #include <QDir>
@@ -27,6 +27,7 @@ namespace platformInfo {
  * that contain different types of resources.
  */
 enum class ResourceType {
+    Unknown = 0,    ///< Unknown/invalid resource type
     Examples,       ///< Example .scad files ($RESOURCEDIR/examples)
     Tests,          ///< Test .scad files ($RESOURCEDIR/tests) - may have .json/.txt/.dat attachments
     Fonts,          ///< Font files - .ttf, .otf ($RESOURCEDIR/fonts)
@@ -39,27 +40,172 @@ enum class ResourceType {
     Translations    ///< Translation/locale files ($RESOURCEDIR/locale)
 };
 
+// All top-level resource types that can be discovered/scanned
+//   excludes EditorColors/RenderColors which are sub-resources)
+static const QList<ResourceType> allTopLevelResTypes = {
+    ResourceType::Examples,
+    ResourceType::Tests,
+    ResourceType::Fonts,
+    ResourceType::ColorSchemes,
+    ResourceType::Shaders,
+    ResourceType::Templates,
+    ResourceType::Libraries,
+    ResourceType::Translations
+};
+
 /**
  * @brief Resource type metadata
  * 
  * Contains the subdirectory name, description, and file extensions for a resource type.
  */
-struct PLATFORMINFO_API ResourceTypeInfo {
-    ResourceType type;              ///< The resource type enum
-    QString subdirectory;           ///< Subdirectory name under resource dir
-    QString description;            ///< Human-readable description
-    QVector<ResourceType> subResTypes; ///< Sub-resource types contained within this resource type
-    QStringList primaryExtensions;  ///< Primary file extensions for this resource
+class PLATFORMINFO_API ResourceTypeInfo {
+private:
+    ResourceType type;                ///< The resource type enum
+    QString subdirectory;             ///< Subdirectory name under resource dir
+    QString description;              ///< Human-readable description
+    QList<ResourceType> subResTypes;  ///< Sub-resource types contained within this resource type
+    QStringList primaryExtensions;    ///< Primary file extensions for this resource
     QStringList attachmentExtensions; ///< Optional attachment file extensions
     
     ResourceTypeInfo() = default;
-    ResourceTypeInfo(ResourceType t, const QString& subdir, const QString& desc,
-                     const QVector<ResourceType>& subRes = {}, 
-                     const QStringList& primary = {},
-                     const QStringList& attachments = {})
-        : type(t), subdirectory(subdir), description(desc), subResTypes(subRes),
-          primaryExtensions(primary), attachmentExtensions(attachments) {}
+public:
+    ResourceTypeInfo(
+            ResourceType t,
+            const QString& subdir,
+            const QString& desc,
+            const QList<ResourceType>& subRes = {}, 
+            const QStringList& primary = {},
+            const QStringList& attachments = {})
+        : type(t), subdirectory(subdir), description(desc)
+        , subResTypes(subRes), primaryExtensions(primary)
+        , attachmentExtensions(attachments) {}
 };
+
+
+// Static resource type definitions with file extensions
+inline const QMap<ResourceType, ResourceTypeInfo> s_resourceTypes = {
+    { ResourceType::Unknown,
+        ResourceTypeInfo(
+            ResourceType::Unknown,
+            QStringLiteral("unknown"),
+            QStringLiteral("Unknown resource type"),
+            {},  // no sub-resources
+            {},
+            {}
+            )
+    },
+
+    { ResourceType::Examples, 
+        ResourceTypeInfo(
+            ResourceType::Examples,
+            QStringLiteral("examples"),       
+            QStringLiteral("Example scripts"),
+            {},  // no sub-resources
+            { QStringLiteral(".scad") },
+            { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") }
+            )
+    },
+      
+    { ResourceType::Tests,
+        ResourceTypeInfo( 
+            ResourceType::Tests,    
+            QStringLiteral("tests"),          
+            QStringLiteral("Test OpenSCAD scripts"),
+            {},  // no sub-resources
+            { QStringLiteral(".scad") },
+            { QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat") } 
+            )
+    },
+      
+    { ResourceType::Fonts,
+        ResourceTypeInfo(
+            ResourceType::Fonts,       
+            QStringLiteral("fonts"),          
+            QStringLiteral("Font files (supplements OS fonts)"),
+            {},  // no sub-resources
+            { QStringLiteral(".ttf"), QStringLiteral(".otf") },
+            {} 
+            )
+    },
+      
+    { ResourceType::ColorSchemes,
+        ResourceTypeInfo(
+            ResourceType::ColorSchemes,
+            QStringLiteral("color-schemes"),  
+            QStringLiteral("Color scheme definitions"),
+            { ResourceType::EditorColors, ResourceType::RenderColors },  // contains editor and render colors
+            {},  // no primary extensions (container only)
+            {}
+        )
+    },
+      
+    { ResourceType::EditorColors,
+        ResourceTypeInfo(
+            ResourceType::EditorColors,
+            QStringLiteral("color-schemes"),  
+            QStringLiteral("Editor color schemes"),
+            {},  // no sub-resources
+            { QStringLiteral(".json") },
+            {} 
+            )
+    },
+      
+    { ResourceType::RenderColors,
+        ResourceTypeInfo(
+            ResourceType::RenderColors,
+            QStringLiteral("color-schemes"),  
+            QStringLiteral("Render color schemes"),
+            {},  // no sub-resources
+            { QStringLiteral(".json") },
+            {} 
+            )
+    },
+      
+    { ResourceType::Shaders,
+        ResourceTypeInfo(
+            ResourceType::Shaders,
+            QStringLiteral("shaders"),        
+            QStringLiteral("OpenGL shader files"),
+            {},  // no sub-resources
+            { QStringLiteral(".frag"), QStringLiteral(".vert") },
+            {}
+            )
+    },
+      
+    { ResourceType::Templates,
+        ResourceTypeInfo(
+            ResourceType::Templates,
+            QStringLiteral("templates"),      
+            QStringLiteral("Template files"),
+            {},  // no sub-resources
+            { QStringLiteral(".json") },
+            {} 
+            )
+    },
+      
+    { ResourceType::Libraries,
+        ResourceTypeInfo(
+            ResourceType::Libraries,   
+            QStringLiteral("libraries"),      
+            QStringLiteral("OpenSCAD library scripts that extend features"),
+            allTopLevelResTypes,  // libraries can contain any top-level resource
+            { QStringLiteral(".scad") },
+            {}
+            )
+    },
+      
+    { ResourceType::Translations,
+        ResourceTypeInfo(
+            ResourceType::Translations,
+            QStringLiteral("locale"),         
+            QStringLiteral("Translation files"),
+            {},  // no sub-resources
+            { QStringLiteral(".qm"), QStringLiteral(".ts") },
+            {}
+            )
+    }
+    };
+
 
 /**
  * @brief Manages resource paths for OpenSCAD
@@ -116,47 +262,7 @@ public:
      * or use the parameterized constructor.
      */
     ResourcePaths();
-    
-    /**
-     * @brief Construct with application path
-     * @param applicationPath Path to the application executable directory
-     * @param suffix Build suffix (e.g., "" for release, " (Nightly)" for nightly builds)
-     * 
-     * @note The suffix corresponds to OpenSCAD's OPENSCAD_SUFFIX preprocessor define.
-     * It is appended to both share paths ("../share/openscad" + suffix) and 
-     * user config paths ("OpenSCAD" + suffix).
-     */
-    explicit ResourcePaths(const QString& applicationPath, const QString& suffix = QString());
-    
-    /**
-     * @brief Set the application executable path
-     * @param path Path to the application executable directory
-     * 
-     * Search paths are relative to this location.
-     */
-    void setApplicationPath(const QString& path);
-    
-    /**
-     * @brief Get the application path
-     * @return Current application path
-     */
-    QString applicationPath() const { return m_applicationPath; }
-    
-    /**
-     * @brief Set the build suffix
-     * @param suffix Build suffix (e.g., "" for release, " (Nightly)" for nightly)
-     * 
-     * This suffix is appended to:
-     * - Share paths: "../share/openscad" + suffix (via RESOURCE_FOLDER macro)
-     * - User config paths: "OpenSCAD" + suffix (via OPENSCAD_FOLDER_NAME)
-     */
-    void setSuffix(const QString& suffix);
-    
-    /**
-     * @brief Get the build suffix
-     * @return Current suffix (e.g., "" or " (Nightly)")
-     */
-    QString suffix() const { return m_suffix; }
+
     
     /**
      * @brief Get the OpenSCAD folder name (for user paths)
@@ -167,12 +273,7 @@ public:
     QString folderName() const;
     
     // ========== Resource Type Information ==========
-    
-    /**
-     * @brief Get all resource type definitions
-     * @return Vector of all resource type info
-     */
-    static QVector<ResourceTypeInfo> allResourceTypes();
+
     
     /**
      * @brief Get info for a specific resource type
@@ -205,7 +306,9 @@ public:
      * 
      * @note This list is read-only and cannot be modified.
      */
-    static QVector<ResourceType> allTopLevelResourceTypes();
+    QList<ResourceType> allTopLevelResourceTypes() {
+    return allTopLevelResTypes;
+}
     
     // ========== Default Search Paths (Immutable) ==========
     //
@@ -257,29 +360,7 @@ public:
      */
     QStringList appSearchPaths() const;
     
-    /**
-     * @brief Find the application resource directory
-     * @return Absolute path to resource directory, or empty string if not found
-     * 
-     * Searches through the platform-specific search paths relative to
-     * the application path and returns the first valid directory found.
-     */
-    QString findAppResourceDirectory() const;
-    
-    /**
-     * @brief Get the full path to an application resource type directory
-     * @param type The resource type
-     * @return Absolute path to the resource type directory, or empty if not found
-     */
-    QString appResourcePath(ResourceType type) const;
-    
-    /**
-     * @brief Check if an application resource directory exists
-     * @param type The resource type
-     * @return true if the resource directory exists
-     */
-    bool hasAppResourceDirectory(ResourceType type) const;
-    
+  
     // ========== User Resource Paths ==========
     //
     // OpenSCAD PlatformUtils defines several user paths:
@@ -316,14 +397,7 @@ public:
      */
     QString userConfigBasePath() const;
     
-    /**
-     * @brief Get the user's OpenSCAD config directory
-     * @return Path to user's OpenSCAD folder (userConfigBasePath/folderName)
-     * 
-     * @note Equivalent to OpenSCAD's PlatformUtils::userConfigPath()
-     */
-    QString userOpenSCADPath() const;
-    
+
     /**
      * @brief Get the full path to a user resource type directory
      * @param type The resource type
@@ -334,79 +408,12 @@ public:
     QString userResourcePath(ResourceType type) const;
     
     /**
-     * @brief Check if a user resource directory exists
-     * @param type The resource type
-     * @return true if the user resource directory exists
-     */
-    bool hasUserResourceDirectory(ResourceType type) const;
-    
-    /**
-     * @brief Get user config base path for a specific platform
-     * @param osType The OS type
-     * @return Platform-specific config base path (without folder name)
-     * 
-     * Platform behavior:
-     * - Linux: $XDG_CONFIG_HOME or $HOME/.config
-     * - Windows: CSIDL_LOCAL_APPDATA
-     * - macOS: NSApplicationSupportDirectory
-     */
-    static QString userConfigBasePathForPlatform(ExtnOSType osType);
-    
-    /**
-     * @brief Get user documents path for a specific platform
-     * @param osType The OS type
-     * @return Platform-specific documents path
-     * 
-     * Platform behavior (matches OpenSCAD PlatformUtils::documentsPath):
-     * - Linux: $HOME/.local/share
-     * - Windows: CSIDL_PERSONAL (My Documents)
-     * - macOS: NSDocumentDirectory (~Documents)
-     * 
-     * @note Used for user libraries and backup files.
-     */
-    static QString userDocumentsPathForPlatform(ExtnOSType osType);
-    
-    // ========== Combined Resource Paths ==========
-    
-    /**
      * @brief Get all paths for a resource type (app + user)
      * @param type The resource type
      * @return List of paths to search (app path first, then user path)
      */
-    QStringList allResourcePaths(ResourceType type) const;
-    
-    // ========== Validation ==========
-    
-    /**
-     * @brief Check if the application resource base directory has been found
-     * @return true if findAppResourceDirectory() returns a valid path
-     */
-    bool isValid() const;
-    
-    /**
-     * @brief Get the detected OS type
-     * @return Current OS type used for search path selection
-     */
-    ExtnOSType osType() const { return m_osType; }
+    QStringList allResourcePaths(ResourceType type) const { return s_resourceTypes; }
 
-private:
-    QString m_applicationPath;
-    QString m_suffix;                         ///< Build suffix (e.g., "" or " (Nightly)")
-    ExtnOSType m_osType;
-    mutable QString m_cachedAppResourceDir;   ///< Cached app resource directory path
-    mutable QString m_cachedUserConfigPath;   ///< Cached user config base path
-    mutable bool m_appResourceDirCached = false;
-    mutable bool m_userConfigPathCached = false;
-    
-    /**
-     * @brief Detect the current OS type
-     */
-    void detectOSType();
-    
-    /**
-     * @brief Resolve user config base path (internal, with caching)
-     */
-    QString resolveUserConfigBasePath() const;
 };
 
 } // namespace platformInfo

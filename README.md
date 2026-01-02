@@ -127,7 +127,8 @@ int main() {
 
 ## Testing
 
-The project uses GoogleTest for unit testing. Tests are automatically discovered by CTest.
+The project uses GoogleTest for some unit tests and to build mock objects, and Qt Ctest for unit testing and GUI tests.
+Tests are automatically discovered by CTest.
 
 ```bash
 cd build

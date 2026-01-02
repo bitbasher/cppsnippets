@@ -3,7 +3,7 @@
  * @brief Implementation of legacy template converter
  */
 
-#include "scadtemplates/legacy_template_converter.hpp"
+#include "legacy_template_converter.hpp"
 #include "scadtemplates/template.hpp"
 #include "platformInfo/resourceLocationManager.hpp"
 #include "jsonreader/JsonReader.hpp"

@@ -1,21 +1,21 @@
 /**
  * @file main.cpp
- * @brief Main entry point for the cppsnippets Qt application
+ * @brief Main entry point for the ScadTemplates Qt application
  */
 
 #include <QApplication>
 #include <QDebug>
 #include "mainwindow.h"
-#include <scadtemplates/scadtemplates.hpp>
+#include "applicationNameInfo.hpp"
 
 int main(int argc, char *argv[]) {
-    qDebug() << "Starting CppSnippets application...";
+    qDebug() << "Starting" << appInfo::displayName << "application...";
     
     QApplication app(argc, argv);
     
-    app.setApplicationName("ScadTemplates");
-    app.setApplicationVersion(scadtemplates::getVersion());
-    app.setOrganizationName("CppSnippets");
+    app.setApplicationName(appInfo::displayName);
+    app.setApplicationVersion(appInfo::version);
+    app.setOrganizationName(appInfo::organization);
     
     qDebug() << "Creating main window...";
     MainWindow window;
