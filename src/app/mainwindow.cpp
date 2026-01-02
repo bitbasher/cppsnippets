@@ -6,7 +6,7 @@
 #include "mainwindow.h"
 #include "gui/preferencesdialog.h"
 #include <scadtemplates/scadtemplates.h>
-#include <platformInfo/resourceLocationManager.h>
+#include <platformInfo/resourceLocationManager.hpp>
 #include <resInventory/resourceScanner.hpp>
 #include <resInventory/resourceTreeWidget.hpp>
 

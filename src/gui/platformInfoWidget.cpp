@@ -1,6 +1,6 @@
 #include "gui/platformInfoWidget.hpp"
-#include "platformInfo/resourceLocationManager.h"
-#include "platformInfo/platformInfo.h"
+#include "platformInfo/resourceLocationManager.hpp"
+#include "platformInfo/platformInfo.hpp"
 
 #include <QGroupBox>
 #include <QFormLayout>

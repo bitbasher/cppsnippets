@@ -1,6 +1,6 @@
 #include "resourceScanner.hpp"
 #include "resourceTreeWidget.hpp"
-#include <platformInfo/resourceLocationManager.h>
+#include <platformInfo/resourceLocationManager.hpp>
 #include <QDir>
 #include <QFileInfo>
 #include <QDirIterator>

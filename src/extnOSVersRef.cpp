@@ -3,7 +3,7 @@
  * @brief Implementation of ExtnOSVersRef class
  */
 
-#include "platformInfo/extnOSVersRef.h"
+#include "platformInfo/extnOSVersRef.hpp"
 
 namespace platformInfo {
 

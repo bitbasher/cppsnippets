@@ -16,15 +16,15 @@
 
 #pragma once
 
-#include "export.h"
-#include "extnOSVersRef.h"
-#include "resourcePaths.h"
+#include "export.hpp"
+#include "extnOSVersRef.hpp"
+#include "resourcePaths.hpp"
 #include <QString>
 #include <QStringList>
 #include <QVector>
 #include <QSettings>
 
-#include "platformInfo/ResourceLocation.h"
+#include "platformInfo/ResourceLocation.hpp"
 
 namespace platformInfo {
 

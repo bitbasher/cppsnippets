@@ -3,7 +3,7 @@
  * @brief Implementation of PlatformInfo class
  */
 
-#include <platformInfo/platformInfo.h>
+#include <platformInfo/platformInfo.hpp>
 #include <QSysInfo>
 #include <QGuiApplication>
 #include <QScreen>

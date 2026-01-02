@@ -3,7 +3,7 @@
 
 #include <QMap>
 #include <QString>
-#include "platformInfo/ResourceLocation.h"
+#include "platformInfo/ResourceLocation.hpp"
 
 /**
  * @brief Storage class for resource locations organized by tier

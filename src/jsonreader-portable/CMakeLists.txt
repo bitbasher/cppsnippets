@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(JsonReaderPortable VERSION 0.1.0 LANGUAGES CXX)
 
-# Enable Qt's automoc for targets here
-set(CMAKE_AUTOMOC ON)
-
-option(JSONREADER_BUILD_TESTS "Build JsonReader tests" ON)
+# Note: CMAKE_AUTOMOC is not enabled here because JsonReaderPortable has no Qt meta-objects
+# (no Q_OBJECT macros, signals, slots). This avoids unnecessary MOC compilation.
+option(JSONREADER_BUILD_TESTS "Build JsonReader tests" OFF)
 
 # Try Qt6 first, then Qt5
 set(_need_qttest ${JSONREADER_BUILD_TESTS})
@@ -40,7 +39,10 @@ endif()
 
 if(JSONREADER_BUILD_TESTS)
   enable_testing()
+  # Enable MOC only for test target which has Q_OBJECT macros
+  set(CMAKE_AUTOMOC ON)
   add_executable(jsonreader_qttest tests/jsonreader_qttest.cpp)
+  set(CMAKE_AUTOMOC OFF)  # Turn back off after test target
   target_link_libraries(jsonreader_qttest PRIVATE JsonReaderPortable)
   if(Qt6_FOUND)
     target_link_libraries(jsonreader_qttest PRIVATE Qt6::Test)

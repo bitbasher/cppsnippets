@@ -221,11 +221,11 @@ set(LIB_HEADERS
     src/include/scadtemplates/editsubtype.h
     src/include/scadtemplates/edittype.h
     src/include/scadtemplates/filesubtype.h
-    src/include/platformInfo/export.h
-    src/include/platformInfo/extnOSVersRef.h
-    src/include/platformInfo/platformInfo.h
-    src/include/platformInfo/resourcePaths.h
-    src/include/platformInfo/resourceLocationManager.h
+    src/platformInfo/export.hpp
+    src/platformInfo/extnOSVersRef.hpp
+    src/platformInfo/platformInfo.hpp
+    src/platformInfo/resourcePaths.hpp
+    src/platformInfo/resourceLocationManager.hpp
 )
 
 # Build the shared/dynamic library

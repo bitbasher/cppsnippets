@@ -5,7 +5,7 @@
 
 #include "scadtemplates/legacy_template_converter.h"
 #include "scadtemplates/template.h"
-#include "platformInfo/resourceLocationManager.h"
+#include "platformInfo/resourceLocationManager.hpp"
 #include "JsonReader/JsonReader.h"
 #include <QDir>
 #include <QFile>

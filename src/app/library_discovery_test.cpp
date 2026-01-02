@@ -9,7 +9,7 @@
 #include "resInventory/resourceScanner.hpp"
 #include "resInventory/resourceTreeWidget.hpp"
 #include "resInventory/resourceItem.hpp"
-#include "platformInfo/ResourceLocation.h"
+#include "platformInfo/ResourceLocation.hpp"
 
 namespace ri = resInventory;
 namespace pi = platformInfo;

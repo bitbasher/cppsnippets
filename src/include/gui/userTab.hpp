@@ -2,7 +2,7 @@
 #define USERTAB_HPP
 
 #include <QWidget>
-#include <platformInfo/ResourceLocation.h>
+#include <platformInfo/ResourceLocation.hpp>
 
 class ResourceLocationWidget;
 

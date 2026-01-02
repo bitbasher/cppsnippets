@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QVector>
 
-#include <platformInfo/ResourceLocation.h>
+#include <platformInfo/ResourceLocation.hpp>
 
 class QListWidget;
 class QPushButton;

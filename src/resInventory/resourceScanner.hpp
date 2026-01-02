@@ -7,7 +7,7 @@
 #include <QMap>
 #include <functional>
 #include "resourceItem.hpp"
-#include "platformInfo/ResourceLocation.h"
+#include "platformInfo/ResourceLocation.hpp"
 
 namespace platformInfo {
 class ResourceLocationManager;

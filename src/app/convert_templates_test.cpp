@@ -8,7 +8,7 @@
 #include <QString>
 #include <iostream>
 #include <scadtemplates/legacy_template_converter.h>
-#include <platformInfo/resourceLocationManager.h>
+#include <platformInfo/resourceLocationManager.hpp>
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);

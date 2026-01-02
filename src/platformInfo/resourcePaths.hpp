@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "export.h"
-#include "extnOSVersRef.h"
+#include "export.hpp"
+#include "extnOSVersRef.hpp"
 #include <QString>
 #include <QStringList>
 #include <QDir>

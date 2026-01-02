@@ -4,7 +4,7 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QString>
-#include "platformInfo/ResourceLocation.h"
+#include "platformInfo/ResourceLocation.hpp"
 
 /**
  * @brief Custom tree widget item that holds a ResourceLocation

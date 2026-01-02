@@ -14,8 +14,8 @@
 #include <QDebug>
 #include <QDir>
 
-#include "platformInfo/resourceLocationManager.h"
-#include "platformInfo/resourcePaths.h"
+#include "platformInfo/resourceLocationManager.hpp"
+#include "platformInfo/resourcePaths.hpp"
 #include "resInventory/resourceScanner.hpp"
 #include "resInventory/resourceTreeWidget.hpp"
 #include "resInventory/resourceItem.hpp"

@@ -12,9 +12,9 @@
 #include "gui/machineTab.hpp"
 #include "gui/userTab.hpp"
 #include "gui/resourceLocationWidget.hpp"
-#include "platformInfo/resourceLocationManager.h"
-#include "platformInfo/ResourceLocation.h"
-#include "platformInfo/platformInfo.h"
+#include "platformInfo/resourceLocationManager.hpp"
+#include "platformInfo/ResourceLocation.hpp"
+#include "platformInfo/platformInfo.hpp"
 
 #include <QTabWidget>
 #include <QVBoxLayout>

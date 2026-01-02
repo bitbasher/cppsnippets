@@ -6,7 +6,7 @@
 #include <QVector>
 #include <memory>
 
-#include "platformInfo/resourcePaths.h"
+#include "platformInfo/resourcePaths.hpp"
 #include "resInventory/resLocMap.h"
 #include "resInventory/resLocTree.h"
 
