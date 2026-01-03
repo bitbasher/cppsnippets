@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         installLoc.displayName = "Installation";
         installLoc.exists = QDir(installPath).exists();
         installLoc.isEnabled = true;
-        installLoc.hasResourceFolders = pi::ResourceLocationManager::isValidInstallation(installPath);
+        installLoc.hasResourceFolders = true;  // Assume valid by definition
         installLocs.append(installLoc);
     }
     

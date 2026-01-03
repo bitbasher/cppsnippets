@@ -30,25 +30,6 @@ namespace appInfo {
     constexpr int versionMinor = @APP_VERSION_MINOR@;
     constexpr int versionPatch = @APP_VERSION_PATCH@;
     
-    // Lowercase name for paths/folders
-    inline std::string lowerName() {
-        std::string result = baseName;
-        for (char& c : result) {
-            c = std::tolower(static_cast<unsigned char>(c));
-        }
-        return result;
-    }
-    
-    // Full lowercase name with suffix for paths (e.g., "scadtemplates-nightly")
-    inline std::string lowerDisplayName() {
-        std::string result = displayName;
-        for (char& c : result) {
-            if (c == ' ' || c == '(' || c == ')') {
-                c = '-';
-            } else {
-                c = std::tolower(static_cast<unsigned char>(c));
-            }
-        }
-        return result;
-    }
-}
+    // Git commit hash (short)
+    constexpr const char* gitCommitHash = "@GIT_COMMIT_HASH@";
+} // namespace appInfo

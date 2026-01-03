@@ -34,8 +34,9 @@ endif()
 # ============================================================================
 include(${CMAKE_SOURCE_DIR}/AppInfo.cmake)
 
-# Get Git commit count for auto-incrementing minor version
+# Get Git commit count for auto-incrementing minor version and short hash for display
 find_package(Git QUIET)
+set(GIT_COMMIT_HASH "unknown")
 if(Git_FOUND)
     execute_process(
         COMMAND ${GIT_EXECUTABLE} rev-list --count HEAD
@@ -47,6 +48,18 @@ if(Git_FOUND)
     )
     if(NOT GIT_RESULT EQUAL 0)
         set(GIT_COMMIT_COUNT 0)
+    endif()
+
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short=8 HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE GIT_HASH_RESULT
+    )
+    if(NOT GIT_HASH_RESULT EQUAL 0)
+        set(GIT_COMMIT_HASH "unknown")
     endif()
 else()
     set(GIT_COMMIT_COUNT 0)
@@ -65,11 +78,13 @@ else()
     set(APP_DISPLAY_NAME "${APP_NAME}")
 endif()
 
-# Legacy compatibility - keep SCADTEMPLATES_* variables
-set(SCADTEMPLATES_VERSION_MAJOR ${APP_VERSION_MAJOR})
-set(SCADTEMPLATES_VERSION_MINOR ${APP_VERSION_MINOR})
-set(SCADTEMPLATES_VERSION_PATCH ${APP_VERSION_PATCH})
-set(SCADTEMPLATES_VERSION ${APP_VERSION})
+# Create safe filename versions (lowercase, spaces/parens → dashes)
+string(TOLOWER "${APP_NAME}" APP_NAME_SAFE)
+string(TOLOWER "${APP_DISPLAY_NAME}" APP_DISPLAY_SAFE)
+string(REPLACE " " "-" APP_DISPLAY_SAFE "${APP_DISPLAY_SAFE}")
+string(REPLACE "(" ""  APP_DISPLAY_SAFE "${APP_DISPLAY_SAFE}")
+string(REPLACE ")" ""  APP_DISPLAY_SAFE "${APP_DISPLAY_SAFE}")
+# ============================================================================
 
 project(scadtemplates
   VERSION ${APP_VERSION}
@@ -78,7 +93,7 @@ project(scadtemplates
   LANGUAGES CXX
 )
 
-message(STATUS "${APP_DISPLAY_NAME} version: ${APP_VERSION} (Git commits: ${GIT_COMMIT_COUNT})")
+message(STATUS "${APP_DISPLAY_NAME} version: ${APP_VERSION} (Git: ${GIT_COMMIT_HASH})")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -205,16 +220,8 @@ configure_file(
     @ONLY
 )
 
-# Generate version source file from template
-configure_file(
-    ${CMAKE_SOURCE_DIR}/src/scadtemplates_version.cpp.in
-    ${CMAKE_BINARY_DIR}/generated/scadtemplates_version.cpp
-    @ONLY
-)
-
 # Library source files
 set(LIB_SOURCES
-    ${CMAKE_BINARY_DIR}/generated/scadtemplates_version.cpp
     src/jsonreader/JsonReader.cpp
     src/scadtemplates/template.cpp
     src/scadtemplates/template_parser.cpp
@@ -226,6 +233,7 @@ set(LIB_SOURCES
     src/scadtemplates/filesubtype.cpp
     src/platformInfo/platformInfo.cpp
     src/platformInfo/resourcePaths.cpp
+    src/platformInfo/ResourceTypeInfo.cpp
     src/platformInfo/resourceLocationManager.cpp
 )
 
@@ -249,7 +257,7 @@ set(LIB_HEADERS
 # Build the shared/dynamic library
 add_library(scadtemplates_lib ${LIB_SOURCES} ${LIB_HEADERS})
 target_include_directories(scadtemplates_lib PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -264,7 +272,7 @@ endif()
 
 # Set output name and versioning
 set_target_properties(scadtemplates_lib PROPERTIES
-    OUTPUT_NAME scadtemplates
+    OUTPUT_NAME ${APP_DISPLAY_SAFE}
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
@@ -307,10 +315,10 @@ if(BUILD_APP)
     add_executable(scadtemplates_app ${APP_SOURCES})
     target_link_libraries(scadtemplates_app PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(scadtemplates_app PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(scadtemplates_app PROPERTIES
-        OUTPUT_NAME scadtemplates
+        OUTPUT_NAME ${APP_DISPLAY_SAFE}
         WIN32_EXECUTABLE ON
     )
     
@@ -338,10 +346,10 @@ if(BUILD_APP)
     add_executable(inventory_test EXCLUDE_FROM_ALL ${INVENTORY_TEST_SOURCES})
     target_link_libraries(inventory_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(inventory_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(inventory_test PROPERTIES
-        OUTPUT_NAME inventory_test
+        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
         WIN32_EXECUTABLE OFF  # Console app, not GUI
     )
     
@@ -349,10 +357,10 @@ if(BUILD_APP)
     add_executable(convert_templates_test EXCLUDE_FROM_ALL src/app/convert_templates_test.cpp)
     target_link_libraries(convert_templates_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(convert_templates_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(convert_templates_test PROPERTIES
-        OUTPUT_NAME convert_templates_test
+        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
         WIN32_EXECUTABLE OFF
     )
 
@@ -360,10 +368,10 @@ if(BUILD_APP)
     add_executable(template_discovery_test EXCLUDE_FROM_ALL src/app/template_discovery_test.cpp)
     target_link_libraries(template_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(template_discovery_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(template_discovery_test PROPERTIES
-        OUTPUT_NAME template_discovery_test
+        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
         WIN32_EXECUTABLE OFF
     )
 
@@ -379,10 +387,10 @@ if(BUILD_APP)
     )
     target_link_libraries(library_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(library_discovery_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(library_discovery_test PROPERTIES
-        OUTPUT_NAME library_discovery_test
+        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
         WIN32_EXECUTABLE OFF
     )
 
@@ -402,6 +410,13 @@ if(BUILD_APP)
                 "${Qt6_DIR}/../../../plugins/platforms"
                 "$<TARGET_FILE_DIR:scadtemplates_app>/platforms"
             COMMENT "Copying Qt platform plugins..."
+        )
+        # Copy Qt DLLs to app output directory
+        add_custom_command(TARGET scadtemplates_app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:scadtemplates_app>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Gui> $<TARGET_FILE_DIR:scadtemplates_app>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Widgets> $<TARGET_FILE_DIR:scadtemplates_app>
+            COMMENT "Copying Qt DLLs to app directory..."
         )
     endif()
 endif()
@@ -493,8 +508,9 @@ install(TARGETS scadtemplates_lib
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(DIRECTORY src/include/scadtemplates
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+install(DIRECTORY src/scadtemplates/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/scadtemplates
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 
 if(BUILD_APP)

@@ -11,13 +11,22 @@
 ### Problems Identified
 
 1. **Duplicate `ResourceType` enum** - defined in both `resourcePaths.hpp` and `ResourceTypeInfo.hpp`
-2. **Duplicate `ResourceTier` enum** - defined in both `resourceTier.h` and `resourceLocationManager.hpp` 
+2. **Duplicate `ResourceTier` enum** - defined in both `resourceTier.h` and `resourceLocationManager.hpp` \
 3. **Static map placement issue** - `s_resourceTypes` is `inline const` in header (line 145 ResourceTypeInfo.hpp) which is correct for C++17, but causes ODR issues
 4. **Mixed namespaces** - `resourceInfo` vs `platformInfo`
 5. **Inconsistent file naming** - `resourceTier.h` vs `.hpp`
 6. **Incomplete ResourceTypeInfo class** - getters take parameters they ignore and don't actually return the member values
 7. **ResourceLocationManager** - mostly stubbed out, unclear purpose vs ResourcePaths
 8. **No separation of concerns** - ResourcePaths trying to do too much
+
+### Updates from Alignment (2026-01-03)
+- Env var expansion: defaults now include env vars (HOME/USERPROFILE/APPDATA/XDG_*); ResourcePaths must expand to absolute paths at runtime.
+- Discovery: no validation step; run discovery at startup over all paths (hardcoded + user-added). Drag/drop can add custom locations (choose tier), see NEWRESOURCES_CONTAINER_INTEGRATION.md.
+- Editable resources: only color schemes and templates get editing UI (existing preference panes/templates editor to be ported). Template tree: tier → location → template items. Color schemes: two preference panels.
+- ResourceRegistry (repurposed ResourceLocationManager): holds resource inventory (metadata + editable resources). Persistence of enabled/disabled/custom locations moves to a new `resourceSettings` (QSettings); no auto-removal of missing paths, just mark missing in UI.
+- ResourceLocation: may need richer model/view support per QDir listing/resource metadata design docs; drag/drop of folders is a way to add custom locations.
+- Tiers: still used to group defaults/access (installation: RO, machine: RO, user: RW) but not the primary structuring axis for resources.
+- Work items: (1) Rework ResourcePaths methods to match new intentions (env expansion, resolved paths). (2) Repurpose ResourceLocationManager → ResourceRegistry as above.
 
 ---
 
@@ -238,7 +247,6 @@ public:
 ```
 platformInfo::           // Platform detection, OS info
   - PlatformInfo
-  - ExtnOSType
 
 resourceInfo::           // Resource metadata
   - ResourceType

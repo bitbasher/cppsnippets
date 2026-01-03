@@ -17,6 +17,7 @@
 #pragma once
 
 #include "export.hpp"
+#include "resourceTier.h"
 #include "resourcePaths.hpp"
 #include <QString>
 #include <QStringList>
@@ -26,16 +27,7 @@
 #include "platformInfo/ResourceLocation.hpp"
 
 namespace platformInfo {
-
-/**
- * @brief Resource location tier/level
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in application resources (read-only, hardcoded)
-    Machine,        ///< System-wide resources for all users (admin-managed)
-    User            ///< Per-user resources (user-managed)
-};
-
+using resourceInfo::ResourceTier;
 
 /**
  * @brief Manages three-tier resource locations with QSettings persistence
@@ -71,6 +63,26 @@ public:
     return QList<ResourceLocation>();
 }
     
+    // Stub methods for legacy template converter (low priority)
+    QVector<ResourceLocation> findSiblingInstallations() const { return QVector<ResourceLocation>(); }
+    QVector<ResourceLocation> enabledMachineLocations() const { return QVector<ResourceLocation>(); }
+    QVector<ResourceLocation> enabledUserLocations() const { return QVector<ResourceLocation>(); }
+    
+    // Methods needed by main app (stubbed for now)
+    void setApplicationPath(const QString &path) { /* Stub */ }
+    QString findInstallationResourceDir() const { return QString(); }
+    QString folderName() const { return QStringLiteral("ScadTemplates"); }
+    bool isRunningFromValidInstallation() const { return false; }
+    QString userSpecifiedInstallationPath() const { return QString(); }
+    
+    // Additional methods needed by preferences dialog
+    QStringList enabledSiblingPaths() const { return QStringList(); }
+    QString defaultInstallationSearchPath() const { return QString(); }
+    QList<ResourceLocation> availableMachineLocations() const { return QList<ResourceLocation>(); }
+    QList<ResourceLocation> availableUserLocations() const { return QList<ResourceLocation>(); }
+    void setUserSpecifiedInstallationPath(const QString &path) { Q_UNUSED(path); /* Stub */ }
+    void setEnabledSiblingPaths(const QStringList &paths) { Q_UNUSED(paths); /* Stub */ }
+    void reloadConfiguration() { /* Stub */ }
 
 private:
 

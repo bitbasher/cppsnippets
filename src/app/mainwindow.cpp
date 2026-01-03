@@ -5,7 +5,8 @@
 
 #include "mainwindow.h"
 #include "gui/preferencesdialog.hpp"
-#include <scadtemplates/scadtemplates.hpp>
+#include "applicationNameInfo.hpp"
+#include <scadtemplates/template_manager.hpp>
 #include <platformInfo/resourceLocationManager.hpp>
 #include <resInventory/resourceScanner.hpp>
 #include <resInventory/resourceTreeWidget.hpp>
@@ -311,7 +312,7 @@ void MainWindow::setupMenus() {
                "Resources Found:\n%4\n\n"
                "Copyright (c) 2025\n"
                "MIT License")
-            .arg(scadtemplates::getVersion())
+            .arg(appInfo::version)
             .arg(m_resourceManager->folderName())
             .arg(resourceDir)
             .arg(resourceCounts));
@@ -319,7 +320,7 @@ void MainWindow::setupMenus() {
 }
 
 void MainWindow::updateWindowTitle() {
-    QString title = QStringLiteral("ScadTemplates v") + scadtemplates::getVersion();
+    QString title = QStringLiteral("ScadTemplates v") + appInfo::version;
     
     if (!m_currentFile.isEmpty()) {
         title += QStringLiteral(" - ") + QFileInfo(m_currentFile).fileName();

@@ -28,25 +28,8 @@ void PlatformInfoWidget::updateFromManager(platformInfo::ResourceLocationManager
 {
     if (!manager) return;
     
-    // Platform name
-    QString platformName;
-    switch (manager->osType()) {
-        case platformInfo::ExtnOSType::Windows:
-            platformName = tr("Windows");
-            break;
-        case platformInfo::ExtnOSType::MacOS:
-            platformName = tr("macOS");
-            break;
-        case platformInfo::ExtnOSType::Linux:
-            platformName = tr("Linux");
-            break;
-        case platformInfo::ExtnOSType::BSD:
-            platformName = tr("BSD");
-            break;
-        default:
-            platformName = tr("Unknown");
-            break;
-    }
-    m_platformLabel->setText(platformName + QStringLiteral(" (") + 
-                             platformInfo::PlatformInfo::productVersion() + QStringLiteral(")"));
+    // Platform name - use prettyProductName() which includes OS name and version
+    QString platformName = platformInfo::PlatformInfo::prettyProductName();
+ 
+    m_platformLabel->setText(platformName);
 }

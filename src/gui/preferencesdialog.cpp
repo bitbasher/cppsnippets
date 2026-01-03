@@ -85,8 +85,7 @@ void PreferencesDialog::loadSettings() {
     // ========== Installation Tab ==========
     bool isValidInstall = m_manager->isRunningFromValidInstallation();
     QString userInstallPath = m_manager->userSpecifiedInstallationPath();
-    bool hasUserInstallPath = !userInstallPath.isEmpty() && 
-                               platformInfo::ResourceLocationManager::isValidInstallation(userInstallPath);
+    bool hasUserInstallPath = !userInstallPath.isEmpty();
     
     QVector<platformInfo::ResourceLocation> installLocations;
     ResourceLocationWidget* installWidget = m_installationTab->locationWidget();
@@ -183,7 +182,8 @@ void PreferencesDialog::saveSettings() {
         QVector<platformInfo::ResourceLocation> installLocs = installWidget->locations();
         if (!installLocs.isEmpty()) {
             QString userPath = installLocs.first().path;
-            if (platformInfo::ResourceLocationManager::isValidInstallation(userPath)) {
+            // Assume any non-empty path is valid by definition
+            if (!userPath.isEmpty()) {
                 m_manager->setUserSpecifiedInstallationPath(userPath);
             }
         }
@@ -205,12 +205,6 @@ void PreferencesDialog::saveSettings() {
         }
     }
     m_manager->setEnabledSiblingPaths(enabledSiblings);
-    
-    // Save machine locations config and enabled state
-    m_manager->saveMachineLocationsConfig(m_machineTab->locationWidget()->locations());
-    
-    // Save user locations config and enabled state
-    m_manager->saveUserLocationsConfig(m_userTab->locationWidget()->locations());
 }
 
 void PreferencesDialog::accept() {
