@@ -11,12 +11,21 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "windowsSdkVersion": "10.0.26100.0",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64",
-            "configurationProvider": "go2sh.cmake-integration"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/18/Insiders/VC/Tools/Llvm/x64/bin/clang-cl.exe",
+            "compileCommands": [
+                "build/compile_commands.json"
+            ],
+            "recursiveIncludes": {
+                "reduce": "never"
+            },
+            "browse": {
+                "databaseFilename": ".vscode/.vscode_browse.vc.db"
+            }
         }
     ],
     "version": 4

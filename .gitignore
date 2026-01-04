@@ -13,6 +13,8 @@ src-orig/
 testFileStructure/**/backups/**
 # font files
 testFileStructure/**/ttf/**
+# comparison files
+cppsnippets-*
 
 # CMake build directories
 /build/

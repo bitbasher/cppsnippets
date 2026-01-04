@@ -11,6 +11,8 @@
 #include <QFileInfo>
 #include <QCoreApplication>
 #include <QStandardPaths>
+#include <QProcessEnvironment>
+#include <QRegularExpression>
 
 namespace platformInfo {
 
@@ -38,13 +40,13 @@ namespace platformInfo {
     }},
     // Machine tier: system-wide locations for all users
     {resourceInfo::ResourceTier::Machine, {
-      QStringLiteral("%PROGRAMDATA%/ScadTemplates"),
+      QStringLiteral("%PROGRAMDATA%/"),
       QStringLiteral("C:/ProgramData/")
     }},
     // User tier: user-specific locations
     {resourceInfo::ResourceTier::User, {
-      QStringLiteral("%APPDATA%/ScadTemplates"),
-      QStringLiteral("%LOCALAPPDATA%/ScadTemplates"),
+      QStringLiteral("%APPDATA%/"),
+      QStringLiteral("%LOCALAPPDATA%/"),
       QStringLiteral("."),
       QStringLiteral("../")
     }}
@@ -57,10 +59,10 @@ namespace platformInfo {
       QStringLiteral("../share/")
     }},
     {resourceInfo::ResourceTier::Machine, {
-      QStringLiteral("/Library/Application Support/ScadTemplates")
+      QStringLiteral("/Library/Application Support/")
     }},
     {resourceInfo::ResourceTier::User, {
-      QStringLiteral("${HOME}/Library/Application Support/ScadTemplates"),
+      QStringLiteral("${HOME}/Library/Application Support/"),
       QStringLiteral("."),
       QStringLiteral("../../Documents/")
     }}
@@ -78,9 +80,9 @@ namespace platformInfo {
       QStringLiteral("/opt/openscad/share/")
     }},
     {resourceInfo::ResourceTier::User, {
-      QStringLiteral("${XDG_CONFIG_HOME}/cppsnippets"),
-      QStringLiteral("${HOME}/.config/cppsnippets"),
-      QStringLiteral("${HOME}/.local/share/cppsnippets"),
+      QStringLiteral("${XDG_CONFIG_HOME}/"),
+      QStringLiteral("${HOME}/.config/"),
+      QStringLiteral("${HOME}/.local/share/"),
       QStringLiteral("."),
       QStringLiteral("../../.local/share/")
     }}
@@ -127,6 +129,96 @@ QStringList ResourcePaths::resourceExtensions(ResourceType type) {
 
 QList<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
     return s_topLevel;
+}
+
+// ============================================================================
+// Resolved Search Paths (Environment Variables Expanded)
+// ============================================================================
+//
+// These methods expand environment variables in the compile-time defaults
+// to produce absolute paths usable at runtime.
+//
+// Examples:
+//   Windows: "%APPDATA%/" → "C:/Users/Jeff/AppData/Roaming/"
+//   Linux:   "${HOME}/.config/" → "/home/jeff/.config/"
+//   macOS:   "${HOME}/Library/..." → "/Users/jeff/Library/..."
+
+QStringList ResourcePaths::resolvedInstallSearchPaths() {
+    const QStringList& defaults = defaultInstallSearchPaths();
+    QStringList resolved;
+    resolved.reserve(defaults.size());
+    for (const QString& path : defaults) {
+        resolved.append(expandEnvVars(path));
+    }
+    return resolved;
+}
+
+QStringList ResourcePaths::resolvedMachineSearchPaths() {
+    const QStringList& defaults = defaultMachineSearchPaths();
+    QStringList resolved;
+    resolved.reserve(defaults.size());
+    for (const QString& path : defaults) {
+        resolved.append(expandEnvVars(path));
+    }
+    return resolved;
+}
+
+QStringList ResourcePaths::resolvedUserSearchPaths() {
+    const QStringList& defaults = defaultUserSearchPaths();
+    QStringList resolved;
+    resolved.reserve(defaults.size());
+    for (const QString& path : defaults) {
+        resolved.append(expandEnvVars(path));
+    }
+    return resolved;
+}
+
+// ============================================================================
+// Environment Variable Expansion Helper
+// ============================================================================
+//
+// Expands ${VAR} and %VAR% style environment variable references.
+// Uses Qt's QProcessEnvironment to read system environment safely.
+//
+// Examples:
+//   "${HOME}/foo" → "/home/user/foo"
+//   "%APPDATA%/bar" → "C:/Users/user/AppData/Roaming/bar"
+//   "${UNDEFINED}/foo" → "/foo" (undefined vars expand to empty string)
+
+QString ResourcePaths::expandEnvVars(const QString& path) {
+    if (path.isEmpty()) {
+        return path;
+    }
+    
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    
+    // Pattern matches both ${VAR} and %VAR% style environment variable references
+    const QRegularExpression pattern(QStringLiteral(R"(\$\{([^}]+)\}|%([^%]+)%)"));
+    
+    QString result;
+    result.reserve(path.size());
+    int lastIndex = 0;
+    
+    // Iterate through all matches and build the expanded string
+    for (auto match = pattern.globalMatch(path); match.hasNext(); ) {
+        auto m = match.next();
+        
+        // Append text before the match
+        result.append(path.mid(lastIndex, m.capturedStart() - lastIndex));
+        
+        // Extract variable name from either ${VAR} or %VAR% capture group
+        const QString varName = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
+        
+        // Append the expanded value (or empty string if undefined)
+        result.append(env.value(varName, QString()));
+        
+        lastIndex = m.capturedEnd();
+    }
+    
+    // Append any remaining text after the last match
+    result.append(path.mid(lastIndex));
+    
+    return result;
 }
 
 
