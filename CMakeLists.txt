@@ -322,6 +322,17 @@ if(BUILD_APP)
         WIN32_EXECUTABLE ON
     )
     
+    # Environment variable expansion test utility
+    add_executable(test_env_expansion EXCLUDE_FROM_ALL src/tools/test_env_expansion.cpp)
+    target_link_libraries(test_env_expansion PRIVATE Qt6::Core)
+    target_include_directories(test_env_expansion PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    )
+    set_target_properties(test_env_expansion PROPERTIES
+        OUTPUT_NAME test-env-expansion
+        WIN32_EXECUTABLE OFF  # Console app
+    )
+    
     # Inventory test console app (non-GUI)
     set(INVENTORY_TEST_SOURCES
         src/app/inventory_test.cpp

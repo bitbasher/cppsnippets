@@ -98,6 +98,14 @@ QString ResourcePaths::folderName() const {
     return QStringLiteral("ScadTemplates");
 }
 
+void ResourcePaths::setSuffix(const QString& suffix) {
+    m_suffix = suffix;
+}
+
+QString ResourcePaths::suffix() const {
+    return m_suffix;
+}
+
 const QStringList& ResourcePaths::defaultInstallSearchPaths() {
     return s_defaultInstallSearchPaths;
 }
@@ -218,7 +226,95 @@ QString ResourcePaths::expandEnvVars(const QString& path) {
     // Append any remaining text after the last match
     result.append(path.mid(lastIndex));
     
+    // Normalize path separators to forward slashes for consistency
+    // This ensures mixed ${VAR}/../relative paths work correctly
+    result.replace(QLatin1Char('\\'), QLatin1Char('/'));
+    
+    // Note: Do NOT cleanPath here - we need to preserve trailing slashes
+    // which indicate that folder name should be appended
     return result;
+}
+
+// ============================================================================
+// Folder Name Appending Rules
+// ============================================================================
+//
+// Paths ending with "/" are base directories that need the application folder
+// name appended. This distinguishes:
+//   - Base paths: "%PROGRAMFILES%/" → "%PROGRAMFILES%/ScadTemplates"
+//   - Direct paths: "../.." → used as-is without modification
+//
+// Installation tier gets suffix applied (e.g., "ScadTemplates (Nightly)")
+// Machine/User tiers use folder name only (no suffix)
+
+QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInstallSuffix) const {
+    // First expand environment variables (normalized to forward slashes, trailing slashes preserved)
+    QString expanded = expandEnvVars(path);
+    
+    // Check if this is a base path that needs folder name appended
+    if (expanded.endsWith(QStringLiteral("/"))) {
+        // Build folder name with optional suffix
+        const QString folder = applyInstallSuffix 
+            ? folderName() + m_suffix 
+            : folderName();
+        
+        expanded += folder;
+    }
+    
+    // NOW clean the path to resolve . and .. components and normalize separators
+    // This must happen AFTER checking for trailing / but BEFORE absolutePath
+    expanded = QDir::cleanPath(expanded);
+    
+    // Convert to absolute path and clean again
+    return QDir::cleanPath(QDir(expanded).absolutePath());
+}
+
+// ============================================================================
+// Qualified Search Paths (Environment Expanded + Folder Names Applied)
+// ============================================================================
+//
+// These methods produce fully qualified absolute paths ready for discovery:
+// 1. Expand environment variables (${HOME}, %APPDATA%, etc.)
+// 2. Apply folder name rules (append "ScadTemplates" + suffix where needed)
+// 3. Clean paths (remove redundant separators, resolve . and ..)
+//
+// Installation tier: applies suffix (e.g., "ScadTemplates (Nightly)")
+// Machine/User tiers: folder name only (no suffix)
+
+QStringList ResourcePaths::qualifiedInstallSearchPaths() const {
+    const QStringList& defaults = defaultInstallSearchPaths();
+    QStringList qualified;
+    qualified.reserve(defaults.size());
+    
+    for (const QString& path : defaults) {
+        qualified.append(applyFolderNameRules(path, true));  // applyInstallSuffix = true
+    }
+    
+    return qualified;
+}
+
+QStringList ResourcePaths::qualifiedMachineSearchPaths() const {
+    const QStringList& defaults = defaultMachineSearchPaths();
+    QStringList qualified;
+    qualified.reserve(defaults.size());
+    
+    for (const QString& path : defaults) {
+        qualified.append(applyFolderNameRules(path, false));  // applyInstallSuffix = false
+    }
+    
+    return qualified;
+}
+
+QStringList ResourcePaths::qualifiedUserSearchPaths() const {
+    const QStringList& defaults = defaultUserSearchPaths();
+    QStringList qualified;
+    qualified.reserve(defaults.size());
+    
+    for (const QString& path : defaults) {
+        qualified.append(applyFolderNameRules(path, false));  // applyInstallSuffix = false
+    }
+    
+    return qualified;
 }
 
 
