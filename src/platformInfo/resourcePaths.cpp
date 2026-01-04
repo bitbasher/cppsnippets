@@ -5,7 +5,6 @@
 
 #include "resourcePaths.hpp"
 #include "platformInfo.hpp"
-#include "resourceTier.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -281,44 +280,28 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
 // Installation tier: applies suffix (e.g., "ScadTemplates (Nightly)")
 // Machine/User tiers: folder name only (no suffix)
 
-QStringList ResourcePaths::qualifiedInstallSearchPaths() const {
-    const QStringList& defaults = defaultInstallSearchPaths();
-    QStringList qualified;
-    qualified.reserve(defaults.size());
+QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
+    QList<PathElement> qualified;
     
-    for (const QString& path : defaults) {
-        qualified.append(applyFolderNameRules(path, true));  // applyInstallSuffix = true
+    // Process Installation tier paths (with suffix)
+    for (const QString& path : defaultInstallSearchPaths()) {
+        QString qualified_path = applyFolderNameRules(path, true);
+        qualified.append(PathElement(resourceInfo::ResourceTier::Installation, qualified_path));
+    }
+    
+    // Process Machine tier paths (no suffix)
+    for (const QString& path : defaultMachineSearchPaths()) {
+        QString qualified_path = applyFolderNameRules(path, false);
+        qualified.append(PathElement(resourceInfo::ResourceTier::Machine, qualified_path));
+    }
+    
+    // Process User tier paths (no suffix)
+    for (const QString& path : defaultUserSearchPaths()) {
+        QString qualified_path = applyFolderNameRules(path, false);
+        qualified.append(PathElement(resourceInfo::ResourceTier::User, qualified_path));
     }
     
     return qualified;
 }
-
-QStringList ResourcePaths::qualifiedMachineSearchPaths() const {
-    const QStringList& defaults = defaultMachineSearchPaths();
-    QStringList qualified;
-    qualified.reserve(defaults.size());
-    
-    for (const QString& path : defaults) {
-        qualified.append(applyFolderNameRules(path, false));  // applyInstallSuffix = false
-    }
-    
-    return qualified;
-}
-
-QStringList ResourcePaths::qualifiedUserSearchPaths() const {
-    const QStringList& defaults = defaultUserSearchPaths();
-    QStringList qualified;
-    qualified.reserve(defaults.size());
-    
-    for (const QString& path : defaults) {
-        qualified.append(applyFolderNameRules(path, false));  // applyInstallSuffix = false
-    }
-    
-    return qualified;
-}
-
-
-
-
 
 } // namespace platformInfo

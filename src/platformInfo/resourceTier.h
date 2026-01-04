@@ -22,7 +22,7 @@ enum class ResourceTier {
 
 // Access modes applicable to tiers and resources
 enum class Access {
-    Undefined = 0,
+    Unknown = 0,
     FullAccess,   // Read + Write + Execute
     ReadWrite,    // Read + Write
     ReadOnly,     // Read only
