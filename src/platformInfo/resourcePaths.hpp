@@ -64,10 +64,10 @@ static const QMap<ResourceTier, Access> accessByTier = {
 namespace platformInfo {
 
 /**
- * @brief Represents a single search path with its tier and access info
+ * @brief Represents a single search path with its tier
  * 
  * Used to track search paths through expansion, qualification, and discovery.
- * Access starts as Unknown and may be updated during discovery.
+ * Access permissions are determined by tier via resourceInfo::accessByTier map.
  */
 class PLATFORMINFO_API PathElement {
 public:
@@ -104,16 +104,20 @@ public:
     static const QStringList &defaultMachineSearchPaths();
     static const QStringList &defaultUserSearchPaths();
     
-    // Resolved search paths with environment variables expanded to absolute paths
+    // Resolved search paths with environment variables expanded (for testing/debugging)
     // These expand env vars but do NOT apply folder name suffix rules
+    // For actual discovery, use qualifiedSearchPaths() instead
     static QStringList resolvedInstallSearchPaths();
     static QStringList resolvedMachineSearchPaths();
     static QStringList resolvedUserSearchPaths();
     
-    // Fully qualified paths: env vars expanded + folder names appended per tier rules
-    // Installation tier: paths ending with "/" get folderName() + suffix appended
-    // Machine/User tiers: paths ending with "/" get folderName() appended (no suffix)
-    // Includes sibling installations (LTS ↔ Nightly) and user-designated paths from settings
+    // PRIMARY API: Single consolidated output of all qualified search paths
+    // Returns QList<PathElement> with tier embedded in each element
+    // - Expands environment variables to absolute paths
+    // - Applies folder name suffix rules per tier
+    // - Includes sibling installations (LTS ↔ Nightly)
+    // - Includes user-designated paths from QSettings
+    // This is the input list for ResourceScanner discovery
     QList<PathElement> qualifiedSearchPaths() const;
     
     // User-designated paths loaded from QSettings
