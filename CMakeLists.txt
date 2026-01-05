@@ -478,6 +478,7 @@ if(BUILD_TESTS)
         tests/test_edittype.cpp
         tests/test_filesubtype.cpp
         tests/test_resource_discovery.cpp
+        tests/test_resource_paths.cpp
         # Resource inventory sources needed by discovery tests
         src/resInventory/resourceScanner.cpp
         src/resInventory/resourceItem.cpp
