@@ -333,6 +333,14 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF  # Console app
     )
     
+    # Settings generator utility for user-designated paths
+    add_executable(settings_generator EXCLUDE_FROM_ALL src/tools/settings_generator.cpp)
+    target_link_libraries(settings_generator PRIVATE Qt6::Core)
+    set_target_properties(settings_generator PROPERTIES
+        OUTPUT_NAME settings-generator
+        WIN32_EXECUTABLE OFF  # Console app
+    )
+    
     # Inventory test console app (non-GUI)
     set(INVENTORY_TEST_SOURCES
         src/app/inventory_test.cpp

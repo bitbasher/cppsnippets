@@ -12,6 +12,7 @@
 #include <QStandardPaths>
 #include <QProcessEnvironment>
 #include <QRegularExpression>
+#include <QSettings>
 
 namespace platformInfo {
 
@@ -269,6 +270,52 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
 }
 
 // ============================================================================
+// Sibling Installation Discovery
+// ============================================================================
+//
+// Detects and returns the sibling installation folder name.
+// If current app is "ScadTemplates" → returns "ScadTemplates (Nightly)"
+// If current app is "ScadTemplates (Nightly)" → returns "ScadTemplates"
+//
+// This allows discovering resources from both LTS and Nightly installations.
+
+QString ResourcePaths::getSiblingFolderName() const {
+    const QString current = folderName();
+    
+    // If we have a suffix, sibling is without suffix
+    if (!m_suffix.isEmpty() && current.endsWith(m_suffix)) {
+        return current.left(current.length() - m_suffix.length());
+    }
+    
+    // If no suffix, sibling has the suffix
+    return current + m_suffix;
+}
+
+bool ResourcePaths::isSiblingCandidatePath(const QString& path) {
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
+    return path == QStringLiteral("%PROGRAMFILES%/") || 
+           path == QStringLiteral("%PROGRAMFILES(X86)%/");
+#elif defined(Q_OS_MACOS) || defined(__APPLE__)
+    return path == QStringLiteral("/Applications/");
+#else // Linux
+    return path == QStringLiteral("/opt/") ||
+           path == QStringLiteral("/usr/local/");
+#endif
+}
+
+// ============================================================================
+// User-Designated Paths
+// ============================================================================
+//
+// Loads additional search paths from QSettings that the user has configured.
+// These are added to the Installation tier search paths.
+
+QStringList ResourcePaths::userDesignatedPaths() {
+    QSettings settings(QStringLiteral("ScadTemplates"), QStringLiteral("ResourcePaths"));
+    return settings.value(QStringLiteral("user_designated_paths"), QStringList()).toStringList();
+}
+
+// ============================================================================
 // Qualified Search Paths (Environment Expanded + Folder Names Applied)
 // ============================================================================
 //
@@ -276,6 +323,8 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
 // 1. Expand environment variables (${HOME}, %APPDATA%, etc.)
 // 2. Apply folder name rules (append "ScadTemplates" + suffix where needed)
 // 3. Clean paths (remove redundant separators, resolve . and ..)
+// 4. Add sibling installations (LTS ↔ Nightly)
+// 5. Add user-designated paths from settings
 //
 // Installation tier: applies suffix (e.g., "ScadTemplates (Nightly)")
 // Machine/User tiers: folder name only (no suffix)
@@ -285,6 +334,22 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
     
     // Process Installation tier paths (with suffix)
     for (const QString& path : defaultInstallSearchPaths()) {
+        QString qualified_path = applyFolderNameRules(path, true);
+        qualified.append(PathElement(resourceInfo::ResourceTier::Installation, qualified_path));
+        
+        // Add sibling installation if this is a sibling candidate
+        if (isSiblingCandidatePath(path)) {
+            QString sibling_base = expandEnvVars(path);
+            if (sibling_base.endsWith('/')) {
+                sibling_base += getSiblingFolderName();
+            }
+            QString sibling_path = QDir::cleanPath(QDir(sibling_base).absolutePath());
+            qualified.append(PathElement(resourceInfo::ResourceTier::Installation, sibling_path));
+        }
+    }
+    
+    // Add user-designated paths (Installation tier, with suffix)
+    for (const QString& path : userDesignatedPaths()) {
         QString qualified_path = applyFolderNameRules(path, true);
         qualified.append(PathElement(resourceInfo::ResourceTier::Installation, qualified_path));
     }

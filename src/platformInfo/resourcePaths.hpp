@@ -113,7 +113,11 @@ public:
     // Fully qualified paths: env vars expanded + folder names appended per tier rules
     // Installation tier: paths ending with "/" get folderName() + suffix appended
     // Machine/User tiers: paths ending with "/" get folderName() appended (no suffix)
+    // Includes sibling installations (LTS ↔ Nightly) and user-designated paths from settings
     QList<PathElement> qualifiedSearchPaths() const;
+    
+    // User-designated paths loaded from QSettings
+    static QStringList userDesignatedPaths();
 
 private:
 
@@ -132,6 +136,14 @@ private:
     // Paths ending with "/" get folderName (+ optional suffix) appended
     // Paths without trailing "/" are returned with just env var expansion
     QString applyFolderNameRules(const QString& path, bool applyInstallSuffix) const;
+    
+    // Sibling installation helper
+    // Given "OpenSCAD" returns "OpenSCAD (Nightly)", and vice versa
+    QString getSiblingFolderName() const;
+    
+    // Check if a path template should trigger sibling discovery
+    // Returns true for platform-specific program files locations
+    static bool isSiblingCandidatePath(const QString& path);
 };
 
 } // namespace platformInfo
