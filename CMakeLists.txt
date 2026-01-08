@@ -220,6 +220,15 @@ configure_file(
     @ONLY
 )
 
+# Generate Windows version resource file (WIN32 only)
+if(WIN32)
+    configure_file(
+        ${CMAKE_SOURCE_DIR}/src/app/version.rc.in
+        ${CMAKE_BINARY_DIR}/generated/version.rc
+        @ONLY
+    )
+endif()
+
 # Library source files
 set(LIB_SOURCES
     src/jsonreader/JsonReader.cpp
@@ -311,6 +320,11 @@ if(BUILD_APP)
         src/resInventory/resourceScanner.cpp
         src/resInventory/resourceScanner.hpp
     )
+    
+    # Add Windows version resource to executable
+    if(WIN32)
+        list(APPEND APP_SOURCES ${CMAKE_BINARY_DIR}/generated/version.rc)
+    endif()
     
     add_executable(scadtemplates_app ${APP_SOURCES})
     target_link_libraries(scadtemplates_app PRIVATE scadtemplates_lib ${QT_LIBRARIES})

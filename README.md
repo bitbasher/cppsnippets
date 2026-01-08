@@ -15,6 +15,7 @@ A comprehensive snippets tool for use in C++ programs - defining, parsing, stori
 ```
 cppsnippets/
 ├── CMakeLists.txt          # Main CMake build configuration
+├── AppInfo.cmake           # Application metadata (name, version, author)
 ├── cmake/                  # CMake configuration files
 ├── doc/                    # Documentation
 ├── src/                    # Source code
@@ -25,6 +26,65 @@ cppsnippets/
 ├── src-orig/               # Original/reference sources
 └── tests/                  # Unit tests
 ```
+
+## Application Metadata (Name & Version)
+
+### Single Source of Truth: AppInfo.cmake
+
+All application metadata is centralized in [AppInfo.cmake](AppInfo.cmake):
+
+```cmake
+set(APP_NAME "ScadTemplates")
+set(APP_SUFFIX "" CACHE STRING "e.g., 'Nightly', 'Beta'")
+set(APP_AUTHOR "Jeff Hayes")
+set(APP_ORGANIZATION "jartisan")
+set(APP_VERSION_MAJOR 2)
+# VERSION_MINOR is auto-calculated from git commit count
+set(APP_VERSION_PATCH 0)
+```
+
+### How It Works
+
+1. **Edit [AppInfo.cmake](AppInfo.cmake)** to change name, version, or author
+2. **CMake generates two files** during configuration:
+   - `build/generated/applicationNameInfo.hpp` - For use in C++ code
+   - `build/generated/version.rc` - For Windows version embedding
+3. **Version info appears in:**
+   - Application UI (About dialog, window title)
+   - Windows File Explorer (right-click → Properties → Details)
+   - Library exports and headers
+
+### Version Numbering
+
+- **Major:** Manual (set in AppInfo.cmake)
+- **Minor:** Automatic (git commit count since repo creation)
+- **Patch:** Manual (set in AppInfo.cmake)
+
+Example: `2.51.0` means "Major version 2, commit #51, patch 0"
+
+### Using in Code
+
+```cpp
+#include "applicationNameInfo.hpp"
+
+// Access metadata
+std::cout << appInfo::displayName << " v" << appInfo::version << std::endl;
+// Output: ScadTemplates v2.51.0
+
+QApplication::setApplicationName(appInfo::displayName);
+QApplication::setApplicationVersion(appInfo::version);
+QApplication::setOrganizationName(appInfo::organization);
+```
+
+All namespace constants:
+- `appInfo::baseName` - "ScadTemplates"
+- `appInfo::suffix` - "" (or " Beta", " Nightly")
+- `appInfo::displayName` - Full name with suffix
+- `appInfo::author` - "Jeff Hayes"
+- `appInfo::organization` - "jartisan"
+- `appInfo::version` - "2.51.0"
+- `appInfo::versionMajor`, `versionMinor`, `versionPatch` - Integer components
+- `appInfo::gitCommitHash` - Short git SHA
 
 ## Building
 

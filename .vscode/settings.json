@@ -2,6 +2,7 @@
     "cmake.configureOnOpen": true,
     "cmake.generator": "Visual Studio 17 2022",
     "cmake.buildType": "Debug",
+    "cmake.ctest.enabled": false,
     "cmake.variants": {
         "buildType": {
             "default": "debug",
@@ -19,13 +20,15 @@
             }
         }
     },
+    "files.autoSave": "afterDelay",
     "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.dimInactiveRegions": true,
     "terminal.integrated.shellIntegration.enabled": true,
+    "powershell.integratedConsole.suppressStartupBanner": true,
+    "powershell.integratedConsole.startInBackground": false,
     "terminal.integrated.shellIntegration.showWelcome": false,
     "testMate.cpp.test.executables": "{build,Build,BUILD,out}/**/*{test,Test,TEST}*.{exe,out}",
-    "testMate.cpp.discovery.testListCaching": {
-        "disable": true
-    },
+    "testMate.cpp.discovery.testListCaching": false,
     "testMate.cpp.log.logpanel": true,
     "testMate.cpp.debug.configTemplate": {
         "type": "cppvsdbg",
@@ -160,9 +163,5 @@
         "qlistwidget": "cpp",
         "qlineedit": "cpp"
     },
-    "cmake.configureOnOpen": true,
-    "cmake.generator": "Visual Studio 17 2022",
-    "cmake.ctest.enabled": false,
-    "testExplorer.ctest.enabled": false,
-    "C_Cpp.errorSquiggles": "enabled"
+    "testExplorer.ctest.enabled": false
 }
