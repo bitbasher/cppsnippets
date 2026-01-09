@@ -209,7 +209,8 @@ endif(CLANG_TIDY)
 
 # Include directories
 # Note: src/include is removed - headers are now co-located with .cpp files
-# Add src/ to include path so headers in src/resInventory, src/gui, src/platformInfo can be found
+# Add src/ to include path so headers in all subdirectories can be found
+# New structure: platformInfo, resourceMetadata, pathDiscovery, resourceDiscovery, resourceScanning, resourceInventory
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_BINARY_DIR}/generated)
 
