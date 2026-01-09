@@ -11,7 +11,7 @@
 #include "resourceInventory/resourceItem.hpp"
 #include "platformInfo/ResourceLocation.hpp"
 
-namespace ri = resInventory;
+namespace ri = resourceInventory;
 namespace pi = platformInfo;
 
 static void printHeader(const QString& title)

@@ -15,7 +15,7 @@ ResourcePaths (defaults)          ◄── Immutable, compile-time constants
 ResourceIterator.scan()           ◄── Finds what actually exists on disk
        │
        ▼
-ResLocMap / ResLocTree            ◄── User's working inventory (in resInventory module)
+ResLocMap / ResLocTree            ◄── User's working inventory (in resourceInventory module)
        │
        ├── User enables/disables via preferences
        ├── User adds custom locations
@@ -48,7 +48,7 @@ static const QStringList s_defaultInstallSearchPaths = {
 };
 ```
 
-### 2. Resource Inventory (User's Selection) - `resInventory` module
+### 2. Resource Inventory (User's Selection) - `resourceInventory` module
 
 - Stored in `ResLocMap` (flat) or `ResLocTree` (hierarchical)
 - **Populated by scanning** the default paths with `ResourceIterator`
@@ -186,5 +186,5 @@ QString userFonts = paths.userResourcePath(ResourceType::Fonts);  // ~/.config/O
 
 ## Related Modules
 
-- **resInventory** - Storage structures (`ResLocMap`, `ResLocTree`) and `ResourceIterator` for scanning and user selections
+- **resourceInventory** - Storage structures (`ResLocMap`, `ResLocTree`) and `ResourceIterator` for scanning and user selections
 - **gui** - `PreferencesDialog` with tier tabs for user configuration

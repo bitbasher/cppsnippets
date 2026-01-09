@@ -9,11 +9,11 @@
 #include <QtTest/QtTest>
 #include <QAbstractItemModelTester>
 
-#include "resInventory/templateTreeModel.h"
-#include "resInventory/resourceStore.h"
-#include "resInventory/resourceScannerDirListing.h"
+#include "resourceInventory/templateTreeModel.h"
+#include "resourceInventory/resourceStore.h"
+#include "resourceInventory/resourceScannerDirListing.h"
 
-using namespace resInventory;
+using namespace resourceInventory;
 
 /**
  * @brief Test class for TemplateTreeModel

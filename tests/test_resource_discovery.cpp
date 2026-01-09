@@ -5,13 +5,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-#include "resInventory/resourceScanner.hpp"
-#include "resInventory/resourceItem.hpp"
+#include "resourceInventory/resourceScanner.hpp"
+#include "resourceInventory/resourceItem.hpp"
 #include "platformInfo/resourceLocationManager.hpp"
 #include "platformInfo/ResourceLocation.hpp"
 
 // Use explicit namespace prefixes to avoid conflicts
-namespace ri = resInventory;
+namespace ri = resourceInventory;
 namespace pi = platformInfo;
 
 class ResourceDiscoveryTest : public ::testing::Test {
