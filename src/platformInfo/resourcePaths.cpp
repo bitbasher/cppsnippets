@@ -40,14 +40,12 @@ namespace platformInfo {
     }},
     // Machine tier: system-wide locations for all users
     {resourceInfo::ResourceTier::Machine, {
-      QStringLiteral("%PROGRAMDATA%/"),
       QStringLiteral("C:/ProgramData/")
     }},
     // User tier: user-specific locations
     {resourceInfo::ResourceTier::User, {
       QStringLiteral("%APPDATA%/"),
       QStringLiteral("%LOCALAPPDATA%/"),
-      QStringLiteral("."),
       QStringLiteral("../")
     }}
 #elif defined(Q_OS_MACOS) || defined(__APPLE__)
@@ -55,35 +53,33 @@ namespace platformInfo {
       QStringLiteral("../Resources"),
       QStringLiteral("../../.."),
       QStringLiteral("../../../.."),
-      QStringLiteral(".."),
-      QStringLiteral("../share/")
+      QStringLiteral("..")
     }},
     {resourceInfo::ResourceTier::Machine, {
-      QStringLiteral("/Library/Application Support/")
+      QStringLiteral("/Library/Application Support/"),
+      QStringLiteral("/usr/share/"),
+      QStringLiteral("/usr/local/share/")
     }},
     {resourceInfo::ResourceTier::User, {
       QStringLiteral("${HOME}/Library/Application Support/"),
-      QStringLiteral("."),
-      QStringLiteral("../../Documents/")
+      QStringLiteral("${HOME}/Documents/")
     }}
 #else // Linux/BSD/POSIX
     {resourceInfo::ResourceTier::Installation, {
       QStringLiteral("../share/"),
       QStringLiteral("../../share/"),
-      QStringLiteral("."),
       QStringLiteral(".."),
       QStringLiteral("../..")
     }},
     {resourceInfo::ResourceTier::Machine, {
       QStringLiteral("/usr/share/"),
       QStringLiteral("/usr/local/share/"),
+      QStringLiteral("/opt/share/"),
       QStringLiteral("/opt/openscad/share/")
     }},
     {resourceInfo::ResourceTier::User, {
       QStringLiteral("${XDG_CONFIG_HOME}/"),
-      QStringLiteral("${HOME}/.config/"),
       QStringLiteral("${HOME}/.local/share/"),
-      QStringLiteral("."),
       QStringLiteral("../../.local/share/")
     }}
 #endif

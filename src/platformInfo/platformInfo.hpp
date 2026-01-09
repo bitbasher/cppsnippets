@@ -10,10 +10,13 @@
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QDir>
 #include <QGuiApplication>
 #include <QList>
 #include <QScreen>
+#include <QStandardPaths>
 #include <QString>
+#include <QStringList>
 #include <QSysInfo>
 #include <QDataStream>
 
@@ -86,6 +89,11 @@ public:
    */
   static QString machineHostName() { return QSysInfo::machineHostName(); }
 
+
+  /* ========================================
+     Installation Tier (Executable Location)
+     ======================================== */
+
   /**
    * @brief Get the full path to the currently running executable
    * @return Absolute path to the executable file
@@ -107,6 +115,52 @@ public:
    */
   static QString getCurrentExecutableDirPath() {
     return QCoreApplication::applicationDirPath();
+  }
+
+
+ /* ========================================
+     User Tier (Personal Resources)
+    ======================================== */
+
+  /**
+   * @brief Get user's home directory
+   * @return Absolute path to user's home directory
+   *
+   * Uses QDir::homePath() to get the user's home directory.
+   * On Windows: C:/Users/<USER>
+   * On Linux: ~
+   * On macOS: ~
+   */
+  static QString getHomeDirectory() {
+    return QDir::homePath();
+  }
+
+  // ========================================
+  // Generic User Locations (Non-App-Specific)
+  // ========================================
+
+  /**
+   * @brief Get user's documents directory
+   * @return Path to user's documents (guaranteed non-empty)
+   *
+   * Returns path from QStandardPaths::DocumentsLocation.
+   * On Windows: C:/Users/<USER>/Documents
+   * On Linux/macOS: ~/Documents
+   */
+  static QString getUserDocumentsLocation() {
+    return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+  }
+
+  /**
+   * @brief Get user's templates directory
+   * @return Path to user's templates (may be empty if no concept of templates)
+   *
+   * Returns path from QStandardPaths::TemplatesLocation.
+   * On Windows: C:/Users/<USER>/AppData/Roaming/Microsoft/Windows/Templates
+   * On Linux/macOS: ~/Templates
+   */
+  static QString getUserTemplatesLocation() {
+    return QStandardPaths::writableLocation(QStandardPaths::TemplatesLocation);
   }
 
   /**
