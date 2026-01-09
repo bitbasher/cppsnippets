@@ -1,5 +1,5 @@
 /**
- * @file ResourceTypeInfo.h
+ * @file ResourceTypeInfo.hpp
  * @brief Information about OpenSCAD resources
  *
  */
@@ -13,7 +13,7 @@
 #include <QString>
 #include <QStringList>
 
-namespace platformInfo {
+namespace resourceMetadata {
 
 /**
  * @brief Enumeration of OpenSCAD resource types
@@ -71,7 +71,7 @@ inline static const QStringList s_attachments = {
  * Contains the subdirectory name, description, and file extensions for a
  * resource type.
  */
-class PLATFORMINFO_API ResourceTypeInfo {
+class ResourceTypeInfo {
 private:
   ResourceType type;    ///< The resource type enum
   QString subdirectory; ///< Subdirectory name under resource dir
@@ -138,4 +138,4 @@ public:
 
 inline static const QString groupNameCapture = QStringLiteral("__capture__");
 
-} // namespace platformInfo
+} // namespace resourceMetadata

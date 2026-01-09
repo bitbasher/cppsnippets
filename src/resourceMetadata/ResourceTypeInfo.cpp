@@ -5,7 +5,7 @@
 
 #include "ResourceTypeInfo.hpp"
 
-namespace platformInfo {
+namespace resourceMetadata {
 
 // Static resource type definitions with file extensions
 const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
@@ -90,4 +90,4 @@ const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
                       {QStringLiteral(".qm"), QStringLiteral(".ts")}, {})}
 };
 
-} // namespace platformInfo
+} // namespace resourceMetadata

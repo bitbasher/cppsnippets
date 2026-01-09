@@ -12,73 +12,43 @@
 #pragma once
 
 #include "export.hpp"
-#include "ResourceTypeInfo.hpp"
+#include "resourceMetadata/ResourceTypeInfo.hpp"
+#include "resourceMetadata/ResourceTier.hpp"
+#include "resourceMetadata/ResourceAccess.hpp"
 
 #include <QDir>
 #include <QString>
 #include <QStringList>
 #include <QMap>
 
-namespace resourceInfo {
-
-/**
- * @brief Resource location tier/level
- * 
- * Resources are organized into three tiers based on their scope and accessibility:
- * - Installation: Built-in resources from the application installation (read-only)
- * - Machine: System-wide resources available to all users (read-only)
- * - User: Personal resources in the user's home directory (read-write)
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in application resources (read-only)
-    Machine,        ///< System-wide resources for all users (read-only)
-    User            ///< Per-user resources (read-write)
-};
-
-/**
- * @brief Access permissions for resources
- */
-enum class Access {
-    Unknown = 0,  ///< Access level not yet determined
-    ReadOnly,     ///< Read-only access
-    ReadWrite,    ///< Read and write access
-    WriteOnly,    ///< Write-only access
-    FullAccess,   ///< All permissions (read, write, execute)
-    NoAccess      ///< No access
-};
-
-/**
- * @brief Default access level for each resource tier
- * 
- * Maps resource tiers to their default access permissions.
- * Actual discovered resources may have different permissions.
- */
-static const QMap<ResourceTier, Access> accessByTier = {
-    { ResourceTier::Installation, Access::ReadOnly },
-    { ResourceTier::Machine, Access::ReadOnly },
-    { ResourceTier::User, Access::ReadWrite }
-};
-
-} // namespace resourceInfo
-
 namespace platformInfo {
+
+// Import resource metadata types into platformInfo namespace for backward compatibility
+using resourceMetadata::ResourceType;
+using resourceMetadata::ResourceTypeInfo;
+using resourceMetadata::s_topLevel;
+using resourceMetadata::s_nonContainer;
+using resourceMetadata::s_exampleSub;
+using resourceMetadata::s_testSub;
+using resourceMetadata::s_attachments;
+using resourceMetadata::groupNameCapture;
 
 /**
  * @brief Represents a single search path with its tier
  * 
  * Used to track search paths through expansion, qualification, and discovery.
- * Access permissions are determined by tier via resourceInfo::accessByTier map.
+ * Access permissions are determined by tier via resourceMetadata::accessByTier map.
  */
 class PLATFORMINFO_API PathElement {
 public:
-    PathElement(resourceInfo::ResourceTier tier, const QString& path)
+    PathElement(resourceMetadata::ResourceTier tier, const QString& path)
         : m_tier(tier), m_path(path) {}
     
-    resourceInfo::ResourceTier tier() const { return m_tier; }
+    resourceMetadata::ResourceTier tier() const { return m_tier; }
     QString path() const { return m_path; }
     
 private:
-    resourceInfo::ResourceTier m_tier;
+    resourceMetadata::ResourceTier m_tier;
     QString m_path;
 };
 

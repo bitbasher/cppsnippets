@@ -6,7 +6,7 @@
 #pragma once
 
 #include "export.hpp"
-#include "resourceTypeInfo.hpp"
+#include "resourceMetadata/ResourceTypeInfo.hpp"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -21,6 +21,10 @@
 #include <QDataStream>
 
 namespace platformInfo {
+
+// Import ResourceType into platformInfo namespace for backward compatibility
+using resourceMetadata::ResourceType;
+using resourceMetadata::ResourceTypeInfo;
 
 /**
  * @brief Provides platform and system information

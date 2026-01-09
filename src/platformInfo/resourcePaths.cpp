@@ -29,64 +29,64 @@ namespace platformInfo {
 
   // Unified default search paths structure indexed by tier
   // These are compile-time platform-specific constants
-  inline static const QMap<resourceInfo::ResourceTier, QStringList> s_defaultSearchPaths = {
+  inline static const QMap<resourceMetadata::ResourceTier, QStringList> s_defaultSearchPaths = {
     // Installation tier: relative to application executable
 #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-    {resourceInfo::ResourceTier::Installation, {
+    {resourceMetadata::ResourceTier::Installation, {
       QStringLiteral("%PROGRAMFILES%/"), // Standard install (append openscad + suffix)
       QStringLiteral("."),                // Release location (same as exe)
       QStringLiteral("../share/"),        // MSYS2 style Base share folder
       QStringLiteral("..")                // Dev location
     }},
     // Machine tier: system-wide locations for all users
-    {resourceInfo::ResourceTier::Machine, {
+    {resourceMetadata::ResourceTier::Machine, {
       QStringLiteral("C:/ProgramData/")
     }},
     // User tier: user-specific locations
-    {resourceInfo::ResourceTier::User, {
+    {resourceMetadata::ResourceTier::User, {
       QStringLiteral("%APPDATA%/"),
       QStringLiteral("%LOCALAPPDATA%/"),
       QStringLiteral("../")
     }}
 #elif defined(Q_OS_MACOS) || defined(__APPLE__)
-    {resourceInfo::ResourceTier::Installation, {
+    {resourceMetadata::ResourceTier::Installation, {
       QStringLiteral("../Resources"),
       QStringLiteral("../../.."),
       QStringLiteral("../../../.."),
       QStringLiteral("..")
     }},
-    {resourceInfo::ResourceTier::Machine, {
+    {resourceMetadata::ResourceTier::Machine, {
       QStringLiteral("/Library/Application Support/"),
       QStringLiteral("/usr/share/"),
       QStringLiteral("/usr/local/share/")
     }},
-    {resourceInfo::ResourceTier::User, {
+    {resourceMetadata::ResourceTier::User, {
       QStringLiteral("${HOME}/Library/Application Support/"),
       QStringLiteral("${HOME}/Documents/")
     }}
 #else // Linux/BSD/POSIX
-    {resourceInfo::ResourceTier::Installation, {
+    {resourceMetadata::ResourceTier::Installation, {
       QStringLiteral("../share/"),
       QStringLiteral("../../share/"),
       QStringLiteral(".."),
       QStringLiteral("../..")
     }},
-    {resourceInfo::ResourceTier::Machine, {
+    {resourceMetadata::ResourceTier::Machine, {
       QStringLiteral("/usr/share/"),
       QStringLiteral("/usr/local/share/"),
       QStringLiteral("/opt/share/"),
       QStringLiteral("/opt/openscad/share/")
     }},
-    {resourceInfo::ResourceTier::User, {
+    {resourceMetadata::ResourceTier::User, {
       QStringLiteral("${XDG_CONFIG_HOME}/"),
       QStringLiteral("${HOME}/.local/share/"),
       QStringLiteral("../../.local/share/")
     }}
 #endif
   };
-const QStringList& ResourcePaths::s_defaultInstallSearchPaths = s_defaultSearchPaths.value(resourceInfo::ResourceTier::Installation);
-const QStringList& ResourcePaths::s_defaultMachineSearchPaths = s_defaultSearchPaths.value(resourceInfo::ResourceTier::Machine);
-const QStringList& ResourcePaths::s_defaultUserSearchPaths    = s_defaultSearchPaths.value(resourceInfo::ResourceTier::User);
+const QStringList& ResourcePaths::s_defaultInstallSearchPaths = s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Installation);
+const QStringList& ResourcePaths::s_defaultMachineSearchPaths = s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Machine);
+const QStringList& ResourcePaths::s_defaultUserSearchPaths    = s_defaultSearchPaths.value(resourceMetadata::ResourceTier::User);
 
 QString ResourcePaths::folderName() const {
     // Folder name is derived from application base name in applicationNameInfo.hpp
@@ -331,7 +331,7 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
     // Process Installation tier paths (with suffix)
     for (const QString& path : defaultInstallSearchPaths()) {
         QString qualified_path = applyFolderNameRules(path, true);
-        qualified.append(PathElement(resourceInfo::ResourceTier::Installation, qualified_path));
+        qualified.append(PathElement(resourceMetadata::ResourceTier::Installation, qualified_path));
         
         // Add sibling installation if this is a sibling candidate
         if (isSiblingCandidatePath(path)) {
@@ -340,26 +340,26 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
                 sibling_base += getSiblingFolderName();
             }
             QString sibling_path = QDir::cleanPath(QDir(sibling_base).absolutePath());
-            qualified.append(PathElement(resourceInfo::ResourceTier::Installation, sibling_path));
+            qualified.append(PathElement(resourceMetadata::ResourceTier::Installation, sibling_path));
         }
     }
     
     // Add user-designated paths (Installation tier, with suffix)
     for (const QString& path : userDesignatedPaths()) {
         QString qualified_path = applyFolderNameRules(path, true);
-        qualified.append(PathElement(resourceInfo::ResourceTier::Installation, qualified_path));
+        qualified.append(PathElement(resourceMetadata::ResourceTier::Installation, qualified_path));
     }
     
     // Process Machine tier paths (no suffix)
     for (const QString& path : defaultMachineSearchPaths()) {
         QString qualified_path = applyFolderNameRules(path, false);
-        qualified.append(PathElement(resourceInfo::ResourceTier::Machine, qualified_path));
+        qualified.append(PathElement(resourceMetadata::ResourceTier::Machine, qualified_path));
     }
     
     // Process User tier paths (no suffix)
     for (const QString& path : defaultUserSearchPaths()) {
         QString qualified_path = applyFolderNameRules(path, false);
-        qualified.append(PathElement(resourceInfo::ResourceTier::User, qualified_path));
+        qualified.append(PathElement(resourceMetadata::ResourceTier::User, qualified_path));
     }
     
     return qualified;

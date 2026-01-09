@@ -26,7 +26,7 @@
 #include "platformInfo/ResourceLocation.hpp"
 
 namespace platformInfo {
-using resourceInfo::ResourceTier;
+using resourceMetadata::ResourceTier;
 
 /**
  * @brief Manages three-tier resource locations with QSettings persistence

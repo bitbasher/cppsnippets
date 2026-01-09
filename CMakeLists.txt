@@ -243,8 +243,8 @@ set(LIB_SOURCES
     src/scadtemplates/filesubtype.cpp
     src/platformInfo/platformInfo.cpp
     src/platformInfo/resourcePaths.cpp
-    src/platformInfo/ResourceTypeInfo.cpp
     src/platformInfo/resourceLocationManager.cpp
+    src/resourceMetadata/ResourceTypeInfo.cpp
 )
 
 set(LIB_HEADERS
