@@ -242,9 +242,9 @@ set(LIB_SOURCES
     src/scadtemplates/edittype.cpp
     src/scadtemplates/filesubtype.cpp
     src/platformInfo/platformInfo.cpp
-    src/platformInfo/resourcePaths.cpp
     src/platformInfo/resourceLocationManager.cpp
     src/resourceMetadata/ResourceTypeInfo.cpp
+    src/pathDiscovery/ResourcePaths.cpp
 )
 
 set(LIB_HEADERS
@@ -260,8 +260,8 @@ set(LIB_HEADERS
     src/scadtemplates/filesubtype.hpp
     src/platformInfo/export.hpp
     src/platformInfo/platformInfo.hpp
-    src/platformInfo/resourcePaths.hpp
     src/platformInfo/resourceLocationManager.hpp
+    src/pathDiscovery/ResourcePaths.hpp
 )
 
 # Build the shared/dynamic library

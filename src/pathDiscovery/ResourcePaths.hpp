@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "export.hpp"
+#include "platformInfo/export.hpp"
 #include "resourceMetadata/ResourceTypeInfo.hpp"
 #include "resourceMetadata/ResourceTier.hpp"
 #include "resourceMetadata/ResourceAccess.hpp"

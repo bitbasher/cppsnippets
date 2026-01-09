@@ -17,7 +17,7 @@
 #pragma once
 
 #include "export.hpp"
-#include "resourcePaths.hpp"
+#include "pathDiscovery/ResourcePaths.hpp"
 #include <QString>
 #include <QStringList>
 #include <QList>

@@ -15,7 +15,7 @@
 #include <QDir>
 
 #include "platformInfo/resourceLocationManager.hpp"
-#include "platformInfo/resourcePaths.hpp"
+#include "pathDiscovery/ResourcePaths.hpp"
 #include "resInventory/resourceScanner.hpp"
 #include "resInventory/resourceTreeWidget.hpp"
 #include "resInventory/resourceItem.hpp"

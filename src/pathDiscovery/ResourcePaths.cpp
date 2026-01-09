@@ -3,8 +3,8 @@
  * @brief Implementation of ResourcePaths class
  */
 
-#include "resourcePaths.hpp"
-#include "platformInfo.hpp"
+#include "ResourcePaths.hpp"
+#include "platformInfo/platformInfo.hpp"
 
 #include <QDir>
 #include <QFileInfo>
