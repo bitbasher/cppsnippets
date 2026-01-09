@@ -15,6 +15,7 @@
 #include "resourceMetadata/ResourceTypeInfo.hpp"
 #include "resourceMetadata/ResourceTier.hpp"
 #include "resourceMetadata/ResourceAccess.hpp"
+#include "pathDiscovery/PathElement.hpp"
 
 #include <QDir>
 #include <QString>
@@ -32,25 +33,6 @@ using resourceMetadata::s_exampleSub;
 using resourceMetadata::s_testSub;
 using resourceMetadata::s_attachments;
 using resourceMetadata::groupNameCapture;
-
-/**
- * @brief Represents a single search path with its tier
- * 
- * Used to track search paths through expansion, qualification, and discovery.
- * Access permissions are determined by tier via resourceMetadata::accessByTier map.
- */
-class PLATFORMINFO_API PathElement {
-public:
-    PathElement(resourceMetadata::ResourceTier tier, const QString& path)
-        : m_tier(tier), m_path(path) {}
-    
-    resourceMetadata::ResourceTier tier() const { return m_tier; }
-    QString path() const { return m_path; }
-    
-private:
-    resourceMetadata::ResourceTier m_tier;
-    QString m_path;
-};
 
 
 
