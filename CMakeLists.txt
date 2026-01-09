@@ -314,12 +314,12 @@ if(BUILD_APP)
         src/gui/sysInfoDialog.cpp
         src/gui/sysInfoDialog.hpp
         # Resource inventory classes
-        src/resInventory/resourceItem.cpp
-        src/resInventory/resourceItem.hpp
-        src/resInventory/resourceTreeWidget.cpp
-        src/resInventory/resourceTreeWidget.hpp
-        src/resInventory/resourceScanner.cpp
-        src/resInventory/resourceScanner.hpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/resourceItem.hpp
+        src/resourceInventory/resourceTreeWidget.cpp
+        src/resourceInventory/resourceTreeWidget.hpp
+        src/resourceInventory/resourceScanner.cpp
+        src/resourceInventory/resourceScanner.hpp
     )
     
     # Add Windows version resource to executable
@@ -369,12 +369,12 @@ if(BUILD_APP)
         src/gui/locationInputWidget.cpp
         src/gui/locationInputWidget.hpp
         # Resource inventory classes
-        src/resInventory/resourceItem.cpp
-        src/resInventory/resourceItem.hpp
-        src/resInventory/resourceTreeWidget.cpp
-        src/resInventory/resourceTreeWidget.hpp
-        src/resInventory/resourceScanner.cpp
-        src/resInventory/resourceScanner.hpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/resourceItem.hpp
+        src/resourceInventory/resourceTreeWidget.cpp
+        src/resourceInventory/resourceTreeWidget.hpp
+        src/resourceInventory/resourceScanner.cpp
+        src/resourceInventory/resourceScanner.hpp
     )
     
     add_executable(inventory_test EXCLUDE_FROM_ALL ${INVENTORY_TEST_SOURCES})
@@ -412,12 +412,12 @@ if(BUILD_APP)
     # Library discovery test app
     add_executable(library_discovery_test EXCLUDE_FROM_ALL
         src/app/library_discovery_test.cpp
-        src/resInventory/resourceScanner.cpp
-        src/resInventory/resourceItem.cpp
-        src/resInventory/resourceTreeWidget.cpp
-        src/resInventory/resourceScanner.hpp
-        src/resInventory/resourceItem.hpp
-        src/resInventory/resourceTreeWidget.hpp
+        src/resourceInventory/resourceScanner.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/resourceTreeWidget.cpp
+        src/resourceInventory/resourceScanner.hpp
+        src/resourceInventory/resourceItem.hpp
+        src/resourceInventory/resourceTreeWidget.hpp
     )
     target_link_libraries(library_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
     target_include_directories(library_discovery_test PRIVATE
@@ -495,12 +495,12 @@ if(BUILD_TESTS)
         tests/test_resource_discovery.cpp
         tests/test_resource_paths.cpp
         # Resource inventory sources needed by discovery tests
-        src/resInventory/resourceScanner.cpp
-        src/resInventory/resourceItem.cpp
-        src/resInventory/resourceTreeWidget.cpp
-        src/resInventory/resourceScanner.hpp
-        src/resInventory/resourceItem.hpp
-        src/resInventory/resourceTreeWidget.hpp
+        src/resourceInventory/resourceScanner.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/resourceTreeWidget.cpp
+        src/resourceInventory/resourceScanner.hpp
+        src/resourceInventory/resourceItem.hpp
+        src/resourceInventory/resourceTreeWidget.hpp
     )
     
     target_link_libraries(scadtemplates_tests PRIVATE

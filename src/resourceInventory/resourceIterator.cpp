@@ -12,7 +12,7 @@
 #include <QDir>
 #include <QFileInfo>
 
-namespace resInventory {
+namespace resourceInventory {
 
 // ============================================================================
 // ResourceIteratorBase
@@ -281,4 +281,4 @@ bool ResourceIteratorFactory::containsHierarchicalType(const QVector<platformInf
     return false;
 }
 
-} // namespace resInventory
+} // namespace resourceInventory

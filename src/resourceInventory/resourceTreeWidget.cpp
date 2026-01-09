@@ -4,7 +4,7 @@
 #include <QFileInfo>
 #include <QCoreApplication>
 
-namespace resInventory {
+namespace resourceInventory {
 
 // ============================================================================
 // ResourceTreeItem
@@ -390,4 +390,4 @@ QList<ResourceTreeItem*> ResourceTreeWidget::findItemsRecursive(
     return results;
 }
 
-} // namespace resInventory
+} // namespace resourceInventory

@@ -11,11 +11,11 @@
 #include <QLabel>
 #include <QDir>
 
-#include "resInventory/resourceScannerDirListing.h"
-#include "resInventory/resourceStore.h"
-#include "resInventory/templateTreeModel.h"
+#include "resourceInventory/resourceScannerDirListing.h"
+#include "resourceInventory/resourceStore.h"
+#include "resourceInventory/templateTreeModel.h"
 
-using namespace resInventory;
+using namespace resourceInventory;
 
 int main(int argc, char* argv[])
 {

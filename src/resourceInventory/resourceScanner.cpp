@@ -14,7 +14,7 @@ static const QStringList kScriptAttachmentFilters = {
     QStringLiteral("*.dat")
 };
 
-namespace resInventory {
+namespace resourceInventory {
 
 // Shared no-op scanner for resource types that are handled elsewhere
 static QVector<ResourceItem> scanNoOp(const QString& basePath,
@@ -684,4 +684,4 @@ QString ResourceInventoryManager::countSummary() const
     return parts.join(QStringLiteral(", "));
 }
 
-} // namespace resInventory
+} // namespace resourceInventory

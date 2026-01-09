@@ -8,8 +8,8 @@
 #include "applicationNameInfo.hpp"
 #include <scadtemplates/template_manager.hpp>
 #include <platformInfo/resourceLocationManager.hpp>
-#include <resInventory/resourceScanner.hpp>
-#include <resInventory/resourceTreeWidget.hpp>
+#include <resourceInventory/resourceScanner.hpp>
+#include <resourceInventory/resourceTreeWidget.hpp>
 
 #include <QMenuBar>
 #include <QMenu>
@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_templateManager(std::make_unique<scadtemplates::TemplateManager>())
     , m_resourceManager(std::make_unique<platformInfo::ResourceLocationManager>())
-    , m_inventoryManager(std::make_unique<resInventory::ResourceInventoryManager>())
+    , m_inventoryManager(std::make_unique<resourceInventory::ResourceInventoryManager>())
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
 {
     // Set application path for resource manager
@@ -94,11 +94,11 @@ void MainWindow::setupUi() {
     listLayout->addWidget(m_searchEdit);
     
     // Get the pre-populated template tree from inventory manager
-    m_templateTree = m_inventoryManager->inventory(resInventory::ResourceType::Template);
+    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Template);
     m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
     m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
     m_templateTree->setColumnHidden(2, true);  // Hide Category column
-    connect(m_templateTree, &resInventory::ResourceTreeWidget::itemSelectionChanged,
+    connect(m_templateTree, &resourceInventory::ResourceTreeWidget::itemSelectionChanged,
             this, &MainWindow::onInventorySelectionChanged);
     listLayout->addWidget(m_templateTree);
     
@@ -427,21 +427,21 @@ void MainWindow::onCancelEdit() {
     updateTemplateButtons();
 }
 
-void MainWindow::onInventoryItemSelected(const resInventory::ResourceItem& item) {
+void MainWindow::onInventoryItemSelected(const resourceInventory::ResourceItem& item) {
     m_selectedItem = item;
     // Show tier name in source field
     QString tierName;
     switch (item.tier()) {
-        case resInventory::ResourceTier::Installation: tierName = tr("Installation"); break;
-        case resInventory::ResourceTier::Machine: tierName = tr("Machine"); break;
-        case resInventory::ResourceTier::User: tierName = tr("User"); break;
+        case resourceInventory::ResourceTier::Installation: tierName = tr("Installation"); break;
+        case resourceInventory::ResourceTier::Machine: tierName = tr("Machine"); break;
+        case resourceInventory::ResourceTier::User: tierName = tr("User"); break;
     }
     m_sourceEdit->setText(tierName);
     populateEditorFromSelection(item);
 }
 
 void MainWindow::onInventorySelectionChanged() {
-    resInventory::ResourceItem item = m_templateTree->selectedItem();
+    resourceInventory::ResourceItem item = m_templateTree->selectedItem();
     if (!item.path().isEmpty()) {
         onInventoryItemSelected(item);
     }
@@ -457,16 +457,16 @@ void MainWindow::refreshInventory() {
     }
     
     // Refresh creates a new widget
-    m_inventoryManager->refreshInventory(resInventory::ResourceType::Template);
+    m_inventoryManager->refreshInventory(resourceInventory::ResourceType::Template);
     
     // Get the new widget and update our pointer
-    m_templateTree = m_inventoryManager->inventory(resInventory::ResourceType::Template);
+    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Template);
     m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
     m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
     m_templateTree->setColumnHidden(2, true);  // Hide Category column
     
     // Reconnect signals
-    connect(m_templateTree, &resInventory::ResourceTreeWidget::itemSelectionChanged,
+    connect(m_templateTree, &resourceInventory::ResourceTreeWidget::itemSelectionChanged,
             this, &MainWindow::onInventorySelectionChanged);
     
     // Re-add to layout
@@ -475,7 +475,7 @@ void MainWindow::refreshInventory() {
     }
 }
 
-void MainWindow::populateEditorFromSelection(const resInventory::ResourceItem& item) {
+void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceItem& item) {
     m_prefixEdit->setText(item.name());
 
     // Prefer structured parse via TemplateParser/JSON to extract body/description/source

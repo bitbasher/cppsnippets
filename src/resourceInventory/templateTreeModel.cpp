@@ -10,7 +10,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-namespace resInventory {
+namespace resourceInventory {
 
 // ============================================================================
 // TemplateTreeNode implementation
@@ -542,4 +542,4 @@ QString TemplateTreeModel::tierDisplayName(ResourceTier tier)
     return QString();
 }
 
-} // namespace resInventory
+} // namespace resourceInventory

@@ -16,9 +16,9 @@
 
 #include "platformInfo/resourceLocationManager.hpp"
 #include "pathDiscovery/ResourcePaths.hpp"
-#include "resInventory/resourceScanner.hpp"
-#include "resInventory/resourceTreeWidget.hpp"
-#include "resInventory/resourceItem.hpp"
+#include "resourceInventory/resourceScanner.hpp"
+#include "resourceInventory/resourceTreeWidget.hpp"
+#include "resourceInventory/resourceItem.hpp"
 #include "gui/machineTab.hpp"
 #include "gui/userTab.hpp"
 

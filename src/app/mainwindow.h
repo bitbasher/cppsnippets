@@ -7,7 +7,7 @@
 
 #include <QMainWindow>
 #include <scadtemplates/template.hpp>
-#include <resInventory/resourceItem.hpp>
+#include <resourceInventory/resourceItem.hpp>
 #include <memory>
 
 class QTextEdit;
@@ -26,7 +26,7 @@ namespace platformInfo {
 class ResourceLocationManager;
 }
 
-namespace resInventory {
+namespace resourceInventory {
 class ResourceInventoryManager;
 class ResourceTreeWidget;
 class ResourceItem;
@@ -63,7 +63,7 @@ private slots:
     void onOpenFile();
     void onSaveFile();
     void onSaveFileAs();
-    void onInventoryItemSelected(const resInventory::ResourceItem& item);
+    void onInventoryItemSelected(const resourceInventory::ResourceItem& item);
     void onInventorySelectionChanged();
 
 private:
@@ -72,19 +72,19 @@ private:
     void updateWindowTitle();
     void updateTemplateButtons();
     void refreshInventory();
-    void populateEditorFromSelection(const resInventory::ResourceItem& item);
+    void populateEditorFromSelection(const resourceInventory::ResourceItem& item);
     QString userTemplatesRoot() const;
     bool saveTemplateToUser(const scadtemplates::Template& tmpl);
     void applyFilterToTree(const QString& text);
     
     std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;
     std::unique_ptr<platformInfo::ResourceLocationManager> m_resourceManager;
-    std::unique_ptr<resInventory::ResourceInventoryManager> m_inventoryManager;
+    std::unique_ptr<resourceInventory::ResourceInventoryManager> m_inventoryManager;
     std::unique_ptr<QSettings> m_settings;
     
     // Template panel
     QVBoxLayout* m_inventoryLayout;
-    resInventory::ResourceTreeWidget* m_templateTree;
+    resourceInventory::ResourceTreeWidget* m_templateTree;
     QLineEdit* m_prefixEdit;
     QTextEdit* m_bodyEdit;
     QTextEdit* m_descriptionEdit;
@@ -102,5 +102,5 @@ private:
     QString m_currentFile;
     bool m_modified = false;
     bool m_editMode = false;
-    resInventory::ResourceItem m_selectedItem;
+    resourceInventory::ResourceItem m_selectedItem;
 };

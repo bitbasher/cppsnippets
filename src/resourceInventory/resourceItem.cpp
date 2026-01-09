@@ -2,7 +2,7 @@
 #include <QFileInfo>
 #include <QMetaType>
 
-namespace resInventory {
+namespace resourceInventory {
 
 // ============================================================================
 // ResourceItem
@@ -129,4 +129,4 @@ bool ResourceTemplate::isValid() const
     return ResourceItem::isValid() && !m_body.isEmpty();
 }
 
-} // namespace resInventory
+} // namespace resourceInventory

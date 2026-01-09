@@ -6,7 +6,7 @@
 #include <QDateTime>
 #include <QVariant>
 
-namespace resInventory {
+namespace resourceInventory {
 
 /**
  * @brief Tier where a resource was found
@@ -203,10 +203,10 @@ ResourceType stringToResourceType(const QString& str);
 QString resourceTierToString(ResourceTier tier);
 ResourceTier stringToResourceTier(const QString& str);
 
-} // namespace resInventory
+} // namespace resourceInventory
 
-Q_DECLARE_METATYPE(resInventory::ResourceItem)
-Q_DECLARE_METATYPE(resInventory::ResourceScript)
-Q_DECLARE_METATYPE(resInventory::ResourceTemplate)
+Q_DECLARE_METATYPE(resourceInventory::ResourceItem)
+Q_DECLARE_METATYPE(resourceInventory::ResourceScript)
+Q_DECLARE_METATYPE(resourceInventory::ResourceTemplate)
 
 #endif // RESOURCEITEM_H

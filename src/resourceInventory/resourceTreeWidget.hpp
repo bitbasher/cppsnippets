@@ -4,7 +4,7 @@
 #include <QTreeWidgetItem>
 #include "resourceItem.hpp"
 
-namespace resInventory {
+namespace resourceInventory {
 
 /**
  * @brief Tree widget item that holds a ResourceItem
@@ -121,6 +121,6 @@ private:
                                                  std::function<bool(ResourceTreeItem*)> predicate) const;
 };
 
-} // namespace resInventory
+} // namespace resourceInventory
 
 #endif // RESOURCETREEITEM_H

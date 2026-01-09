@@ -7,10 +7,10 @@
 #include <memory>
 
 #include "pathDiscovery/ResourcePaths.hpp"
-#include "resInventory/resLocMap.h"
-#include "resInventory/resLocTree.h"
+#include "resourceInventory/resLocMap.h"
+#include "resourceInventory/resLocTree.h"
 
-namespace resInventory {
+namespace resourceInventory {
 
 /**
  * @brief Enumeration of resource tiers
@@ -427,6 +427,6 @@ private:
     ResourceIteratorFactory() = delete;  ///< Static factory - no instantiation
 };
 
-} // namespace resInventory
+} // namespace resourceInventory
 
 #endif // RESOURCEITERATOR_H

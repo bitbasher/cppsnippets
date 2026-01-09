@@ -17,9 +17,9 @@
 #include <QVector>
 #include <memory>
 
-#include "resInventory/resourceStore.h"
+#include "resourceInventory/resourceStore.h"
 
-namespace resInventory {
+namespace resourceInventory {
 
 /**
  * @brief Internal node for tree structure
@@ -175,6 +175,6 @@ private:
     static QString tierDisplayName(ResourceTier tier);
 };
 
-} // namespace resInventory
+} // namespace resourceInventory
 
 #endif // TEMPLATETREEMODEL_H

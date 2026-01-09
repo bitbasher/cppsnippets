@@ -13,7 +13,7 @@ namespace platformInfo {
 class ResourceLocationManager;
 }
 
-namespace resInventory {
+namespace resourceInventory {
 
 class ResourceTreeWidget;
 
@@ -222,6 +222,6 @@ private:
     QMap<ResourceType, ResourceTreeWidget*> m_inventories;
 };
 
-} // namespace resInventory
+} // namespace resourceInventory
 
 #endif // RESOURCESCANNER_H
