@@ -10,7 +10,7 @@
 
 #include <QString>
 
-namespace platformInfo {
+namespace pathDiscovery {
 
 /**
  * @brief Represents a single search path with its tier
@@ -31,4 +31,4 @@ private:
     QString m_path;
 };
 
-} // namespace platformInfo
+} // namespace pathDiscovery

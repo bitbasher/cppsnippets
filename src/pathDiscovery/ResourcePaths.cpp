@@ -14,7 +14,7 @@
 #include <QRegularExpression>
 #include <QSettings>
 
-namespace platformInfo {
+namespace pathDiscovery {
 
 // ============================================================================
 // Default Search Paths (Immutable, Compile-Time Constants)
@@ -365,4 +365,4 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
     return qualified;
 }
 
-} // namespace platformInfo
+} // namespace pathDiscovery

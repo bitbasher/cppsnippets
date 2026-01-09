@@ -22,9 +22,9 @@
 #include <QStringList>
 #include <QMap>
 
-namespace platformInfo {
+namespace pathDiscovery {
 
-// Import resource metadata types into platformInfo namespace for backward compatibility
+// Import resource metadata types for convenience
 using resourceMetadata::ResourceType;
 using resourceMetadata::ResourceTypeInfo;
 using resourceMetadata::s_topLevel;
@@ -102,4 +102,4 @@ private:
     static bool isSiblingCandidatePath(const QString& path);
 };
 
-} // namespace platformInfo
+} // namespace pathDiscovery

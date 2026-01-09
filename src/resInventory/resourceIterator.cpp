@@ -50,7 +50,7 @@ bool ResourceIteratorFlat::scan()
         
         // Check for each resource type subdirectory
         for (const auto& resType : m_resourceTypes) {
-            QString subdir = platformInfo::ResourcePaths::resourceSubdirectory(resType);
+            QString subdir = pathDiscovery::ResourcePaths::resourceSubdirectory(resType);
             if (subdir.isEmpty()) {
                 continue;
             }
@@ -133,7 +133,7 @@ bool ResourceIteratorTree::scan()
         
         // Check for each resource type subdirectory
         for (const auto& resType : m_resourceTypes) {
-            QString subdir = platformInfo::ResourcePaths::resourceSubdirectory(resType);
+            QString subdir = pathDiscovery::ResourcePaths::resourceSubdirectory(resType);
             if (subdir.isEmpty()) {
                 continue;
             }
@@ -208,7 +208,7 @@ void ResourceIteratorTree::scanDirectory(ResLocTreeItem* parentItem, const QStri
         // (examples, tests, etc. within a library)
         bool hasKnownResources = false;
         for (const auto& resType : m_resourceTypes) {
-            QString resSubdir = platformInfo::ResourcePaths::resourceSubdirectory(resType);
+            QString resSubdir = pathDiscovery::ResourcePaths::resourceSubdirectory(resType);
             if (subdir.compare(resSubdir, Qt::CaseInsensitive) == 0) {
                 hasKnownResources = true;
                 childLoc.description = QString("%1 resources").arg(resSubdir);
