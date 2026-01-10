@@ -289,8 +289,12 @@ int main(int argc, char *argv[]) {
             default: typeName = "Other"; break;
         }
         
-        QString subdir = ResourcePaths::resourceSubdirectory(type);
-        QStringList exts = ResourcePaths::resourceExtensions(type);
+        // Use ResourceTypeInfo directly (wrapper methods removed)
+        auto it = ResourceTypeInfo::s_resourceTypes.constFind(type);
+        QString subdir = (it != ResourceTypeInfo::s_resourceTypes.constEnd()) 
+            ? it.value().getSubDir() : QString();
+        QStringList exts = (it != ResourceTypeInfo::s_resourceTypes.constEnd())
+            ? it.value().getPrimaryExtensions() : QStringList();
         
         out << QString("  %1:\n").arg(typeName);
         out << QString("    Subdirectory: %1/\n").arg(subdir);

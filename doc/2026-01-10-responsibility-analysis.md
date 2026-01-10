@@ -25,13 +25,14 @@
 **Current State:**
 
 | Location | What It Has |
-|----------|-------------|
+| ---------- | ------------- |
 | `resourceMetadata::ResourceTypeInfo` | Has `subdirectory` field (e.g., "templates", "fonts", "color-schemes") ✅ |
 | `resourceMetadata::ResourceTypeInfo::s_resourceTypes` | QMap<ResourceType, ResourceTypeInfo> with all definitions ✅ |
 | Phase 2A design doc | Has `DiscoveryEngine::expectedResourceFolders()` returning hardcoded QStringList ❌ |
 
 **Problem:**
 Phase 2A design has:
+
 ```cpp
 QStringList DiscoveryEngine::expectedResourceFolders()
 {
@@ -92,7 +93,7 @@ QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 **Current State:**
 
 | Document | What It Says |
-|----------|-------------|
+| ---------- | ------------- |
 | NEWRESOURCES_CONTAINER_INTEGRATION.md | Describes "newresources" as drop-zone container with subdirectories ✅ |
 | ResourceTypeInfo.hpp | Has `ResourceType::NewResources` enum value ✅ |
 | ResourceTypeInfo.hpp | Has entry in `s_resourceTypes` map (presumably) ❓ |
@@ -100,12 +101,14 @@ QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 | Phase 2B design | **NO MENTION** of "newresources" folder ❌ |
 
 **Problem:**
+
 - NewResources is defined as a ResourceType enum but is a **container**, not a scannable type
 - Phase 2A `detectResourceFolders()` should detect "newresources/" folder
 - Phase 2B scanning must look inside "newresources/templates/" etc.
 - No clear integration point in new namespace structure
 
 **NewResources Characteristics:**
+
 - Location: `<basePath>/newresources/`
 - Structure: Contains subdirectories for each type (templates/, fonts/, etc.)
 - Purpose: Drop-zone for user-imported resources
@@ -118,7 +121,8 @@ QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 2. **Phase 2A DiscoveryEngine** - Should check for "newresources/" folder existence
 3. **Phase 2B Scanners** - Must scan both "templates/" AND "newresources/templates/"
 
-**Recommendation:** 
+**Recommendation:**
+
 - ✅ Verify ResourceTypeInfo.s_resourceTypes has NewResources entry with subdirectory="newresources"
 - ✅ Phase 2A should detect "newresources" folder presence
 - ✅ Phase 2B sub-phase designs must include newresources scanning
@@ -131,7 +135,7 @@ QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 **Current State:**
 
 | Location | What It Has |
-|----------|-------------|
+| ---------- | ------------- |
 | Phase 2A design | `DiscoveryEngine::generateDisplayName(path, tier)` - complex logic ❌ |
 | Phase 2A design | `DiscoveryEngine::extractSignificantComponent(path)` - path parsing ❌ |
 | ResourceTier.hpp | Enum only, no display name helpers ❌ |
@@ -140,15 +144,18 @@ QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 Display name generation is **pure presentation logic** embedded in discovery engine. Rules are:
 
 **Installation Tier:**
+
 - Debug/Release build → "Installation - Build Area"
 - Program Files → "Installation - Program Files"
 - Else → "Installation - [LastComponent]"
 
 **Machine Tier:**
+
 - ProgramData → "Machine - ProgramData"
 - Else → "Machine - [Component]"
 
 **User Tier:**
+
 - Documents → "User - Documents"
 - AppData/Roaming → "User - AppData Roaming"
 - AppData/Local → "User - AppData Local"
@@ -157,7 +164,8 @@ Display name generation is **pure presentation logic** embedded in discovery eng
 **Correct Approach:**
 Display name generation is **UI presentation**, not discovery logic. Options:
 
-**Option A: Move to ResourceLocation class**
+**Option A: Move to ResourceLocation class:**
+
 ```cpp
 namespace resourceDiscovery {
     struct ResourceLocation {
@@ -172,7 +180,8 @@ namespace resourceDiscovery {
 }
 ```
 
-**Option B: Move to separate DisplayNameFormatter utility**
+**Option B: Move to separate DisplayNameFormatter utility:**
+
 ```cpp
 namespace resourceDiscovery {
     class DisplayNameFormatter {
@@ -186,7 +195,8 @@ namespace resourceDiscovery {
 }
 ```
 
-**Option C: Make it data-driven with patterns**
+**Option C: Make it data-driven with patterns:**
+
 ```cpp
 namespace resourceMetadata {
     struct TierDisplayRules {
@@ -203,7 +213,8 @@ namespace resourceMetadata {
 }
 ```
 
-**Recommendation:** 
+**Recommendation:**
+
 - ✅ **Option A** is simplest - make it a member function of ResourceLocation
 - Display name is property of the location, so it belongs with the location
 - Keeps DiscoveryEngine focused on filesystem validation only
@@ -215,12 +226,13 @@ namespace resourceMetadata {
 **Current State:**
 
 | Location | What It Has |
-|----------|-------------|
+| ---------- | ------------- |
 | ResourceAccess.hpp | `static const QMap<ResourceTier, Access> accessByTier` ✅ |
 
 **Status:** ✅ **CORRECT** - This is exactly the right approach!
 
 **Example:**
+
 ```cpp
 static const QMap<ResourceTier, Access> accessByTier = {
     { ResourceTier::Installation, Access::ReadOnly },
@@ -238,7 +250,7 @@ This is **data-driven table lookup** done correctly. We should follow this patte
 **Current State:**
 
 | Location | What It Has |
-|----------|-------------|
+| ---------- | ------------- |
 | ResourceTypeInfo | `primaryExtensions` field ✅ |
 | ResourceTypeInfo | `attachmentExtensions` field ✅ |
 | ResourceTypeInfo::s_resourceTypes | Complete definitions per type ✅ |
@@ -266,6 +278,7 @@ QStringList ResourcePaths::resourceExtensions(ResourceType type) {
 **Status:** ✅ **ACCEPTABLE** - It's a convenience wrapper in pathDiscovery that delegates to resourceMetadata
 
 **Alternative:** Could be moved to resourceMetadata namespace as static helper:
+
 ```cpp
 namespace resourceMetadata {
     static QStringList getExtensionsForType(ResourceType type) {
@@ -285,7 +298,7 @@ namespace resourceMetadata {
 ## Summary of Issues and Recommendations
 
 | Issue | Current Location | Should Be In | Priority | Effort |
-|-------|-----------------|--------------|----------|--------|
+| ------- | ----------------- | -------------- | ---------- | -------- |
 | **Expected resource folders list** | Phase 2A design hardcoded | `resourceMetadata::allResourceFolders()` static helper | High | 1 hour |
 | **NewResources integration** | Mentioned but not integrated | Phase 2A/2B designs + ResourceTypeInfo verification | High | 2 hours |
 | **Display name generation** | DiscoveryEngine (Phase 2A design) | ResourceLocation member function | Medium | 2 hours |
@@ -301,6 +314,7 @@ namespace resourceMetadata {
 **File:** `src/resourceMetadata/ResourceTypeInfo.hpp`
 
 **Add:**
+
 ```cpp
 namespace resourceMetadata {
     /**
@@ -330,6 +344,7 @@ namespace resourceMetadata {
 **File:** `src/resourceMetadata/ResourceTypeInfo.cpp` (or wherever s_resourceTypes is defined)
 
 **Verify entry exists:**
+
 ```cpp
 const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
     // ... other entries ...
@@ -385,6 +400,7 @@ namespace resourceDiscovery {
 ```
 
 **Remove from DiscoveryEngine:**
+
 - Remove `generateDisplayName()` static method
 - Remove `extractSignificantComponent()` static method
 - Update `discoverLocations()` to not call these
@@ -394,13 +410,16 @@ namespace resourceDiscovery {
 ### Action 4: Document NewResources in Phase Designs
 
 **Phase 2A updates:**
+
 - Add "NewResources Container" section explaining discovery
 - Update `detectResourceFolders()` to note "newresources" will be found
 - Explain that Phase 2B handles actual scanning of contents
 
 **Phase 2B updates:**
+
 - Each sub-phase (2B.1-2B.5) must document newresources scanning
 - Example for 2B.1 Template Scanner:
+
   ```cpp
   // Scan standard location
   count += scanDirectory(basePath, "templates", ...);
@@ -418,6 +437,7 @@ namespace resourceDiscovery {
 Should we add more helpers to resourceMetadata for common queries?
 
 **Examples:**
+
 ```cpp
 namespace resourceMetadata {
     // Get all resource folder names
@@ -468,6 +488,7 @@ Should Phase 2B scanners:
 ### Q4: PathDiscovery Accessor Functions
 
 Should `pathDiscovery::ResourcePaths` keep convenience accessors like:
+
 - `resourceExtensions(ResourceType)`
 - `resourceSubdirectory(ResourceType)`
 

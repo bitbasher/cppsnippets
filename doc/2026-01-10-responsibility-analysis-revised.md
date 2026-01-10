@@ -26,11 +26,12 @@
 **Current State:**
 
 | Location | What It Has |
-|----------|-------------|
+| ---------- | ------------- |
 | `resourceMetadata::ResourceTypeInfo` | Has `subdirectory` field (e.g., "templates", "fonts", "color-schemes") ✅ |
 | `resourceMetadata::ResourceTypeInfo::s_resourceTypes` | Static const QMap<ResourceType, ResourceTypeInfo> with all definitions ✅ |
 
 **Original Proposal (WRONG):**
+
 ```cpp
 // Runtime function building list
 static QStringList allResourceFolders() {
@@ -64,6 +65,7 @@ inline static const QStringList s_allResourceFolders = {
 ```
 
 **Usage in Phase 2A:**
+
 ```cpp
 QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 {
@@ -94,6 +96,7 @@ QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 **Ah! NewResources is NOT a ResourceType - it's a special drop-zone location!**
 
 NewResources was incorrectly placed in `s_resourceTypes` as a container type. It has been removed because:
+
 - It's not a resource type like Templates or Fonts
 - It's a **pre-defined location for dropped resources**
 - It's a user-writable drop-zone for drag-and-drop imports
@@ -102,6 +105,7 @@ NewResources was incorrectly placed in `s_resourceTypes` as a container type. It
 **How It Actually Works:**
 
 1. **Static Definition Needed** (in `resourceDiscovery` namespace):
+
    ```cpp
    // In ResourceLocation.hpp
    namespace resourceDiscovery {
@@ -136,6 +140,7 @@ NewResources was incorrectly placed in `s_resourceTypes` as a container type. It
    - Drag-drop processing ensures only valid resources exist, so scanners can trust the content
 
 **Key Points:**
+
 - ✅ NewResources is a **location**, not a resource type
 - ✅ Removed from `s_resourceTypes` (user confirmed this is done)
 - ✅ Needs static path definition with platform-specific #ifdef blocks
@@ -143,7 +148,8 @@ NewResources was incorrectly placed in `s_resourceTypes` as a container type. It
 - ✅ May not exist (user creates it manually or via drag-drop)
 - ✅ No special scanner logic needed
 
-**Recommendation:** 
+**Recommendation:**
+
 - ✅ Add `getNewResourcesPath()` static helper to resourceDiscovery namespace
 - ✅ Phase 2A checks this location and adds it to discovered locations if it exists
 - ✅ Use same environment variable expansion as ResourcePaths (see line 83 pattern)
@@ -158,6 +164,7 @@ NewResources was incorrectly placed in `s_resourceTypes` as a container type. It
 > "the special case of display names for locations are explained in the code and design docs of the previous implementation cycle"
 >
 > Rules:
+>
 > - Install tier: "Program Files/OpenSCAD" or "/Applications/OpenSCAD (Nightly)"
 > - Machine tier: "ProgramData" (folder before app name)
 > - User tier: "AppData\Local" (two folders before app name)
@@ -169,7 +176,7 @@ My original proposal included tier prefix ("Installation - ", "Machine - ", "Use
 **Correct Display Name Rules:**
 
 | Tier | Display Name Rule | Example Path | Display Name |
-|------|------------------|--------------|--------------|
+| ------ | ------------------ | -------------- | -------------- |
 | Installation | Previous folder + app name | `C:/Program Files/OpenSCAD` | `Program Files/OpenSCAD` |
 | Installation | Previous folder + app name | `/Applications/OpenSCAD (Nightly)` | `Applications/OpenSCAD (Nightly)` |
 | Machine | Folder before app name | `C:/ProgramData/OpenSCAD` | `ProgramData` |
@@ -222,7 +229,8 @@ namespace resourceMetadata {
 }
 ```
 
-**Recommendation:** 
+**Recommendation:**
+
 - ✅ Remove tier prefix from location display names
 - ✅ Follow folder hierarchy rules per tier
 - ✅ Add tierDisplayNames lookup table for enum values
@@ -273,7 +281,8 @@ if (info) {
 }
 ```
 
-**Recommendation:** 
+**Recommendation:**
+
 - ⚠️ Remove wrapper methods from pathDiscovery::ResourcePaths
 - ✅ Use ResourceTypeInfo getters directly
 - ✅ Document that consumers should use resourceMetadata directly
@@ -283,7 +292,7 @@ if (info) {
 ## Revised Summary of Issues and Recommendations
 
 | Issue | Solution | Priority | Effort |
-|-------|----------|----------|--------|
+| ------- | ---------- | ---------- | -------- |
 | **Resource folders list** | Add `resourceMetadata::s_allResourceFolders` static const (excludes newresources) | High | 0.5 hours |
 | **Enum display names** | Add `resourceMetadata::tierDisplayNames` lookup table | High | 0.5 hours |
 | **Location display names** | Implement in ResourceLocation without tier prefix | High | 1.5 hours |
@@ -302,6 +311,7 @@ if (info) {
 **File:** `src/resourceMetadata/ResourceTypeInfo.hpp`
 
 **Add:**
+
 ```cpp
 namespace resourceMetadata {
     // All resource folder names (compile-time constant)
@@ -322,6 +332,7 @@ namespace resourceMetadata {
 **File:** `src/resourceMetadata/ResourceTier.hpp`
 
 **Add:**
+
 ```cpp
 namespace resourceMetadata {
     // Display names for tier enum values
@@ -342,6 +353,7 @@ namespace resourceMetadata {
 **File:** `src/resourceDiscovery/ResourceLocation.hpp` (when Phase 2A is implemented)
 
 **Add static constexpr and helper:**
+
 ```cpp
 namespace resourceDiscovery {
     // Platform-specific base paths for NewResources drop-zone location
@@ -373,6 +385,7 @@ namespace resourceDiscovery {
 ```
 
 **Usage in DiscoveryEngine::discoverLocations():**
+
 ```cpp
 QList<ResourceLocation> DiscoveryEngine::discoverLocations(
     const QList<pathDiscovery::PathElement>& discoveryPaths)
@@ -410,6 +423,7 @@ QList<ResourceLocation> DiscoveryEngine::discoverLocations(
 ```
 
 **Notes:**
+
 - NewResources is ALWAYS User tier (read-write, per-user)
 - May not exist - only add if folder exists
 - Scanners trust that drag-drop already validated resources
@@ -530,6 +544,7 @@ QList<ResourceLocation> DiscoveryEngine::discoverLocations(
 ```
 
 **Key Points:**
+
 - NewResources checked separately from standard discovery paths
 - Only added if folder exists (user creates it manually or via drag-drop)
 - Always User tier (read-write)
@@ -566,6 +581,7 @@ inline static const QStringList s_allResourceFolders = {
 **File:** `src/pathDiscovery/ResourcePaths.hpp`
 
 **Remove:**
+
 ```cpp
 // DELETE THESE (use resourceMetadata directly)
 static QStringList resourceExtensions(ResourceType type);
@@ -573,6 +589,7 @@ static QString resourceSubdirectory(ResourceType type);
 ```
 
 **Update calling code to use:**
+
 ```cpp
 // Direct access to resourceMetadata
 const ResourceTypeInfo* info = /* get from s_resourceTypes */;
@@ -589,6 +606,7 @@ QString subdir = info->getSubDir();
 Since `s_allResourceFolders` is manually maintained, how to keep in sync with `s_resourceTypes`?
 
 **Recommendation:** Add documentation comment explaining:
+
 - List must match subdirectory values from s_resourceTypes
 - "newresources" excluded (it's a location, not a resource folder)
 - Update both when adding new resource types
@@ -598,6 +616,7 @@ Since `s_allResourceFolders` is manually maintained, how to keep in sync with `s
 ### Q2: Location Display Name Edge Cases
 
 What if path hierarchy doesn't match expected pattern?
+
 - Path too short (e.g., `/OpenSCAD` - no parent)
 - User's home directory directly
 - App at drive root (e.g., `C:/OpenSCAD`)
@@ -611,6 +630,7 @@ What if path hierarchy doesn't match expected pattern?
 Should NewResources use `QStandardPaths` or environment variable expansion?
 
 **Current proposal:** Environment variables (matching ResourcePaths.cpp pattern)
+
 - Windows: `%LOCALAPPDATA%/AppName/NewResources`
 - macOS: `${HOME}/Library/Application Support/AppName/NewResources`
 - Linux: `${HOME}/.local/share/AppName/NewResources`
@@ -624,6 +644,7 @@ Should NewResources use `QStandardPaths` or environment variable expansion?
 ### Q4: Where to Define getNewResourcesPath()?
 
 Options:
+
 - A: In ResourceLocation struct (static helper)
 - B: In DiscoveryEngine class (private helper)
 - C: Separate utility header in resourceDiscovery namespace

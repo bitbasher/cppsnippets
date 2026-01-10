@@ -146,7 +146,7 @@ public:
   }
 
   // Static resource type registry
-  static const QMap<ResourceType, ResourceTypeInfo> s_resourceTypes;
+  RESOURCEMETADATA_API static const QMap<ResourceType, ResourceTypeInfo> s_resourceTypes;
 };
 
 inline static const QString groupNameCapture = QStringLiteral("__capture__");

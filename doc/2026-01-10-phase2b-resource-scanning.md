@@ -10,6 +10,7 @@
 ## Prerequisites
 
 ✅ **Phase 2A Must Be Complete:**
+
 - `resourceDiscovery::DiscoveryEngine` implemented and tested
 - `QList<resourceDiscovery::ResourceLocation>` available as input
 - Each ResourceLocation contains:
@@ -20,7 +21,8 @@
   - `resourceFolders` (list of folders found: templates/, libraries/, etc.)
 
 **Current Pipeline:**
-```
+
+```text
 pathDiscovery::ResourcePaths 
     → QList<PathElement> (12 paths with tiers)
         → resourceDiscovery::DiscoveryEngine
@@ -74,6 +76,7 @@ pathDiscovery::ResourcePaths
 **Responsibility:** Read files, validate formats, extract metadata, delegate to inventory for storage.
 
 **Dependencies:**
+
 - ✅ `platformInfo` (QDir, QFileInfo, QDirIterator)
 - ✅ `resourceMetadata` (ResourceType enum, type-specific metadata)
 - ✅ `resourceDiscovery` (ResourceLocation input)
@@ -91,6 +94,7 @@ pathDiscovery::ResourcePaths
 **Input:** ResourceLocation with "templates" in resourceFolders list
 
 **Process:**
+
 1. Iterate `location.path/templates/*.json`
 2. For each .json file:
    - Read file content
@@ -113,6 +117,7 @@ pathDiscovery::ResourcePaths
 **Input:** ResourceLocation with "fonts" in resourceFolders list
 
 **Process:**
+
 1. Iterate `location.path/fonts/*.{ttf,otf}`
 2. For each font file:
    - Check file is readable
@@ -133,6 +138,7 @@ pathDiscovery::ResourcePaths
 **Input:** ResourceLocation with "color-schemes" in resourceFolders list
 
 **Process:**
+
 1. Iterate `location.path/color-schemes/*.json`
 2. For each .json file:
    - Read and parse JSON
@@ -154,6 +160,7 @@ pathDiscovery::ResourcePaths
 **Input:** ResourceLocation with "libraries" in resourceFolders list
 
 **Process:**
+
 1. Iterate `location.path/libraries/*.scad`
 2. For each .scad file:
    - Check file is readable
@@ -175,6 +182,7 @@ pathDiscovery::ResourcePaths
 **Input:** ResourceLocation with "examples" in resourceFolders list
 
 **Process:**
+
 1. Recursively iterate `location.path/examples/**/*.scad`
 2. For each .scad file:
    - Extract category from parent directory path
@@ -192,7 +200,7 @@ pathDiscovery::ResourcePaths
 
 ### Class Structure
 
-```
+```text
 ResourceScanner (abstract base)
     ├── TypeScanner (abstract per-type interface)
     │   ├── TemplateScanner
@@ -236,7 +244,7 @@ for (const auto& location : validatedLocations) {
 
 ### File Structure
 
-```
+```text
 src/
 ├── resourceScanning/
 │   ├── ResourceScanner.hpp          (abstract base)
@@ -301,7 +309,7 @@ while (exampleIt.hasNext()) {
 Filtering options for QDir operations (from Qt documentation):
 
 | Constant | Value | Description |
-|----------|-------|-------------|
+| ---------- | ------- | ------------- |
 | QDir::Dirs | 0x001 | List directories that match the filters |
 | QDir::Files | 0x002 | List files |
 | QDir::Readable | 0x010 | List files for which the application has read access (combine with Dirs or Files) |
@@ -313,6 +321,7 @@ Filtering options for QDir operations (from Qt documentation):
 | QDir::NoSymLinks | 0x008 | Do not list symbolic links |
 
 **Common Combinations:**
+
 - File scanning: `QDir::Files | QDir::Readable | QDir::NoDotAndDotDot`
 - Directory scanning: `QDir::Dirs | QDir::Readable | QDir::NoDotAndDotDot`
 - Recursive: Use `QDirIterator::Subdirectories` flag
@@ -326,7 +335,7 @@ Filtering options for QDir operations (from Qt documentation):
 Used by pathDiscovery, useful context for understanding where resources come from:
 
 | Path Type | Windows | macOS | Linux | Description |
-|-----------|---------|-------|-------|-------------|
+| ----------- | --------- | ------- | ------- | ------------- |
 | **DocumentsLocation** | `C:/Users/<USER>/Documents` | `~/Documents` | `~/Documents` | User document files (generic) |
 | **FontsLocation** | `C:/Windows/Fonts` (RO) | `/System/Library/Fonts` (RO) | `~/.fonts`, `/usr/share/fonts` | System and user fonts |
 | **AppDataLocation** | `C:/Users/<USER>/AppData/Roaming/<APPNAME>` | `~/Library/Application Support/<APPNAME>` | `~/.local/share/<APPNAME>` | Per-app persistent data |
@@ -639,7 +648,7 @@ TemplateMetadata TemplateScanner::extractMetadata(
 
 Phase 2B requires populated test structure:
 
-```
+```text
 testFileStructure/
 ├── templates/
 │   ├── basic_cube.json
@@ -762,7 +771,8 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 
 ## Success Criteria Per Sub-Phase
 
-### Sub-Phase 2B.1 Complete When:
+### Sub-Phase 2B.1 Complete When
+
 1. ✅ TemplateScanner class implemented
 2. ✅ All 20 tests pass
 3. ✅ testFileStructure/templates/ populated with test data
@@ -778,7 +788,7 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 ## Estimated Total Effort for Phase 2B
 
 | Sub-Phase | Component | Hours |
-|-----------|-----------|-------|
+| ----------- | ----------- | ------- |
 | **2B.1** | Template Scanner | 6 |
 | **2B.2** | Font Scanner | 4 |
 | **2B.3** | Color Scheme Scanner | 4 |
@@ -804,6 +814,7 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 **Problem:** Scanning thousands of files could block UI
 
 **Mitigation:**
+
 - Use QDirIterator (memory efficient)
 - Provide progress callbacks
 - Consider background threading (Phase 3)
@@ -814,6 +825,7 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 **Problem:** Malformed JSON, corrupted fonts, etc.
 
 **Mitigation:**
+
 - Robust validation in FileValidator
 - Try/catch around parsing
 - Log errors, skip invalid files
@@ -824,6 +836,7 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 **Problem:** Same template in multiple locations
 
 **Mitigation:**
+
 - Tier-based precedence (User > Machine > Installation)
 - Allow duplicates but mark tier in metadata
 - UI (Phase 5) shows source location
@@ -834,6 +847,7 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 **Problem:** JSON parsing is expensive
 
 **Mitigation:**
+
 - Only parse files once
 - Cache results in inventory
 - Lazy loading (parse on demand, not all upfront)
@@ -844,6 +858,7 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 ## Next Steps After Phase 2B
 
 ### Phase 3: Resource Management
+
 - Dependency resolution (libraries using other libraries)
 - Resource validation (deeper than format checking)
 - Resource caching and indexing
@@ -851,12 +866,14 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 - Resource update detection
 
 ### Phase 4: Settings and Persistence
+
 - Save/load resource preferences
 - Remember which locations are enabled
 - Cache scan results
 - Track user customizations
 
 ### Phase 5: GUI Integration
+
 - Resource browser UI
 - Enable/disable locations
 - Resource preview
@@ -881,11 +898,12 @@ add_test(NAME TemplateScannerTests COMMAND test_template_scanner)
 
 **Approach:** Incremental implementation, one resource type at a time.
 
-**Input:** QList<ResourceLocation> from Phase 2A  
+**Input:** QList&lt;ResourceLocation&gt; from Phase 2A  
 **Process:** File iteration, format validation, metadata extraction  
 **Output:** Populated inventory stores (TemplateStore, FontStore, etc.)
 
 **Why 5 Sub-Phases:**
+
 - Each resource type has unique characteristics
 - Incremental testing reduces integration risk
 - Can ship partial functionality

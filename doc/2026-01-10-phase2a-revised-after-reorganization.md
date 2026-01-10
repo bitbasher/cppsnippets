@@ -33,7 +33,8 @@
    - Clean production-ready code (debug traces removed)
 
 **Current State:**
-```
+
+```text
 pathDiscovery::ResourcePaths → QList<PathElement> with tier tags
                                     ↓
                            [Phase 2A goes here]
@@ -49,7 +50,8 @@ pathDiscovery::ResourcePaths → QList<PathElement> with tier tags
 
 **Test-Driven:** Tests written first, implementation follows.
 
-**Clear Boundaries:** 
+**Clear Boundaries:**
+
 - **Input:** `QList<pathDiscovery::PathElement>` from ResourcePaths
 - **Output:** `QList<resourceDiscovery::ResourceLocation>` for valid, populated paths
 
@@ -86,6 +88,7 @@ pathDiscovery::ResourcePaths → QList<PathElement> with tier tags
 **Responsibility:** Filesystem validation only - no knowledge of file contents.
 
 **Dependencies:**
+
 - ✅ `platformInfo` (for QDir, QFileInfo operations)
 - ✅ `resourceMetadata` (for ResourceTier enum, ResourceType definitions)
 - ✅ `pathDiscovery` (for PathElement input)
@@ -134,6 +137,7 @@ QList<pathDiscovery::PathElement> discoveryPaths = {
 ```
 
 **Characteristics:**
+
 - All paths are absolute
 - All paths have been deduplicated
 - Environment variables already expanded
@@ -215,12 +219,14 @@ Display names provide compact, human-readable identification for UI elements.
 **Goal:** Show app name or location identifier
 
 **Rules:**
+
 1. If path contains exe directory → "Installation - [BuildType]" (e.g., "Installation - Debug")
 2. If path ends with app name → "Installation - [AppName]"
 3. If path in Program Files → "Installation - Program Files"
 4. Otherwise → "Installation - [LastComponent]"
 
 **Examples:**
+
 - `D:/repos/cppsnippets/build/bin/Debug` → "Installation - Debug"
 - `C:/Program Files/ScadTemplates` → "Installation - Program Files"
 
@@ -229,10 +235,12 @@ Display names provide compact, human-readable identification for UI elements.
 **Goal:** Show system location
 
 **Rules:**
+
 1. Extract key path component (ProgramData, etc.)
 2. Format as "Machine - [Component]"
 
 **Examples:**
+
 - `C:/ProgramData/ScadTemplates` → "Machine - ProgramData"
 
 ### User Tier
@@ -240,6 +248,7 @@ Display names provide compact, human-readable identification for UI elements.
 **Goal:** Show personal location context
 
 **Rules:**
+
 1. If Documents folder → "User - Documents"
 2. If AppData/Roaming → "User - AppData Roaming"
 3. If AppData/Local → "User - AppData Local"
@@ -247,6 +256,7 @@ Display names provide compact, human-readable identification for UI elements.
 5. Otherwise → "User - [LastComponent]"
 
 **Examples:**
+
 - `C:/Users/Jeff/Documents/ScadTemplates` → "User - Documents"
 - `C:/Users/Jeff/AppData/Roaming/ScadTemplates` → "User - AppData Roaming"
 - `C:/CustomScad` → "User - CustomScad"
@@ -258,7 +268,7 @@ Display names provide compact, human-readable identification for UI elements.
 
 ### File Structure
 
-```
+```text
 src/
 ├── resourceDiscovery/              (NEW FOLDER)
 │   ├── ResourceLocation.hpp        (struct definition)
@@ -573,6 +583,7 @@ Uses Google Test with QTemporaryDir for filesystem simulation.
 ### Test Categories
 
 #### 1. Basic Functionality (5 tests)
+
 - Empty input returns empty output
 - Empty path is skipped
 - Non-existent path is skipped
@@ -580,6 +591,7 @@ Uses Google Test with QTemporaryDir for filesystem simulation.
 - Path with random folders (not resource folders) is skipped
 
 #### 2. Resource Folder Detection (8 tests)
+
 - Path with templates/ folder is included
 - Path with libraries/ folder is included
 - Path with fonts/ folder is included
@@ -590,17 +602,20 @@ Uses Google Test with QTemporaryDir for filesystem simulation.
 - Case sensitivity check (Windows: case-insensitive, Linux: case-sensitive)
 
 #### 3. Multiple Paths (4 tests)
+
 - Multiple valid paths all included
 - Mixed valid and invalid paths (only valid included)
 - All Installation tier paths processed correctly
 - Mixed tiers processed with correct tier tags
 
 #### 4. Write Access Detection (3 tests)
+
 - Writable path marked as writable
 - Read-only path marked as read-only (platform-specific)
 - Temp directory is writable
 
 #### 5. Display Name Generation (6 tests)
+
 - Installation tier shows correct format
 - Machine tier shows correct format
 - User tier - Documents shows "User - Documents"
@@ -609,6 +624,7 @@ Uses Google Test with QTemporaryDir for filesystem simulation.
 - User tier - custom path shows last component
 
 #### 6. Edge Cases (4 tests)
+
 - Path with only files (no folders) is skipped
 - Resource folder as file (not directory) is ignored
 - Path with subdirectories named similarly but not matching is skipped
@@ -748,6 +764,7 @@ Phase 2A is complete when:
 ### Immediate: Create test_discovery_integration.cpp
 
 Small program similar to test_path_discovery that:
+
 1. Calls pathDiscovery to get candidate paths
 2. Calls resourceDiscovery to validate
 3. Prints side-by-side comparison showing which paths were kept/rejected and why
@@ -793,6 +810,7 @@ Break into sub-phases:
 **Output:** Validated ResourceLocation objects ready for scanning
 
 **Why This Matters:**
+
 - Prevents scanning non-existent paths
 - Identifies which resource types are available at each location
 - Provides UI-friendly display names
