@@ -14,7 +14,6 @@
 #include <QProcessEnvironment>
 #include <QRegularExpression>
 #include <QSettings>
-#include <QDebug>
 
 namespace pathDiscovery {
 
@@ -344,96 +343,56 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
     QList<PathElement> qualified;
     QSet<QString> seenPaths; // Track paths to prevent duplicates
     
-    qDebug() << "// TRACE: qualifiedSearchPaths() starting"; // REMOVE_WHEN_VERIFIED
-    
     // Helper lambda to add path only if not already present
     auto addIfUnique = [&](resourceMetadata::ResourceTier tier, const QString& path) {
         if (!seenPaths.contains(path)) {
-            qDebug() << "// TRACE: addIfUnique - ADDING new path:" << path; // REMOVE_WHEN_VERIFIED
             seenPaths.insert(path);
             qualified.append(PathElement(tier, path));
-        } else {
-            qDebug() << "// TRACE: addIfUnique - SKIPPING duplicate:" << path; // REMOVE_WHEN_VERIFIED
         }
     };
     
     // Process Installation tier paths (with suffix)
-    qDebug() << "// TRACE: Processing Installation tier paths"; // REMOVE_WHEN_VERIFIED
     for (const QString& path : defaultInstallSearchPaths()) {
-        qDebug() << "// TRACE: Installation default path:" << path; // REMOVE_WHEN_VERIFIED
         QString qualified_path = applyFolderNameRules(path, true);
-        qDebug() << "// TRACE: After applyFolderNameRules:" << qualified_path; // REMOVE_WHEN_VERIFIED
         addIfUnique(resourceMetadata::ResourceTier::Installation, qualified_path);
         
         // Add sibling installation if this is a sibling candidate
-        qDebug() << "// TRACE: SIBLING CHECK - Testing path:" << path; // REMOVE_WHEN_VERIFIED
         if (isSiblingCandidatePath(path)) {
-            qDebug() << "// TRACE: SIBLING CHECK - ✓ YES, this IS a sibling candidate"; // REMOVE_WHEN_VERIFIED
             QString siblingFolderName = getSiblingFolderName();
-            qDebug() << "// TRACE: SIBLING - Sibling folder name:" << siblingFolderName; // REMOVE_WHEN_VERIFIED
             QString sibling_base = expandEnvVars(path);
-            qDebug() << "// TRACE: SIBLING - Expanded base path:" << sibling_base; // REMOVE_WHEN_VERIFIED
             if (sibling_base.endsWith('/')) {
-                qDebug() << "// TRACE: SIBLING - Path ends with /, appending sibling folder name"; // REMOVE_WHEN_VERIFIED
                 sibling_base += siblingFolderName;
-                qDebug() << "// TRACE: SIBLING - Path with sibling folder:" << sibling_base; // REMOVE_WHEN_VERIFIED
-            } else {
-                qDebug() << "// TRACE: SIBLING - Path does NOT end with /, using as-is (no folder append)"; // REMOVE_WHEN_VERIFIED
             }
             QString sibling_path = QDir::cleanPath(QDir(sibling_base).absolutePath());
-            qDebug() << "// TRACE: SIBLING - Final cleaned sibling path:" << sibling_path; // REMOVE_WHEN_VERIFIED
-            qDebug() << "// TRACE: SIBLING - Attempting to add sibling path..."; // REMOVE_WHEN_VERIFIED
             addIfUnique(resourceMetadata::ResourceTier::Installation, sibling_path);
-            qDebug() << "// TRACE: SIBLING CHECK COMPLETE"; // REMOVE_WHEN_VERIFIED
-        } else {
-            qDebug() << "// TRACE: SIBLING CHECK - ✗ NO, this is NOT a sibling candidate (no sibling added)"; // REMOVE_WHEN_VERIFIED
         }
-        qDebug() << ""; // REMOVE_WHEN_VERIFIED - blank line for readability
     }
     
     // Add executable directory path (always check where the exe actually is)
     // This ensures we find resources even if launched with different CWD
-    qDebug() << "// TRACE: Adding executable directory path (NO SIBLING CHECK)"; // REMOVE_WHEN_VERIFIED
     QString exePath = QDir::cleanPath(QCoreApplication::applicationDirPath());
-    qDebug() << "// TRACE: Executable path:" << exePath; // REMOVE_WHEN_VERIFIED
     addIfUnique(resourceMetadata::ResourceTier::Installation, exePath);
     
     // Process Machine tier paths (no suffix)
-    qDebug() << "// TRACE: Processing Machine tier paths"; // REMOVE_WHEN_VERIFIED
     for (const QString& path : defaultMachineSearchPaths()) {
-        qDebug() << "// TRACE: Machine path:" << path; // REMOVE_WHEN_VERIFIED
         QString qualified_path = applyFolderNameRules(path, false);
-        qDebug() << "// TRACE: Machine qualified:" << qualified_path; // REMOVE_WHEN_VERIFIED
         addIfUnique(resourceMetadata::ResourceTier::Machine, qualified_path);
     }
     
     // Process User tier paths (no suffix)
-    qDebug() << "// TRACE: Processing User tier paths"; // REMOVE_WHEN_VERIFIED
     QStringList resolvedUserPaths = resolvedUserSearchPaths();
-    qDebug() << "// TRACE: User resolved paths count:" << resolvedUserPaths.size(); // REMOVE_WHEN_VERIFIED
     for (const QString& path : resolvedUserPaths) {
-        qDebug() << "// TRACE: User resolved path:" << path; // REMOVE_WHEN_VERIFIED
         QString qualified_path = applyFolderNameRules(path, false);
-        qDebug() << "// TRACE: User qualified:" << qualified_path; // REMOVE_WHEN_VERIFIED
         addIfUnique(resourceMetadata::ResourceTier::User, qualified_path);
     }
     
     // Add user-designated paths (User tier, no suffix - these are per-user read-write locations)
     QStringList userDesignated = userDesignatedPaths();
-    qDebug() << "// TRACE: USER-DESIGNATED - count:" << userDesignated.size(); // REMOVE_WHEN_VERIFIED
-    if (userDesignated.isEmpty()) {
-        qDebug() << "// TRACE: USER-DESIGNATED - NO user-designated paths found"; // REMOVE_WHEN_VERIFIED
-    } else {
-        qDebug() << "// TRACE: USER-DESIGNATED - processing paths"; // REMOVE_WHEN_VERIFIED
-        for (const QString& path : userDesignated) {
-            qDebug() << "// TRACE: USER-DESIGNATED - original path:" << path; // REMOVE_WHEN_VERIFIED
-            QString qualified_path = applyFolderNameRules(path, false);
-            qDebug() << "// TRACE: USER-DESIGNATED - qualified path:" << qualified_path; // REMOVE_WHEN_VERIFIED
-            addIfUnique(resourceMetadata::ResourceTier::User, qualified_path);
-        }
+    for (const QString& path : userDesignated) {
+        QString qualified_path = applyFolderNameRules(path, false);
+        addIfUnique(resourceMetadata::ResourceTier::User, qualified_path);
     }
     
-    qDebug() << "// TRACE: qualifiedSearchPaths() complete - total paths:" << qualified.size(); // REMOVE_WHEN_VERIFIED
     return qualified;
 }
 
