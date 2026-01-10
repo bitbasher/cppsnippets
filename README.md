@@ -187,13 +187,52 @@ int main() {
 
 ## Testing
 
-The project uses GoogleTest for some unit tests and to build mock objects, and Qt Ctest for unit testing and GUI tests.
+The project uses GoogleTest for some unit tests and to build mock objects, and Qt Test for unit testing and GUI tests.
 Tests are automatically discovered by CTest.
 
 ```bash
 cd build
 ctest --output-on-failure
 ```
+
+### Path Discovery Test Program
+
+A diagnostic tool for visualizing and verifying the path discovery workflow is available in `tests/test_path_discovery.cpp`.
+
+**Purpose:** Demonstrates how template paths are transformed into qualified discovery paths, showing:
+- Environment variable expansion
+- Folder name appending rules
+- Sibling installation detection
+- User-designated path handling
+- Path deduplication
+
+**Building:**
+```bash
+cmake --build build --target test_path_discovery
+```
+
+**Running:**
+```bash
+# Run normally (shows formatted output)
+./build/bin/Debug/test-path-discovery.exe
+
+# Show debug trace messages
+./build/bin/Debug/test-path-discovery.exe 2>&1 | Select-String "TRACE"
+
+# Show only sibling checks
+./build/bin/Debug/test-path-discovery.exe 2>&1 | Select-String "SIBLING"
+```
+
+**Output includes:**
+1. Default template paths by tier (Installation, Machine, User)
+2. Resolved paths (with environment variables expanded)
+3. Qualified discovery paths (final output ready for scanning)
+4. Detailed transformation for each path showing:
+   - Final absolute path
+   - Source (which template or mechanism created it)
+   - Whether sibling check was performed
+
+This tool is invaluable for debugging resource discovery issues and understanding how the path resolution system works across different platforms.
 
 ## GUI Architecture
 

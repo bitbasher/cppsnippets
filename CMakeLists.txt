@@ -428,6 +428,19 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF
     )
 
+    # Path discovery test app (resourceMetadata → pathDiscovery workflow)
+    add_executable(test_path_discovery EXCLUDE_FROM_ALL
+        tests/test_path_discovery.cpp
+    )
+    target_link_libraries(test_path_discovery PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(test_path_discovery PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    )
+    set_target_properties(test_path_discovery PROPERTIES
+        OUTPUT_NAME test-path-discovery
+        WIN32_EXECUTABLE OFF
+    )
+
     # Copy Qt platform plugins so the console app can find qwindows at runtime
     if(WIN32)
         add_custom_command(TARGET inventory_test POST_BUILD
