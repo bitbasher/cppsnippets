@@ -61,19 +61,19 @@ bool ResourceIteratorFlat::scan()
             if (resDir.exists()) {
                 // Create a ResourceLocation for this found resource
                 platformInfo::ResourceLocation loc;
-                loc.path = resDir.absolutePath();
-                loc.displayName = subdir;
-                loc.description = QString("Found in %1").arg(folderPath);
-                loc.exists = true;
-                loc.isEnabled = true;
-                loc.hasResourceFolders = true;
+                loc.setPath(resDir.absolutePath());
+                loc.setDisplayName(subdir);
+                loc.setDescription(QString("Found in %1").arg(folderPath));
+                loc.setExists(true);
+                loc.setEnabled(true);
+                loc.setHasResourceFolders(true);
                 
                 // Determine writability
                 QFileInfo fi(resPath);
-                loc.isWritable = fi.isWritable();
+                loc.setWritable(fi.isWritable());
                 
                 // Use path as key for uniqueness
-                QString key = loc.path;
+                QString key = loc.path();
                 
                 // Add to appropriate tier in results
                 switch (m_tier) {
@@ -148,15 +148,15 @@ bool ResourceIteratorTree::scan()
             if (resDir.exists()) {
                 // Create a ResourceLocation for the top-level resource
                 platformInfo::ResourceLocation loc;
-                loc.path = resDir.absolutePath();
-                loc.displayName = subdir;
-                loc.description = QString("Found in %1").arg(folderPath);
-                loc.exists = true;
-                loc.isEnabled = true;
-                loc.hasResourceFolders = true;
+                loc.setPath(resDir.absolutePath());
+                loc.setDisplayName(subdir);
+                loc.setDescription(QString("Found in %1").arg(folderPath));
+                loc.setExists(true);
+                loc.setEnabled(true);
+                loc.setHasResourceFolders(true);
                 
                 QFileInfo fi(resPath);
-                loc.isWritable = fi.isWritable();
+                loc.setWritable(fi.isWritable());
                 
                 // Add as top-level item
                 ResLocTreeItem* topItem = m_results->addTopLevelLocation(loc);
@@ -202,11 +202,11 @@ void ResourceIteratorTree::scanDirectory(ResLocTreeItem* parentItem, const QStri
         
         // Create location for this child
         platformInfo::ResourceLocation childLoc;
-        childLoc.path = fi.absoluteFilePath();
-        childLoc.displayName = subdir;
-        childLoc.exists = true;
-        childLoc.isEnabled = true;
-        childLoc.isWritable = fi.isWritable();
+        childLoc.setPath(fi.absoluteFilePath());
+        childLoc.setDisplayName(subdir);
+        childLoc.setExists(true);
+        childLoc.setEnabled(true);
+        childLoc.setWritable(fi.isWritable());
         
         // Check if this subdirectory contains known resource types
         // (examples, tests, etc. within a library)
@@ -219,7 +219,7 @@ void ResourceIteratorTree::scanDirectory(ResLocTreeItem* parentItem, const QStri
             QString resSubdir = it.value().getSubDir();
             if (subdir.compare(resSubdir, Qt::CaseInsensitive) == 0) {
                 hasKnownResources = true;
-                childLoc.description = QString("%1 resources").arg(resSubdir);
+                childLoc.setDescription(QString("%1 resources").arg(resSubdir));
                 break;
             }
         }

@@ -166,10 +166,10 @@ TEST_F(ResourceDiscoveryTest, ScannerCanProcessInstallation) {
     // Create a mock resource location
     QString installPath = instDir.absoluteFilePath(installations[0]);
     pi::ResourceLocation testLoc;
-    testLoc.path = installPath;
-    testLoc.displayName = installations[0];
-    testLoc.hasResourceFolders = true;
-    testLoc.exists = true;  // Must set exists = true for scanner to process
+    testLoc.setPath(installPath);
+    testLoc.setDisplayName(installations[0]);
+    testLoc.setHasResourceFolders(true);
+    testLoc.setExists(true);  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -203,10 +203,10 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversRenderColors) {
     }
     
     pi::ResourceLocation testLoc;
-    testLoc.path = installPath;
-    testLoc.displayName = installations[0];
-    testLoc.hasResourceFolders = true;
-    testLoc.exists = true;  // Must set exists = true for scanner to process
+    testLoc.setPath(installPath;
+    testLoc.setDisplayName(installations[0]);
+    testLoc.setHasResourceFolders(true;
+    testLoc.setExists(true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -235,10 +235,10 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversEditorColors) {
     }
     
     pi::ResourceLocation testLoc;
-    testLoc.path = installPath;
-    testLoc.displayName = installations[0];
-    testLoc.hasResourceFolders = true;
-    testLoc.exists = true;  // Must set exists = true for scanner to process
+    testLoc.setPath(installPath;
+    testLoc.setDisplayName(installations[0]);
+    testLoc.setHasResourceFolders(true;
+    testLoc.setExists(true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -262,10 +262,10 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversExamplesWithCategories) {
     }
     
     pi::ResourceLocation testLoc;
-    testLoc.path = installPath;
-    testLoc.displayName = installations[0];
-    testLoc.hasResourceFolders = true;
-    testLoc.exists = true;  // Must set exists = true for scanner to process
+    testLoc.setPath(installPath;
+    testLoc.setDisplayName(installations[0]);
+    testLoc.setHasResourceFolders(true;
+    testLoc.setExists(true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -307,10 +307,10 @@ TEST_F(ResourceDiscoveryTest, ScannerDiscoversTemplates) {
     }
     
     pi::ResourceLocation testLoc;
-    testLoc.path = installPath;
-    testLoc.displayName = installations[0];
-    testLoc.hasResourceFolders = true;
-    testLoc.exists = true;  // Must set exists = true for scanner to process
+    testLoc.setPath(installPath;
+    testLoc.setDisplayName(installations[0]);
+    testLoc.setHasResourceFolders(true;
+    testLoc.setExists(true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -328,10 +328,10 @@ TEST_F(ResourceDiscoveryTest, FontsScannerIsNoOp) {
     QString installPath = instDir.absoluteFilePath(installations[0]);
     
     pi::ResourceLocation testLoc;
-    testLoc.path = installPath;
-    testLoc.displayName = installations[0];
-    testLoc.hasResourceFolders = true;
-    testLoc.exists = true;  // Must set exists = true for scanner to process
+    testLoc.setPath(installPath;
+    testLoc.setDisplayName(installations[0]);
+    testLoc.setHasResourceFolders(true;
+    testLoc.setExists(true;  // Must set exists = true for scanner to process
     
     ri::ResourceScanner scanner;
     auto items = scanner.scanLocation(testLoc, ri::ResourceType::Font, ri::ResourceTier::Installation);
@@ -349,10 +349,10 @@ TEST_F(ResourceDiscoveryTest, ResourceItemPropertiesPopulated) {
     QString installPath = instDir.absoluteFilePath(installations[0]);
     
     pi::ResourceLocation testLoc;
-    testLoc.path = installPath;
-    testLoc.displayName = installations[0];
-    testLoc.hasResourceFolders = true;
-    testLoc.exists = true;  // Must set exists = true for scanner to process
+    testLoc.setPath(installPath;
+    testLoc.setDisplayName(installations[0]);
+    testLoc.setHasResourceFolders(true;
+    testLoc.setExists(true;  // Must set exists = true for scanner to process
 
     
     ri::ResourceScanner scanner;
@@ -394,3 +394,4 @@ TEST_F(ResourceDiscoveryTest, InventoryManagerCanBeInstantiated) {
     // For now just verify instantiation works
     EXPECT_TRUE(true);
 }
+

@@ -1,32 +1,77 @@
 #pragma once
+#include "export.hpp"
 #include <QString>
 
 namespace platformInfo {
 
-class ResourceLocation {
+/**
+ * @brief Resource location with smart display name generation
+ * 
+ * Represents a filesystem location where resources may be found.
+ * Display names are automatically generated from paths following these rules:
+ * - Short paths (< 24 chars): Display full path
+ * - Home directory paths: Replace with "~"  
+ * - Drive roots (C:, /): Already minimal
+ * - Long paths: Truncate to configured max (default 60 chars)
+ * 
+ * Tool tips always show the full path.
+ */
+class PLATFORMINFO_API ResourceLocation {
 public:
-    QString path;
-    QString displayName;
-    QString description;
-    bool isEnabled = true;
-    bool exists = false;
-    bool isWritable = false;
-    bool hasResourceFolders = false;  // true if path contains resource folders (examples, fonts, libraries, locale)
+    // Constructors
+    ResourceLocation();
+    ResourceLocation(const QString& p, const QString& name = QString(), const QString& desc = QString());
+    ResourceLocation(const ResourceLocation& other);
 
-    ResourceLocation() = default;
-    ResourceLocation(const QString& p, const QString& name, const QString& desc = QString())
-        : path(p), displayName(name), description(desc) {}
-    // Copy constructor
-    ResourceLocation(const ResourceLocation& other) :
-        path(other.path),
-        displayName(other.displayName),
-        description(other.description),
-        isEnabled(other.isEnabled),
-        exists(other.exists),
-        isWritable(other.isWritable),
-        hasResourceFolders(other.hasResourceFolders) {}
+    bool operator==(const ResourceLocation& other) const { return m_path == other.m_path; }
 
-    bool operator==(const ResourceLocation& other) const { return path == other.path; }
+    // Getters
+    QString path() const { return m_path; }
+    QString displayName() const;
+    QString description() const { return m_description; }
+    bool isEnabled() const { return m_isEnabled; }
+    bool exists() const { return m_exists; }
+    bool isWritable() const { return m_isWritable; }
+    bool hasResourceFolders() const { return m_hasResourceFolders; }
+
+    // Setters
+    void setPath(const QString& p);
+    void setDisplayName(const QString& name);
+    void setDescription(const QString& desc) { m_description = desc; }
+    void setEnabled(bool enabled) { m_isEnabled = enabled; }
+    void setExists(bool exist) { m_exists = exist; }
+    void setWritable(bool writable) { m_isWritable = writable; }
+    void setHasResourceFolders(bool has) { m_hasResourceFolders = has; }
+    
+    /**
+     * @brief Generate display name from absolute path
+     * 
+     * Rules:
+     * - Validates path is absolute and doesn't contain env var placeholders
+     * - Short paths (< 24 chars): returned as-is
+     * - Home directory: replaced with "~"
+     * - Drive root: returned as-is (already minimal)
+     * - Long paths: truncated to max length with ellipsis
+     * 
+     * @param absolutePath Absolute filesystem path (must not contain $, %, &&)
+     * @return Display-friendly name
+     */
+    static QString generateDisplayName(const QString& absolutePath);
+    
+private:
+    QString m_path;                     ///< Absolute path to the resource location
+    QString m_displayName;              ///< Display-friendly name
+    QString m_description;              ///< User-friendly description
+    bool m_isEnabled = true;            ///< Whether this location is active
+    bool m_exists = false;              ///< Whether the directory exists
+    bool m_isWritable = false;          ///< Whether the directory is writable
+    bool m_hasResourceFolders = false;  ///< Whether valid resource folders were found
+
+    /**
+     * @brief Get configured maximum display name length
+     * @return Max length from settings (default 60 characters)
+     */
+    static int getMaxDisplayLength();
 };
 
 } // namespace platformInfo

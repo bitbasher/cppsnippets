@@ -242,6 +242,7 @@ set(LIB_SOURCES
     src/scadtemplates/edittype.cpp
     src/scadtemplates/filesubtype.cpp
     src/platformInfo/platformInfo.cpp
+    src/platformInfo/ResourceLocation.cpp
     src/platformInfo/resourceLocationManager.cpp
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
@@ -260,6 +261,7 @@ set(LIB_HEADERS
     src/scadtemplates/filesubtype.hpp
     src/platformInfo/export.hpp
     src/platformInfo/platformInfo.hpp
+    src/platformInfo/ResourceLocation.hpp
     src/platformInfo/resourceLocationManager.hpp
     src/pathDiscovery/ResourcePaths.hpp
 )
@@ -520,6 +522,7 @@ if(BUILD_TESTS)
         # tests/test_edittype.cpp
         # tests/test_filesubtype.cpp
         tests/test_resource_metadata_comprehensive.cpp
+        tests/test_resourcelocation.cpp
         # DISABLED: Missing platformInfo/resourcePaths.hpp 
         # tests/test_resource_paths.cpp
         # Resource inventory sources needed by discovery tests

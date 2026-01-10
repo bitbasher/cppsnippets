@@ -146,7 +146,7 @@ LegacyTemplateConverter::discoverAndConvertTemplates(
         
         // Scan each location in this tier
         for (const auto& location : tier.locations) {
-            QString basePath = location.path;
+            QString basePath = location.path();
             
             // Look for templates subdirectory
             QDir templateDir(basePath + QStringLiteral("/templates"));

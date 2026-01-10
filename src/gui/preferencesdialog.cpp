@@ -98,9 +98,9 @@ void PreferencesDialog::loadSettings() {
             platformInfo::ResourceLocation loc(installDir, 
                 tr("Application Resources"), 
                 tr("Built-in resources from this installation"));
-            loc.isEnabled = true;
-            loc.exists = true;
-            loc.isWritable = false;
+            loc.setEnabled(true);
+            loc.setExists(true);
+            loc.setWritable(false);
             installLocations.append(loc);
         }
         
@@ -108,7 +108,7 @@ void PreferencesDialog::loadSettings() {
         QStringList enabledSiblings = m_manager->enabledSiblingPaths();
         QVector<platformInfo::ResourceLocation> siblings = m_manager->findSiblingInstallations();
         for (auto& sibling : siblings) {
-            sibling.isEnabled = enabledSiblings.contains(sibling.path);
+            sibling.setEnabled(enabledSiblings.contains(sibling.path()));
             installLocations.append(sibling);
         }
         
@@ -118,12 +118,12 @@ void PreferencesDialog::loadSettings() {
         // Not running from valid installation - allow user to specify one
         // Show helpful message as a pseudo-location
         platformInfo::ResourceLocation placeholder;
-        placeholder.path = m_manager->defaultInstallationSearchPath();
-        placeholder.displayName = tr("No OpenSCAD installation detected");
-        placeholder.description = tr("Use Browse to locate an OpenSCAD installation folder");
-        placeholder.isEnabled = false;
-        placeholder.exists = false;
-        placeholder.isWritable = false;
+        placeholder.setPath(m_manager->defaultInstallationSearchPath());
+        placeholder.setDisplayName(tr("No OpenSCAD installation detected"));
+        placeholder.setDescription(tr("Use Browse to locate an OpenSCAD installation folder"));
+        placeholder.setEnabled(false);
+        placeholder.setExists(false);
+        placeholder.setWritable(false);
         installLocations.append(placeholder);
         
         // Show input widget in fallback mode so user can specify installation
@@ -137,8 +137,8 @@ void PreferencesDialog::loadSettings() {
     QVector<platformInfo::ResourceLocation> machineLocations = m_manager->availableMachineLocations();
     // Disable and uncheck locations that don't exist or exist but have no resource folders
     for (auto& loc : machineLocations) {
-        if (!loc.exists || !loc.hasResourceFolders) {
-            loc.isEnabled = false;
+        if (!loc.exists() || !loc.hasResourceFolders()) {
+            loc.setEnabled(false);
         }
     }
     
@@ -157,8 +157,8 @@ void PreferencesDialog::loadSettings() {
     // Disable and uncheck locations that don't exist or exist but have no resource folders
     // Exception: OPENSCADPATH placeholder should remain disabled but visible
     for (auto& loc : userLocations) {
-        if (!loc.exists || (!loc.hasResourceFolders && !loc.path.startsWith(QLatin1Char('(')))) {
-            loc.isEnabled = false;
+        if (!loc.exists() || (!loc.hasResourceFolders() && !loc.path().startsWith(QLatin1Char('(')))) {
+            loc.setEnabled(false);
         }
     }
     
@@ -181,7 +181,7 @@ void PreferencesDialog::saveSettings() {
     if (!m_manager->isRunningFromValidInstallation()) {
         QVector<platformInfo::ResourceLocation> installLocs = installWidget->locations();
         if (!installLocs.isEmpty()) {
-            QString userPath = installLocs.first().path;
+            QString userPath = installLocs.first().path();
             // Assume any non-empty path is valid by definition
             if (!userPath.isEmpty()) {
                 m_manager->setUserSpecifiedInstallationPath(userPath);
@@ -196,12 +196,12 @@ void PreferencesDialog::saveSettings() {
     QString currentInstallDir = m_manager->findInstallationResourceDir();
     for (const auto& loc : installLocs) {
         // Skip the current installation (always enabled, not a sibling)
-        if (loc.path == currentInstallDir) continue;
+        if (loc.path() == currentInstallDir) continue;
         // Skip if this is the user-specified path (not a sibling)
-        if (loc.path == m_manager->userSpecifiedInstallationPath()) continue;
+        if (loc.path() == m_manager->userSpecifiedInstallationPath()) continue;
         // This is a sibling - check if enabled
-        if (loc.isEnabled) {
-            enabledSiblings.append(loc.path);
+        if (loc.isEnabled()) {
+            enabledSiblings.append(loc.path());
         }
     }
     m_manager->setEnabledSiblingPaths(enabledSiblings);

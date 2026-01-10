@@ -14,6 +14,7 @@
 #include "resourceMetadata/ResourceTypeInfo.hpp"
 #include "pathDiscovery/PathElement.hpp"
 #include "pathDiscovery/ResourcePaths.hpp"
+#include "platformInfo/ResourceLocation.hpp"
 
 using namespace resourceMetadata;
 using namespace pathDiscovery;
@@ -245,6 +246,10 @@ int main(int argc, char *argv[]) {
         }
         
         out << QString("  Source: %1\n").arg(source);
+        
+        // Generate and display the display name
+        QString displayName = platformInfo::ResourceLocation::generateDisplayName(p.path());
+        out << QString("  Display Name: %1\n").arg(displayName);
         
         // Show sibling check info for Installation tier default template paths
         if (fromInstallTemplate && !templatePath.isEmpty()) {

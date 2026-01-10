@@ -75,39 +75,40 @@ void ResourceLocationWidget::setLocations(const QVector<platformInfo::ResourceLo
     m_listWidget->clear();
     for (const auto& loc : m_locations) {
         QListWidgetItem* item = new QListWidgetItem(m_listWidget);
-        QString displayText = loc.displayName.isEmpty() ? loc.path : 
-                              QString("%1 (%2)").arg(loc.displayName, loc.path);
+        QString displayName = loc.displayName();
+        QString displayText = displayName.isEmpty() ? loc.path() : 
+                              QString("%1 (%2)").arg(displayName, loc.path());
         item->setText(displayText);
-        item->setData(Qt::UserRole, loc.path);
+        item->setData(Qt::UserRole, loc.path());
         
         // Determine if this item should be checkable
         // Not checkable if: doesn't exist, or exists but has no resource folders
-        bool canCheck = loc.exists && loc.hasResourceFolders;
+        bool canCheck = loc.exists() && loc.hasResourceFolders();
         // Special case: placeholder items (path starts with '(') are never checkable
-        if (loc.path.startsWith(QLatin1Char('('))) {
+        if (loc.path().startsWith(QLatin1Char('('))) {
             canCheck = false;
         }
         
         if (canCheck) {
             item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            item->setCheckState(loc.isEnabled ? Qt::Checked : Qt::Unchecked);
+            item->setCheckState(loc.isEnabled() ? Qt::Checked : Qt::Unchecked);
         } else {
             // Remove checkable flag - item will appear without checkbox
             item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable);
         }
         
         // Show status via appearance
-        if (!loc.exists) {
+        if (!loc.exists()) {
             item->setForeground(Qt::gray);
-            if (loc.path.startsWith(QLatin1Char('('))) {
-                item->setToolTip(loc.description);
+            if (loc.path().startsWith(QLatin1Char('('))) {
+                item->setToolTip(loc.description());
             } else {
                 item->setToolTip(tr("Path does not exist"));
             }
-        } else if (!loc.hasResourceFolders) {
+        } else if (!loc.hasResourceFolders()) {
             item->setForeground(Qt::darkGray);
             item->setToolTip(tr("Path exists but contains no resource folders"));
-        } else if (!loc.isWritable) {
+        } else if (!loc.isWritable()) {
             item->setToolTip(tr("Path is read-only"));
         }
     }
@@ -123,9 +124,9 @@ QVector<platformInfo::ResourceLocation> ResourceLocationWidget::locations() cons
         
         // Find the original location and update enabled state
         for (const auto& loc : m_locations) {
-            if (loc.path == path) {
+            if (loc.path() == path) {
                 platformInfo::ResourceLocation updated = loc;
-                updated.isEnabled = (item->checkState() == Qt::Checked);
+                updated.setEnabled(item->checkState() == Qt::Checked);
                 result.append(updated);
                 break;
             }
@@ -188,30 +189,32 @@ void ResourceLocationWidget::onAddLocation()
     
     // Check if path already exists in list
     for (const auto& loc : m_locations) {
-        if (loc.path == path) {
+        if (loc.path() == path) {
             return; // Already exists
         }
     }
     
     platformInfo::ResourceLocation newLoc;
-    newLoc.path = path;
-    newLoc.displayName = m_inputWidget->name().trimmed();
-    newLoc.isEnabled = true;
-    newLoc.exists = QDir(path).exists();
-    newLoc.isWritable = newLoc.exists; // Simplified check
+    newLoc.setPath(path);
+    newLoc.setDisplayName(m_inputWidget->name().trimmed());
+    newLoc.setEnabled(true);
+    bool pathExists = QDir(path).exists();
+    newLoc.setExists(pathExists);
+    newLoc.setWritable(pathExists); // Simplified check
     
     m_locations.append(newLoc);
     
     // Add to list widget
     QListWidgetItem* item = new QListWidgetItem(m_listWidget);
-    QString displayText = newLoc.displayName.isEmpty() ? newLoc.path : 
-                          QString("%1 (%2)").arg(newLoc.displayName, newLoc.path);
+    QString displayName = newLoc.displayName();
+    QString displayText = displayName.isEmpty() ? newLoc.path() : 
+                          QString("%1 (%2)").arg(displayName, newLoc.path());
     item->setText(displayText);
-    item->setData(Qt::UserRole, newLoc.path);
+    item->setData(Qt::UserRole, newLoc.path());
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(Qt::Checked);
     
-    if (!newLoc.exists) {
+    if (!pathExists) {
         item->setForeground(Qt::gray);
         item->setToolTip(tr("Path does not exist"));
     }
@@ -233,7 +236,7 @@ void ResourceLocationWidget::onRemoveLocation()
     
     // Remove from internal list
     for (int i = 0; i < m_locations.size(); ++i) {
-        if (m_locations[i].path == path) {
+        if (m_locations[i].path() == path) {
             m_locations.removeAt(i);
             break;
         }

@@ -49,13 +49,13 @@ QVector<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
     if (envValue.isEmpty()) {
         // On POSIX/Mac: show as disabled placeholder when not defined
         platformInfo::ResourceLocation loc;
-        loc.path = QString();
-        loc.displayName = QObject::tr("XDG_DATA_HOME (not set)");
-        loc.description = QObject::tr("Set the XDG_DATA_HOME environment variable to add user data paths");
-        loc.isEnabled = false;
-        loc.exists = false;
-        loc.isWritable = false;
-        loc.hasResourceFolders = false;
+        loc.setPath(QString());
+        loc.setDisplayName(QObject::tr("XDG_DATA_HOME (not set)"));
+        loc.setDescription(QObject::tr("Set the XDG_DATA_HOME environment variable to add user data paths"));
+        loc.setEnabled(false);
+        loc.setExists(false);
+        loc.setWritable(false);
+        loc.setHasResourceFolders(false);
         locations.append(loc);
     } else {
         // XDG_DATA_HOME is defined - parse the path list
@@ -72,22 +72,23 @@ QVector<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
             QString fullPath = QDir::cleanPath(basePath + QStringLiteral("/openscad"));
             
             platformInfo::ResourceLocation loc;
-            loc.path = fullPath;
-            loc.displayName = QObject::tr("XDG_DATA_HOME: %1").arg(fullPath);
-            loc.description = QObject::tr("From environment variable XDG_DATA_HOME");
-            loc.isEnabled = true;  // User can toggle
-            loc.exists = QDir(fullPath).exists();
-            loc.isWritable = loc.exists;  // User paths typically writable
+            loc.setPath(fullPath);
+            loc.setDisplayName(QObject::tr("XDG_DATA_HOME: %1").arg(fullPath));
+            loc.setDescription(QObject::tr("From environment variable XDG_DATA_HOME"));
+            loc.setEnabled(true);  // User can toggle
+            bool pathExists = QDir(fullPath).exists();
+            loc.setExists(pathExists);
+            loc.setWritable(pathExists);  // User paths typically writable
             
             // Check if it has resource folders
-            if (loc.exists) {
+            if (pathExists) {
                 QDir dir(fullPath);
-                loc.hasResourceFolders = dir.exists(QStringLiteral("examples")) ||
+                loc.setHasResourceFolders(dir.exists(QStringLiteral("examples")) ||
                                           dir.exists(QStringLiteral("fonts")) ||
                                           dir.exists(QStringLiteral("libraries")) ||
-                                          dir.exists(QStringLiteral("color-schemes"));
+                                          dir.exists(QStringLiteral("color-schemes")));
             } else {
-                loc.hasResourceFolders = false;
+                loc.setHasResourceFolders(false);
             }
             
             locations.append(loc);
