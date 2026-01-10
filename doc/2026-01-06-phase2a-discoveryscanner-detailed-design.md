@@ -1,9 +1,53 @@
 # Phase 2A: DiscoveryScanner Detailed Implementation
 
 **Date:** January 6, 2026  
-**Status:** Detailed Design for Review  
+**Updated:** January 10, 2026 - Post Namespace Reorganization  
+**Status:** ⚠️ SUPERSEDED - See 2026-01-10-phase2a-revised-after-reorganization.md  
 **Author:** GitHub Copilot (Claude Sonnet 4.5)  
 **Phase:** 2A - Discovery Scanner Only (Minimal Scope)
+
+---
+
+## ⚠️ IMPORTANT: This Document is Superseded
+
+**This design was created before the namespace reorganization.**
+
+**Please refer to the updated design document:**  
+📄 **[2026-01-10-phase2a-revised-after-reorganization.md](2026-01-10-phase2a-revised-after-reorganization.md)**
+
+**Key Changes in Revised Version:**
+- ✅ Reflects completed namespace reorganization (pathDiscovery, resourceMetadata, resourceDiscovery)
+- ✅ Updated to use current 12-path system from pathDiscovery::ResourcePaths
+- ✅ ResourceLocation includes resourceFolders list (which folders were found)
+- ✅ Display name generation rules refined for all tiers
+- ✅ Integration examples updated with correct namespaces
+- ✅ Test strategy expanded to 30 tests across 6 categories
+- ✅ Clean design based on actual working path discovery system
+
+**This document is kept for historical reference only.**
+
+---
+
+## 🔄 Update Notes (Jan 10, 2026)
+
+**What Changed Since This Document Was Written:**
+
+1. ✅ **Namespace reorganization completed** (Steps 1-7 from 2026-01-09 roadmap)
+   - `resourceMetadata` namespace created with ResourceTier, ResourceType definitions
+   - `pathDiscovery` namespace contains PathElement and ResourcePaths
+   - `resourceInventory` namespace renamed from `resInventory`
+
+2. ✅ **Path discovery system enhanced**
+   - Added deduplication using QSet<QString>
+   - Added QStandardPaths::DocumentsLocation to User tier
+   - Added QCoreApplication::applicationDirPath() for exe location detection
+   - Moved user-designated paths to User tier (correct semantics)
+   - Debug traces removed (clean production-ready code)
+
+3. ✅ **Test infrastructure in place**
+   - test_path_discovery.cpp diagnostic tool validates path processing
+   - Shows 12 qualified paths with detailed transformations
+   - Confirmed: 68 tests passing, 13 failing (unrelated testFileStructure issue)
 
 ---
 
