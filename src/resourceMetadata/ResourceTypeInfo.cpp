@@ -21,11 +21,6 @@ const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
                       {}, // no sub-resources
                       {QStringLiteral(".scad")}, s_attachments)},
 
-    {ResourceType::NewResources,
-     ResourceTypeInfo(
-         ResourceType::NewResources, QStringLiteral("newresources"),
-         QStringLiteral("Drop Targets"), s_nonContainer, {}, {})},
-
     {ResourceType::Group,
      ResourceTypeInfo(ResourceType::Group, groupNameCapture,
                       QStringLiteral("A Category or Group"), {},

@@ -46,11 +46,6 @@ public:
     void setSuffix(const QString& suffix);
     QString suffix() const;
 
-    static const ResourceTypeInfo *resourceTypeInfo(ResourceType type);
-    static QString resourceSubdirectory(ResourceType type);
-    static QStringList resourceExtensions(ResourceType type);
-    static QList<ResourceType> allTopLevelResourceTypes();
-
     // Immutable default search paths by tier (compile-time constants with env var templates)
     static const QStringList &defaultInstallSearchPaths();
     static const QStringList &defaultMachineSearchPaths();

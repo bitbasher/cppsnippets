@@ -38,8 +38,7 @@ enum class ResourceType {
   Templates,    ///< Template files ($RESOURCEDIR/templates)
   Libraries,    ///< OpenSCAD library .scad scripts ($RESOURCEDIR/libraries) -
                 ///< extend OpenSCAD features
-  Translations, ///< Translation/locale files ($RESOURCEDIR/locale)
-  NewResources  ///< For resources dropped in and not yet categorized
+  Translations  ///< Translation/locale files ($RESOURCEDIR/locale)
 };
 
 // All top-level resource types that can be discovered/scanned
@@ -58,6 +57,20 @@ inline static const QList<ResourceType> s_exampleSub = {
     ResourceType::Group, ResourceType::Templates, ResourceType::Tests};
 
 inline static const QList<ResourceType> s_testSub = {ResourceType::Templates};
+
+// All resource folder names that can be discovered in a resource location
+// Note: "newresources" is NOT included - it's a pre-defined location for dropped resources, not a resource folder
+// This list should match the subdirectory values from s_resourceTypes for top-level resource types
+inline static const QStringList s_allResourceFolders = {
+    QStringLiteral("examples"),
+    QStringLiteral("tests"),
+    QStringLiteral("fonts"),
+    QStringLiteral("color-schemes"),
+    QStringLiteral("shaders"),
+    QStringLiteral("templates"),
+    QStringLiteral("libraries"),
+    QStringLiteral("locale")
+};
 
 inline static const QStringList s_attachments = {
     QStringLiteral(".json"), QStringLiteral(".txt"), QStringLiteral(".dat"),

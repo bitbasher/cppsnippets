@@ -114,27 +114,6 @@ const QStringList& ResourcePaths::defaultUserSearchPaths() {
     return s_defaultUserSearchPaths;
 }
 
-
-
-const ResourceTypeInfo *ResourcePaths::resourceTypeInfo(ResourceType type) {
-    auto it = ResourceTypeInfo::s_resourceTypes.constFind(type);
-    return it == ResourceTypeInfo::s_resourceTypes.constEnd() ? nullptr : &(*it);
-}
-
-QString ResourcePaths::resourceSubdirectory(ResourceType type) {
-    const ResourceTypeInfo *info = resourceTypeInfo(type);
-    return info ? info->getSubDir() : QString();
-}
-
-QStringList ResourcePaths::resourceExtensions(ResourceType type) {
-    const ResourceTypeInfo *info = resourceTypeInfo(type);
-    return info ? info->getPrimaryExtensions() : QStringList{};
-}
-
-QList<ResourceType> ResourcePaths::allTopLevelResourceTypes() {
-    return s_topLevel;
-}
-
 // ============================================================================
 // Resolved Search Paths (Environment Variables Expanded)
 // ============================================================================
