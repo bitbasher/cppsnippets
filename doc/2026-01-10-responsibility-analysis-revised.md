@@ -95,7 +95,7 @@ QStringList DiscoveryEngine::detectResourceFolders(const QString& path)
 
 NewResources was incorrectly placed in `s_resourceTypes` as a container type. It has been removed because:
 - It's not a resource type like Templates or Fonts
-- It's a **location** (like Installation/Machine/User tier paths)
+- It's a **pre-defined location for dropped resources**
 - It's a user-writable drop-zone for drag-and-drop imports
 - Should be checked and added to discovered locations IF it exists
 
@@ -103,17 +103,20 @@ NewResources was incorrectly placed in `s_resourceTypes` as a container type. It
 
 1. **Static Definition Needed** (in `resourceDiscovery` namespace):
    ```cpp
-   // In ResourceLocation.hpp or DiscoveryEngine.hpp
+   // In ResourceLocation.hpp
    namespace resourceDiscovery {
-       // Platform-specific NewResources location
-       inline static const QString getNewResourcesPath() {
+       // Platform-specific base paths for NewResources location
    #if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-           return QStringLiteral("%LOCALAPPDATA%/") + folderName() + QStringLiteral("/NewResources");
+       inline static constexpr const char* s_newResourcesBasePath = "%LOCALAPPDATA%/";
    #elif defined(Q_OS_MACOS) || defined(__APPLE__)
-           return QStringLiteral("${HOME}/Library/Application Support/") + folderName() + QStringLiteral("/NewResources");
+       inline static constexpr const char* s_newResourcesBasePath = "${HOME}/Library/Application Support/";
    #else // Linux
-           return QStringLiteral("${HOME}/.local/share/") + folderName() + QStringLiteral("/NewResources");
+       inline static constexpr const char* s_newResourcesBasePath = "${HOME}/.local/share/";
    #endif
+       
+       // Get platform-specific NewResources location path
+       inline static QString getNewResourcesPath(const QString& folderName) {
+           return QString::fromUtf8(s_newResourcesBasePath) + folderName + QStringLiteral("/NewResources");
        }
    }
    ```
@@ -338,9 +341,18 @@ namespace resourceMetadata {
 
 **File:** `src/resourceDiscovery/ResourceLocation.hpp` (when Phase 2A is implemented)
 
-**Add static helper:**
+**Add static constexpr and helper:**
 ```cpp
 namespace resourceDiscovery {
+    // Platform-specific base paths for NewResources drop-zone location
+#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
+    inline static constexpr const char* s_newResourcesBasePath = "%LOCALAPPDATA%/";
+#elif defined(Q_OS_MACOS) || defined(__APPLE__)
+    inline static constexpr const char* s_newResourcesBasePath = "${HOME}/Library/Application Support/";
+#else // Linux
+    inline static constexpr const char* s_newResourcesBasePath = "${HOME}/.local/share/";
+#endif
+    
     /**
      * @brief Get platform-specific path for NewResources drop-zone
      * @param folderName Application folder name (e.g., "ScadTemplates")
@@ -355,13 +367,7 @@ namespace resourceDiscovery {
      * Linux:    ~/.local/share/AppName/NewResources
      */
     inline static QString getNewResourcesPath(const QString& folderName) {
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-        return QStringLiteral("%LOCALAPPDATA%/") + folderName + QStringLiteral("/NewResources");
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-        return QStringLiteral("${HOME}/Library/Application Support/") + folderName + QStringLiteral("/NewResources");
-#else // Linux
-        return QStringLiteral("${HOME}/.local/share/") + folderName + QStringLiteral("/NewResources");
-#endif
+        return QString::fromUtf8(s_newResourcesBasePath) + folderName + QStringLiteral("/NewResources");
     }
 }
 ```
