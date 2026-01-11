@@ -10,6 +10,11 @@
 #include <QTextStream>
 #include <QDir>
 
+#ifdef USE_TEST_APP_INFO
+#include "testAppNameInfo.hpp"
+#else
+#include "applicationNameInfo.hpp"
+#endif
 #include "pathDiscovery/ResourcePaths.hpp"
 #include "platformInfo/ResourceLocation.hpp"
 #include "resourceDiscovery/templateScanner.hpp"
@@ -140,15 +145,14 @@ void displayTemplateInventory(QTextStream& out)
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
-    
     // Parse command line arguments for app name (default: OpenSCAD)
     QString appName = "OpenSCAD";
     if (argc > 1) {
         appName = QString::fromUtf8(argv[1]);
     }
+    appInfo::setBaseName(appName);
     
-    QCoreApplication::setApplicationName(appName);
+    QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationVersion("1.0");
     
     QTextStream out(stdout);

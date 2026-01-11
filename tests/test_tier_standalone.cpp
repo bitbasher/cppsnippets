@@ -6,6 +6,11 @@
 #include <iostream>
 #include <QCoreApplication>
 #include <QString>
+#ifdef USE_TEST_APP_INFO
+#include "testAppNameInfo.hpp"
+#else
+#include "applicationNameInfo.hpp"
+#endif
 #include "resourceMetadata/ResourceTier.hpp"
 
 using namespace resourceMetadata;
@@ -19,7 +24,8 @@ int main(int argc, char *argv[]) {
         appName = QString::fromUtf8(argv[1]);
     }
     
-    QCoreApplication::setApplicationName(appName);
+    // Set test application name for resource discovery
+    appInfo::setBaseName(appName);
     
     std::cout << "=== ResourceTier Standalone Test ===\n";
     std::cout << "Application Name: " << appName.toStdString() << "\n\n";

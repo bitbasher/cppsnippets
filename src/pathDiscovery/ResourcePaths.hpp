@@ -40,12 +40,6 @@ using resourceMetadata::groupNameCapture;
 class PLATFORMINFO_API ResourcePaths {
 public:
 
-    QString folderName() const;
-    
-    // Application suffix (e.g., " (Nightly)") for Installation tier paths
-    void setSuffix(const QString& suffix);
-    QString suffix() const;
-
     // Immutable default search paths by tier (compile-time constants with env var templates)
     static const QStringList &defaultInstallSearchPaths();
     static const QStringList &defaultMachineSearchPaths();
@@ -72,12 +66,6 @@ public:
 
 private:
 
-    QString m_suffix;  // Empty for release, " (Nightly)" for nightly builds
-
-    static const QStringList &s_defaultInstallSearchPaths;
-    static const QStringList &s_defaultMachineSearchPaths;
-    static const QStringList &s_defaultUserSearchPaths;
-    
     // Environment variable expansion helper
     // Expands ${VAR} and %VAR% style environment variables to their values
     // Uses system environment from QProcessEnvironment::systemEnvironment()
@@ -91,10 +79,6 @@ private:
     // Sibling installation helper
     // Given "OpenSCAD" returns "OpenSCAD (Nightly)", and vice versa
     QString getSiblingFolderName() const;
-    
-    // Check if a path template should trigger sibling discovery
-    // Returns true for platform-specific program files locations
-    static bool isSiblingCandidatePath(const QString& path);
 };
 
 } // namespace pathDiscovery

@@ -85,33 +85,16 @@ namespace pathDiscovery {
     }}
 #endif
   };
-const QStringList& ResourcePaths::s_defaultInstallSearchPaths = s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Installation);
-const QStringList& ResourcePaths::s_defaultMachineSearchPaths = s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Machine);
-const QStringList& ResourcePaths::s_defaultUserSearchPaths    = s_defaultSearchPaths.value(resourceMetadata::ResourceTier::User);
-
-QString ResourcePaths::folderName() const {
-    // Folder name is derived from application base name in applicationNameInfo.hpp
-    return QString::fromUtf8(appInfo::baseName);
-}
-
-void ResourcePaths::setSuffix(const QString& suffix) {
-    m_suffix = suffix;
-}
-
-QString ResourcePaths::suffix() const {
-    return m_suffix;
-}
-
 const QStringList& ResourcePaths::defaultInstallSearchPaths() {
-    return s_defaultInstallSearchPaths;
+    return s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Installation);
 }
 
 const QStringList& ResourcePaths::defaultMachineSearchPaths() {
-    return s_defaultMachineSearchPaths;
+    return s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Machine);
 }
 
 const QStringList& ResourcePaths::defaultUserSearchPaths() {
-    return s_defaultUserSearchPaths;
+    return s_defaultSearchPaths.value(resourceMetadata::ResourceTier::User);
 }
 
 // ============================================================================
@@ -236,9 +219,10 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
     // Check if this is a base path that needs folder name appended
     if (expanded.endsWith(QStringLiteral("/"))) {
         // Build folder name with optional suffix
+        const QString suffix = QString::fromUtf8(appInfo::suffix);
         const QString folder = applyInstallSuffix 
-            ? folderName() + m_suffix 
-            : folderName();
+            ? appInfo::getBaseName() + suffix 
+            : appInfo::getBaseName();
         
         expanded += folder;
     }
@@ -262,28 +246,13 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
 // This allows discovering resources from both LTS and Nightly installations.
 
 QString ResourcePaths::getSiblingFolderName() const {
-    const QString current = folderName();
+    QString baseName = appInfo::getBaseName();
+    const QString suffix = QString::fromUtf8(appInfo::suffix);
     
-    // If we have a suffix, sibling is without suffix
-    if (!m_suffix.isEmpty() && current.endsWith(m_suffix)) {
-        return current.left(current.length() - m_suffix.length());
-    }
-    
-    // If no suffix, sibling has the suffix
-    return current + m_suffix;
+    return baseName += suffix.isEmpty() ? suffix : QString();
 }
 
-bool ResourcePaths::isSiblingCandidatePath(const QString& path) {
-#if defined(Q_OS_WIN) || defined(_WIN32) || defined(_WIN64)
-    return path == QStringLiteral("%PROGRAMFILES%/") || 
-           path == QStringLiteral("%PROGRAMFILES(X86)%/");
-#elif defined(Q_OS_MACOS) || defined(__APPLE__)
-    return path == QStringLiteral("/Applications/");
-#else // Linux
-    return path == QStringLiteral("/opt/") ||
-           path == QStringLiteral("/usr/local/");
-#endif
-}
+
 
 // ============================================================================
 // User-Designated Paths
@@ -335,13 +304,10 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
         QString qualified_path = applyFolderNameRules(path, true);
         addIfUnique(resourceMetadata::ResourceTier::Installation, qualified_path);
         
-        // Add sibling installation if this is a sibling candidate
-        if (isSiblingCandidatePath(path)) {
+        // Add sibling installation for base directories (paths ending with /)
+        if (path.endsWith('/')) {
             QString siblingFolderName = getSiblingFolderName();
-            QString sibling_base = expandEnvVars(path);
-            if (sibling_base.endsWith('/')) {
-                sibling_base += siblingFolderName;
-            }
+            QString sibling_base = expandEnvVars(path) + siblingFolderName;
             QString sibling_path = QDir::cleanPath(QDir(sibling_base).absolutePath());
             addIfUnique(resourceMetadata::ResourceTier::Installation, sibling_path);
         }

@@ -9,15 +9,37 @@
 #pragma once
 
 #include <string>
+#include <QString>
 
 namespace appInfo {
     // Application name without suffix
-    constexpr const char* baseName = "@APP_NAME@";
+    // Can be overridden at configure time with -DTESTAPPNAME="AppName"
+    constexpr const char* baseName = "@EFFECTIVE_APP_NAME@";
+    
+    // Test override for application name (used by test executables)
+    // Internal storage for test name override
+    inline QString& testAppName() {
+        static QString name;
+        return name;
+    }
+    
+    // Get effective base name (test override if set, otherwise compile-time constant)
+    // Use this instead of accessing baseName directly
+    inline QString getBaseName() {
+        return testAppName().isEmpty() 
+            ? QString::fromUtf8(baseName) 
+            : testAppName();
+    }
+    
+    // Set test override (call from test executables before discovery)
+    inline void setTestAppName(const QString& name) {
+        testAppName() = name;
+    }
     
     // Application suffix (e.g., " (Nightly)", " (Beta)") - empty by default
     constexpr const char* suffix = "@APP_DISPLAY_SUFFIX@";
     
-    // Full display name = baseName + suffix
+    // Full display name = baseName + suffix (computed at compile time)
     constexpr const char* displayName = "@APP_DISPLAY_NAME@";
     
     // Author and organization

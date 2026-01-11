@@ -10,6 +10,11 @@
 #include <QDir>
 #include <QSysInfo>
 #include <QStandardPaths>
+#ifdef USE_TEST_APP_INFO
+#include "testAppNameInfo.hpp"
+#else
+#include "applicationNameInfo.hpp"
+#endif
 #include "resourceMetadata/ResourceTier.hpp"
 #include "resourceMetadata/ResourceTypeInfo.hpp"
 #include "pathDiscovery/PathElement.hpp"
@@ -30,12 +35,14 @@ int main(int argc, char *argv[]) {
         appName = QString::fromUtf8(argv[1]);
     }
     
-    QCoreApplication::setApplicationName(appName);
+    // Set test application name for resource discovery
+    appInfo::setBaseName(appName);
     
     out << QString(80, '=') << "\n";
     out << "PATH DISCOVERY WORKFLOW TEST\n";
     out << QString(80, '=') << "\n";
     out << "Application Name: " << appName << "\n";
+    out << "Effective Base Name: " << appInfo::getBaseName() << "\n";
     out << "Qt Version: " << qVersion() << "\n";
     out << "Platform: " << QSysInfo::prettyProductName() << "\n\n";
     
@@ -84,37 +91,6 @@ int main(int argc, char *argv[]) {
     
     ResourcePaths pathsHelper;
     pathsHelper.setSuffix("");  // Release build
-    
-    out << "INPUT: Default Template Paths\n";
-    out << QString(80, '-') << "\n\n";
-    
-    out << "Installation Tier Templates:\n";
-    auto installTemplates = ResourcePaths::defaultInstallSearchPaths();
-    for (int i = 0; i < installTemplates.size(); ++i) {
-        out << QString("  [%1] %2\n").arg(i).arg(installTemplates[i]);
-    }
-    
-    out << "\nMachine Tier Templates:\n";
-    auto machineTemplates = ResourcePaths::defaultMachineSearchPaths();
-    for (int i = 0; i < machineTemplates.size(); ++i) {
-        out << QString("  [%1] %2\n").arg(i).arg(machineTemplates[i]);
-    }
-    
-    out << "\nUser Tier Templates:\n";
-    auto userTemplates = ResourcePaths::defaultUserSearchPaths();
-    for (int i = 0; i < userTemplates.size(); ++i) {
-        out << QString("  [%1] %2\n").arg(i).arg(userTemplates[i]);
-    }
-    
-    out << "\n" << QString(80, '-') << "\n\n";
-    
-    out << "TRANSFORMATION RULES:\n";
-    out << "  1. Expand environment variables (%VAR% or ${VAR})\n";
-    out << "  2. If path ends with '/', append folder name + suffix\n";
-    out << "  3. Clean and resolve relative paths (. and ..)\n";
-    out << "  4. Convert to absolute paths\n";
-    out << "  5. Add sibling installations (if applicable)\n";
-    out << "  6. Add user-designated paths from QSettings\n\n";
     
     out << QString(80, '-') << "\n\n";
     

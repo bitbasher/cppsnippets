@@ -8,7 +8,10 @@
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
+// Static build - no import/export needed
+#ifdef RESOURCEMETADATA_STATIC_DEFINE
+  #define RESOURCEMETADATA_API
+#elif defined(_WIN32) || defined(_WIN64)
   #ifdef SCADTEMPLATES_EXPORTS
     #define RESOURCEMETADATA_API __declspec(dllexport)
   #else

@@ -8,7 +8,10 @@
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
+// Static build - no import/export needed
+#ifdef PLATFORMINFO_STATIC_DEFINE
+    #define PLATFORMINFO_API
+#elif defined(_WIN32) || defined(_WIN64)
     #ifdef PLATFORMINFO_EXPORTS
         #define PLATFORMINFO_API __declspec(dllexport)
     #else
