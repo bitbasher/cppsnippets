@@ -24,9 +24,18 @@ static QTextStream out(stdout);
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
     
+    // Parse command line arguments for app name (default: OpenSCAD)
+    QString appName = "OpenSCAD";
+    if (argc > 1) {
+        appName = QString::fromUtf8(argv[1]);
+    }
+    
+    QCoreApplication::setApplicationName(appName);
+    
     out << QString(80, '=') << "\n";
     out << "PATH DISCOVERY WORKFLOW TEST\n";
     out << QString(80, '=') << "\n";
+    out << "Application Name: " << appName << "\n";
     out << "Qt Version: " << qVersion() << "\n";
     out << "Platform: " << QSysInfo::prettyProductName() << "\n\n";
     

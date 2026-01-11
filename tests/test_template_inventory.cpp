@@ -141,10 +141,18 @@ void displayTemplateInventory(QTextStream& out)
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    QCoreApplication::setApplicationName("Template Inventory Test");
+    
+    // Parse command line arguments for app name (default: OpenSCAD)
+    QString appName = "OpenSCAD";
+    if (argc > 1) {
+        appName = QString::fromUtf8(argv[1]);
+    }
+    
+    QCoreApplication::setApplicationName(appName);
     QCoreApplication::setApplicationVersion("1.0");
     
     QTextStream out(stdout);
+    out << "Testing template discovery for application: " << appName << "\n\n";
     
     try {
         displayTemplateInventory(out);

@@ -13,7 +13,16 @@ using namespace resourceMetadata;
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
     
-    std::cout << "=== ResourceTier Standalone Test ===\n\n";
+    // Parse command line arguments for app name (default: OpenSCAD)
+    QString appName = "OpenSCAD";
+    if (argc > 1) {
+        appName = QString::fromUtf8(argv[1]);
+    }
+    
+    QCoreApplication::setApplicationName(appName);
+    
+    std::cout << "=== ResourceTier Standalone Test ===\n";
+    std::cout << "Application Name: " << appName.toStdString() << "\n\n";
     
     // Test 1: Enum values
     std::cout << "Test 1: Enum Values\n";
