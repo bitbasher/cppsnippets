@@ -246,6 +246,8 @@ set(LIB_SOURCES
     src/platformInfo/resourceLocationManager.cpp
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
+    src/resourceInventory/resourceItem.cpp
+    src/resourceDiscovery/templateScanner.cpp
 )
 
 set(LIB_HEADERS
@@ -264,6 +266,8 @@ set(LIB_HEADERS
     src/platformInfo/ResourceLocation.hpp
     src/platformInfo/resourceLocationManager.hpp
     src/pathDiscovery/ResourcePaths.hpp
+    src/resourceInventory/resourceItem.hpp
+    src/resourceDiscovery/templateScanner.hpp
 )
 
 # Build the shared/dynamic library

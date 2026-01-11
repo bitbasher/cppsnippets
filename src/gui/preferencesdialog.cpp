@@ -14,6 +14,7 @@
 #include "gui/resourceLocationWidget.hpp"
 #include "platformInfo/resourceLocationManager.hpp"
 #include "platformInfo/ResourceLocation.hpp"
+#include "resourceInventory/resourceItem.hpp"
 #include "platformInfo/platformInfo.hpp"
 
 #include <QTabWidget>
@@ -95,7 +96,10 @@ void PreferencesDialog::loadSettings() {
         QString installDir = m_manager->findInstallationResourceDir();
         
         if (!installDir.isEmpty()) {
-            platformInfo::ResourceLocation loc(installDir, 
+            platformInfo::ResourceLocation loc(
+                installDir,
+                resourceInventory::ResourceTier::Installation,
+                QString(),  // rawPath (same as resolved for installation)
                 tr("Application Resources"), 
                 tr("Built-in resources from this installation"));
             loc.setEnabled(true);

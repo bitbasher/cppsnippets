@@ -4,6 +4,7 @@
  */
 
 #include "ResourceLocation.hpp"
+#include "resourceInventory/resourceItem.hpp"
 #include <QDir>
 #include <QFileInfo>
 #include <QSettings>
@@ -14,8 +15,10 @@ namespace platformInfo {
 // Default constructor - displayName will be empty until path is set
 ResourceLocation::ResourceLocation()
     : m_path()
+    , m_rawPath()
     , m_displayName()
     , m_description()
+    , m_tier(resourceInventory::ResourceTier::User)
     , m_isEnabled(true)
     , m_exists(false)
     , m_isWritable(false)
@@ -23,10 +26,12 @@ ResourceLocation::ResourceLocation()
 {}
 
 // Path-only constructor - generates display name from path
-ResourceLocation::ResourceLocation(const QString& p, const QString& name, const QString& desc)
+ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QString& rawPath, const QString& name, const QString& desc)
     : m_path(p)
+    , m_rawPath(rawPath.isEmpty() ? p : rawPath)
     , m_displayName(name.isEmpty() ? generateDisplayName(p) : name)
     , m_description(desc)
+    , m_tier(tier)
     , m_isEnabled(true)
     , m_exists(false)
     , m_isWritable(false)
@@ -36,8 +41,10 @@ ResourceLocation::ResourceLocation(const QString& p, const QString& name, const 
 // Copy constructor
 ResourceLocation::ResourceLocation(const ResourceLocation& other)
     : m_path(other.m_path)
+    , m_rawPath(other.m_rawPath)
     , m_displayName(other.m_displayName)
     , m_description(other.m_description)
+    , m_tier(other.m_tier)
     , m_isEnabled(other.m_isEnabled)
     , m_exists(other.m_exists)
     , m_isWritable(other.m_isWritable)
