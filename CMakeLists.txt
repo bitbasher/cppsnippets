@@ -348,7 +348,7 @@ if(BUILD_APP)
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(test_env_expansion PROPERTIES
-        OUTPUT_NAME test-env-expansion
+        OUTPUT_NAME test_env_expansion
         WIN32_EXECUTABLE OFF  # Console app
     )
     
@@ -356,7 +356,7 @@ if(BUILD_APP)
     add_executable(settings_generator EXCLUDE_FROM_ALL src/tools/settings_generator.cpp)
     target_link_libraries(settings_generator PRIVATE Qt6::Core)
     set_target_properties(settings_generator PROPERTIES
-        OUTPUT_NAME settings-generator
+        OUTPUT_NAME settings_generator
         WIN32_EXECUTABLE OFF  # Console app
     )
     
@@ -441,7 +441,7 @@ if(BUILD_APP)
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(test_path_discovery PROPERTIES
-        OUTPUT_NAME test-path-discovery
+        OUTPUT_NAME test_path_discovery
         WIN32_EXECUTABLE OFF
     )
 
@@ -454,7 +454,7 @@ if(BUILD_APP)
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
     set_target_properties(test_tier_standalone PROPERTIES
-        OUTPUT_NAME test-tier-standalone
+        OUTPUT_NAME test_tier_standalone
         WIN32_EXECUTABLE OFF
     )
 
