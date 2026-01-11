@@ -530,6 +530,20 @@ git tag -a phase-N-complete -m "Phase N: [name] - Build ✅ Tests ✅"
 
 ## 11. Git Workflow
 
+### GPG Signing Policy
+
+**CRITICAL: GPG signing is REQUIRED for all commits**
+
+- **NEVER** use `--no-gpg-sign` flag
+- **NEVER** bypass GPG signature requirements
+- If `git commit` fails due to GPG issues:
+  - **STOP** immediately
+  - **FLAG** the issue to the user
+  - **DO NOT** attempt workarounds
+  - Let user resolve GPG agent/signing issues manually
+  
+**Why:** Unsigned commits are not valid on GitHub and compromise repository integrity.
+
 ### Daily Commits
 
 **When committing changes:**
@@ -537,6 +551,7 @@ git tag -a phase-N-complete -m "Phase N: [name] - Build ✅ Tests ✅"
 - Reference doc changes or test updates in the message
 - All tests should pass before committing
 - Follow the Documentation & Commit Protocol (Section 10) for multi-phase work
+- **All commits must be GPG signed** (see GPG Signing Policy above)
 
 ### Commit Message Format
 
