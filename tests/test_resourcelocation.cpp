@@ -4,12 +4,14 @@
  */
 
 #include <platformInfo/ResourceLocation.hpp>
+#include <resourceInventory/resourceItem.hpp>
 #include <gtest/gtest.h>
 #include <QDir>
 #include <QTemporaryDir>
 #include <QStandardPaths>
 
 using namespace platformInfo;
+using namespace resourceInventory;
 
 // ============================================================================
 // ResourceLocation Display Name Tests
@@ -39,7 +41,7 @@ TEST_F(ResourceLocationTest, PathOnlyConstructor) {
     QDir tempDir = QDir::temp();
     QString testPath = tempDir.absolutePath();
     
-    ResourceLocation loc(testPath);
+    ResourceLocation loc(testPath, ResourceTier::User);
     EXPECT_EQ(loc.path(), testPath);
     EXPECT_FALSE(loc.displayName().isEmpty());
     EXPECT_NE(loc.displayName(), testPath);  // Should be shortened
@@ -49,13 +51,13 @@ TEST_F(ResourceLocationTest, PathAndNameConstructor) {
     QString testPath = "/some/absolute/path";
     QString testName = "Custom Name";
     
-    ResourceLocation loc(testPath, testName);
+    ResourceLocation loc(testPath, ResourceTier::User, QString(), testName);
     EXPECT_EQ(loc.path(), testPath);
     EXPECT_EQ(loc.displayName(), testName);  // Should use provided name
 }
 
 TEST_F(ResourceLocationTest, CopyConstructor) {
-    ResourceLocation original("/test/path", "Test Name");
+    ResourceLocation original("/test/path", ResourceTier::User, QString(), "Test Name");
     original.setDescription("Test Description");
     original.setWritable(true);
     
@@ -193,7 +195,7 @@ TEST_F(ResourceLocationTest, SetPathRegeneratesDisplayName) {
 
 TEST_F(ResourceLocationTest, SetDisplayNameOverridesGenerated) {
     QDir tempDir = QDir::temp();
-    ResourceLocation loc(tempDir.absolutePath());
+    ResourceLocation loc(tempDir.absolutePath(), ResourceTier::User);
     
     QString original = loc.displayName();
     QString custom = "My Custom Name";
@@ -242,8 +244,5 @@ TEST_F(ResourceLocationTest, RealWorldMacPath) {
 // ============================================================================
 // Main
 // ============================================================================
+// Note: main() is provided by test_main.cpp when building with other tests
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

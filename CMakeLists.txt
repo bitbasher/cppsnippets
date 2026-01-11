@@ -319,13 +319,11 @@ if(BUILD_APP)
         src/gui/aboutDialog.hpp
         src/gui/sysInfoDialog.cpp
         src/gui/sysInfoDialog.hpp
-        # Resource inventory classes
-        src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/resourceItem.hpp
-        src/resourceInventory/resourceTreeWidget.cpp
-        src/resourceInventory/resourceTreeWidget.hpp
+        # Resource inventory GUI components (require Qt Widgets)
         src/resourceInventory/resourceScanner.cpp
         src/resourceInventory/resourceScanner.hpp
+        src/resourceInventory/resourceTreeWidget.cpp
+        src/resourceInventory/resourceTreeWidget.hpp
     )
     
     # Add Windows version resource to executable
@@ -527,16 +525,27 @@ if(BUILD_TESTS)
         # tests/test_filesubtype.cpp
         tests/test_resource_metadata_comprehensive.cpp
         tests/test_resourcelocation.cpp
+        tests/test_templatescanner.cpp
         # DISABLED: Missing platformInfo/resourcePaths.hpp 
         # tests/test_resource_paths.cpp
-        # Resource inventory sources needed by discovery tests
-        src/resourceInventory/resourceScanner.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/resourceTreeWidget.cpp
-        src/resourceInventory/resourceScanner.hpp
-        src/resourceInventory/resourceItem.hpp
-        src/resourceInventory/resourceTreeWidget.hpp
     )
+    
+    # Standalone test program to display template inventory
+    add_executable(test_template_inventory EXCLUDE_FROM_ALL
+        tests/test_template_inventory.cpp
+    )
+    
+    target_link_libraries(test_template_inventory PRIVATE
+        scadtemplates_lib
+        ${QT_LIBRARIES}
+    )
+    
+    if (WIN32 AND BUILD_SHARED_LIBS)
+        add_custom_command(TARGET test_template_inventory POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_template_inventory>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_template_inventory>
+            COMMENT "Copy DLLs to test_template_inventory directory")
+    endif()
     
     target_link_libraries(scadtemplates_tests PRIVATE
         scadtemplates_lib

@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QJsonDocument>
 
+#include "../platformInfo/export.hpp"
 #include "../platformInfo/ResourceLocation.hpp"
 #include "../resourceInventory/resourceItem.hpp"
 
@@ -32,7 +33,7 @@ using resourceInventory::ResourceAccess;
  *   "body": "OpenSCAD code"           // optional
  * }
  */
-class TemplateScanner
+class PLATFORMINFO_API TemplateScanner
 {
 public:
     /**
