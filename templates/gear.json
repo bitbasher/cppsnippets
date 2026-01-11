@@ -1,0 +1,26 @@
+{
+  "name": "User's Gear Template",
+  "description": "Parametric gear created by user",
+  "scope": "source.scad",
+  "body": [
+    "// User-created gear template",
+    "// Location: pers/Jeff/Documents/OpenSCAD/templates/",
+    "// Parametric gear with customizable teeth",
+    "module parametric_gear(teeth, radius, thickness, hole_radius) {",
+    "    difference() {",
+    "        cylinder(h=thickness, r=radius);",
+    "        cylinder(h=thickness*1.1, r=hole_radius);",
+    "    }",
+    "}",
+    "",
+    "// Usage:",
+    "parametric_gear(",
+    "  teeth=${1:12},",
+    "  radius=${2:20},",
+    "  thickness=${3:5},",
+    "  hole_radius=${4:2}",
+    ");",
+    "$0"
+  ],
+  "prefix": "gear_param_user"
+}
