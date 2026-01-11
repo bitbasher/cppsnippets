@@ -9,6 +9,9 @@ applyTo: "**"
 - Use PascalCase for File names and Class names
 - Use camelCase for variables, functions, and methods
 - Prefix private class members with "m_"
+- **Test executables**: Use underscores only (e.g., `test_template_scanner`, `settings_generator`)
+  - Never use hyphens in OUTPUT_NAME properties
+  - Consistent with project convention: `scadtemplates_tests`, `test_template_inventory`
 
 ## Error Handling
 - Use try/catch blocks for async operations
