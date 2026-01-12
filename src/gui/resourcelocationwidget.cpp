@@ -75,7 +75,7 @@ void ResourceLocationWidget::setLocations(const QVector<platformInfo::ResourceLo
     m_listWidget->clear();
     for (const auto& loc : m_locations) {
         QListWidgetItem* item = new QListWidgetItem(m_listWidget);
-        QString displayName = loc.displayName();
+        QString displayName = loc.getDisplayName();
         QString displayText = displayName.isEmpty() ? loc.path() : 
                               QString("%1 (%2)").arg(displayName, loc.path());
         item->setText(displayText);
@@ -196,7 +196,7 @@ void ResourceLocationWidget::onAddLocation()
     
     platformInfo::ResourceLocation newLoc;
     newLoc.setPath(path);
-    newLoc.setDisplayName(m_inputWidget->name().trimmed());
+    // Display name auto-generated from path
     newLoc.setEnabled(true);
     bool pathExists = QDir(path).exists();
     newLoc.setExists(pathExists);
@@ -206,7 +206,7 @@ void ResourceLocationWidget::onAddLocation()
     
     // Add to list widget
     QListWidgetItem* item = new QListWidgetItem(m_listWidget);
-    QString displayName = newLoc.displayName();
+    QString displayName = newLoc.getDisplayName();
     QString displayText = displayName.isEmpty() ? newLoc.path() : 
                           QString("%1 (%2)").arg(displayName, newLoc.path());
     item->setText(displayText);

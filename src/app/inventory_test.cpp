@@ -82,7 +82,7 @@ void printResourceItems(const QString& typeName, ri::ResourceTreeWidget* tree)
         
         qDebug() << QString("    [%1] %2%3")
                     .arg(tierStr, -7)
-                    .arg(item.displayName())
+                    .arg(item.getDisplayName())
                     .arg(categoryStr);
         qDebug() << QString("           Path: %1").arg(item.path());
     }

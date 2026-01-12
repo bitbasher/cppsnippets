@@ -29,6 +29,9 @@ static QTextStream out(stdout);
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
     
+    out << "Starting test...\n";
+    out.flush();
+    
     // Parse command line arguments for app name (default: OpenSCAD)
     QString appName = "OpenSCAD";
     if (argc > 1) {
@@ -36,7 +39,11 @@ int main(int argc, char *argv[]) {
     }
     
     // Set test application name for resource discovery
-    appInfo::setBaseName(appName);
+    out << "About to set base name...\n";
+    out.flush();
+    appInfo::setTestAppName(appName);
+    out << "Base name set successfully\n";
+    out.flush();
     
     out << QString(80, '=') << "\n";
     out << "PATH DISCOVERY WORKFLOW TEST\n";
@@ -47,70 +54,66 @@ int main(int argc, char *argv[]) {
     out << "Platform: " << QSysInfo::prettyProductName() << "\n\n";
     
     // Test 1: Show default search paths
-    out << "TEST 1: Default Search Paths (with env var templates)\n";
+    // Note: Default search paths and resolved paths are now internal implementation details.
+    // The primary public API is qualifiedSearchPaths() which returns all tiers.
+    // This test shows the qualified paths grouped by tier.
+    
+    out << "TEST 1: Qualified Search Paths by Tier (PRIMARY API)\n";
     out << QString(80, '-') << "\n";
+    out << "Shows how paths are qualified for discovery, grouped by tier.\n\n";
+    
+    out << "About to create ResourcePaths helper...\n";
+    out.flush();
+    ResourcePaths pathsHelper;
+    out << "ResourcePaths created successfully\n";
+    out.flush();
+    
+    out << "About to call qualifiedSearchPaths()...\n";
+    out.flush();
+    auto qualifiedPaths = pathsHelper.qualifiedSearchPaths();
+    out << "qualifiedSearchPaths() returned " << qualifiedPaths.size() << " paths\n";
+    out.flush();
     
     out << "\nInstallation Tier:\n";
-    for (const auto& path : ResourcePaths::defaultInstallSearchPaths()) {
-        out << "  - " << path << "\n";
+    for (const auto& pathElement : qualifiedPaths) {
+        if (pathElement.tier() == resourceMetadata::ResourceTier::Installation) {
+            out << "  - " << pathElement.path() << "\n";
+        }
     }
     
     out << "\nMachine Tier:\n";
-    for (const auto& path : ResourcePaths::defaultMachineSearchPaths()) {
-        out << "  - " << path << "\n";
+    for (const auto& pathElement : qualifiedPaths) {
+        if (pathElement.tier() == resourceMetadata::ResourceTier::Machine) {
+            out << "  - " << pathElement.path() << "\n";
+        }
     }
     
     out << "\nUser Tier:\n";
-    for (const auto& path : ResourcePaths::defaultUserSearchPaths()) {
-        out << "  - " << path << "\n";
+    for (const auto& pathElement : qualifiedPaths) {
+        if (pathElement.tier() == resourceMetadata::ResourceTier::User) {
+            out << "  - " << pathElement.path() << "\n";
+        }
     }
     
-    // Test 2: Show resolved search paths (env vars expanded)
-    out << "\n\nTEST 2: Resolved Search Paths (Environment Variables Expanded)\n";
+    // Test 2: Complete qualified search paths (PRIMARY API)
+    out << "\n\nTEST 2: All Qualified Search Paths (PRIMARY API FOR DISCOVERY)\n";
     out << QString(80, '-') << "\n";
-    
-    out << "\nInstallation Tier (Resolved):\n";
-    for (const auto& path : ResourcePaths::resolvedInstallSearchPaths()) {
-        out << "  - " << path << "\n";
-    }
-    
-    out << "\nMachine Tier (Resolved):\n";
-    for (const auto& path : ResourcePaths::resolvedMachineSearchPaths()) {
-        out << "  - " << path << "\n";
-    }
-    
-    out << "\nUser Tier (Resolved):\n";
-    for (const auto& path : ResourcePaths::resolvedUserSearchPaths()) {
-        out << "  - " << path << "\n";
-    }
-    
-    // Test 3: Qualified search paths (PRIMARY API)
-    out << "\n\nTEST 3: Qualified Search Paths (PRIMARY API FOR DISCOVERY)\n";
-    out << QString(80, '-') << "\n";
-    out << "Shows how template paths are transformed into qualified discovery paths.\n\n";
-    
-    ResourcePaths pathsHelper;
-    pathsHelper.setSuffix("");  // Release build
+    out << "Complete list with tier markers - this is what ResourceScanner receives.\n\n";
     
     out << QString(80, '-') << "\n\n";
     
     // Now show the qualified output paths
-    auto discoveryPaths = pathsHelper.qualifiedSearchPaths();
+    auto discoveryPaths = qualifiedPaths;
     
     out << QString("OUTPUT: %1 Qualified Discovery Paths\n\n").arg(discoveryPaths.size());
-    
-    // Build a map to find which template path each output came from
-    auto installResolved = ResourcePaths::resolvedInstallSearchPaths();
-    auto machineResolved = ResourcePaths::resolvedMachineSearchPaths();
-    auto userResolved = ResourcePaths::resolvedUserSearchPaths();
     
     for (int i = 0; i < discoveryPaths.size(); ++i) {
         const auto& p = discoveryPaths[i];
         QString tierName;
         switch (p.tier()) {
-            case ResourceTier::Installation: tierName = "Installation"; break;
-            case ResourceTier::Machine: tierName = "Machine"; break;
-            case ResourceTier::User: tierName = "User"; break;
+            case resourceMetadata::ResourceTier::Installation: tierName = "Installation"; break;
+            case resourceMetadata::ResourceTier::Machine: tierName = "Machine"; break;
+            case resourceMetadata::ResourceTier::User: tierName = "User"; break;
         }
         
         out << QString("  [%1] %2: %3\n")
@@ -123,9 +126,8 @@ int main(int argc, char *argv[]) {
     
     out << "DETAILED TRANSFORMATION FOR EACH PATH:\n\n";
     
-    // Get user-designated paths and install templates for accurate source identification
+    // Get user-designated paths for accurate source identification
     auto userDesignatedPaths = ResourcePaths::userDesignatedPaths();
-    auto installTemplateList = ResourcePaths::defaultInstallSearchPaths();
     
     // Show detailed transformation for each path
     for (int i = 0; i < discoveryPaths.size(); ++i) {
@@ -140,28 +142,10 @@ int main(int argc, char *argv[]) {
         out << QString("Path [%1] - %2 Tier:\n").arg(i).arg(tierName);
         out << QString("  Final: %1\n").arg(p.path());
         
-        // Determine source and check if from default Installation templates
+        // Determine source
         QString source = "Unknown";
-        QString templatePath = "";
-        bool fromInstallTemplate = false;
         
-        // Check if from Installation tier default templates
-        if (p.tier() == ResourceTier::Installation && i < installTemplateList.size() + userDesignatedPaths.size() + 1) {
-            // Try to match against install templates
-            for (const QString& tmpl : installTemplateList) {
-                // Simple heuristics to match paths to their templates
-                if ((tmpl == "%PROGRAMFILES%/" && p.path().contains("Program Files")) ||
-                    (tmpl == "." && p.path() == QDir::current().absolutePath()) ||
-                    (tmpl == "../share/" && p.path().contains("share/ScadTemplates")) ||
-                    (tmpl == ".." && p.path().endsWith("cppsnippets") && !p.path().contains("build"))) {
-                    templatePath = tmpl;
-                    fromInstallTemplate = true;
-                    break;
-                }
-            }
-        }
-        
-        // Check if it's from user-designated paths first (these are Installation tier)
+        // Check if from Installation tier
         bool isUserDesignated = false;
         if (p.tier() == ResourceTier::Installation) {
             for (const QString& userPath : userDesignatedPaths) {
@@ -233,26 +217,9 @@ int main(int argc, char *argv[]) {
         out << QString("  Source: %1\n").arg(source);
         
         // Generate and display the display name
-        QString displayName = platformInfo::ResourceLocation::generateDisplayName(p.path());
+        platformInfo::ResourceLocation tempLoc(p.path(), static_cast<resourceInventory::ResourceTier>(p.tier()));
+        QString displayName = tempLoc.getDisplayName();
         out << QString("  Display Name: %1\n").arg(displayName);
-        
-        // Show sibling check info for Installation tier default template paths
-        if (fromInstallTemplate && !templatePath.isEmpty()) {
-            // Check if this template would trigger a sibling check
-            bool isSiblingCandidate = (templatePath == "%PROGRAMFILES%/" || 
-                                      templatePath == "%PROGRAMFILES(X86)%/" ||
-                                      templatePath == "/Applications/" ||
-                                      templatePath == "/opt/" ||
-                                      templatePath == "/usr/local/");
-            
-            if (isSiblingCandidate) {
-                out << "  Sibling check: ✓ Performed (path is %PROGRAMFILES%/ or equivalent)\n";
-            } else {
-                out << "  Sibling check: ✗ Not performed (not a sibling candidate path)\n";
-            }
-        } else if (p.path() == QCoreApplication::applicationDirPath()) {
-            out << "  Sibling check: ✗ Not performed (exe directory added separately)\n";
-        }
         
         out << "\n";
     }

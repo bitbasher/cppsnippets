@@ -123,7 +123,7 @@ void PreferencesDialog::loadSettings() {
         // Show helpful message as a pseudo-location
         platformInfo::ResourceLocation placeholder;
         placeholder.setPath(m_manager->defaultInstallationSearchPath());
-        placeholder.setDisplayName(tr("No OpenSCAD installation detected"));
+        // Display name auto-generated from path
         placeholder.setDescription(tr("Use Browse to locate an OpenSCAD installation folder"));
         placeholder.setEnabled(false);
         placeholder.setExists(false);

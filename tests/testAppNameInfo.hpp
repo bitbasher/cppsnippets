@@ -9,7 +9,7 @@
  * Test apps that use this header must:
  * 1. Define USE_TEST_APP_INFO before including any headers
  * 2. Compile ResourcePaths.cpp and dependencies into the test executable
- * 3. Call appInfo::setBaseName() before any discovery calls
+ * 3. Call appInfo::setTestAppName() before any discovery calls
  * 
  * Usage:
  *   // In CMakeLists.txt:
@@ -23,7 +23,7 @@
  *   #endif
  *   
  *   int main(int argc, char* argv[]) {
- *       appInfo::setBaseName(QString::fromUtf8(argv[1]));
+ *       appInfo::setTestAppName(QString::fromUtf8(argv[1]));
  *       // ... rest of test
  *   }
  */
@@ -34,24 +34,45 @@
 #include <string>
 
 namespace appInfo {
-    // Runtime-modifiable application name for testing
-    namespace detail {
-        static QString g_testBaseName = "OpenSCAD";  // Default test name
+    // Application name without suffix (test default)
+    constexpr const char* baseName = "OpenSCAD";
+    
+    // Test override for application name (used by test executables)
+    // Internal storage for test name override
+    inline QString& testAppName() {
+        static QString name;
+        return name;
     }
     
-    // Set the test application name (call from main before any discovery)
-    inline void setBaseName(const QString& name) {
-        detail::g_testBaseName = name;
-    }
-    
-    // Get effective base name - returns the runtime-set value
+    // Get effective base name (test override if set, otherwise compile-time constant)
+    // Use this instead of accessing baseName directly
     inline QString getBaseName() {
-        return detail::g_testBaseName;
+        return testAppName().isEmpty() 
+            ? QString::fromUtf8(baseName) 
+            : testAppName();
+    }
+    
+    // Set test override (call from test executables before discovery)
+    inline void setTestAppName(const QString& name) {
+        testAppName() = name;
     }
     
     // Test defaults for other metadata
     constexpr const char* suffix = "";
     constexpr const char* displayName = "Test App";
+    
+    // Get sibling installation folder name (for discovering alternate versions)
+    inline QString getSiblingName() {
+        QString base = getBaseName();
+        QString suf = QString::fromUtf8(suffix);
+        
+        // LTS → Nightly sibling candidate
+        if (suf.isEmpty()) {
+            return base + QStringLiteral(" (Nightly)");
+        }
+        // Nightly → LTS sibling
+        return base;
+    }
     
     constexpr const char* author = "Test Author";
     constexpr const char* organization = "Test Org";

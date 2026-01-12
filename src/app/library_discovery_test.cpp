@@ -24,7 +24,7 @@ static void printHeader(const QString& title)
 static void printItem(const ri::ResourceItem& item)
 {
     std::cout << "  - [" << resourceTypeToString(item.type()).toStdString() << "] "
-              << item.displayName().toStdString()
+              << item.getDisplayName().toStdString()
               << " (" << item.path().toStdString() << ")" << std::endl;
     if (!item.category().isEmpty()) {
         std::cout << "      category: " << item.category().toStdString() << std::endl;

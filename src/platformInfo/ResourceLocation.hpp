@@ -36,7 +36,7 @@ public:
     // Getters
     QString path() const { return m_path; }
     QString rawPath() const { return m_rawPath; }
-    QString displayName() const;
+    QString getDisplayName() const;
     QString description() const { return m_description; }
     ResourceTier tier() const { return m_tier; }
     bool isEnabled() const { return m_isEnabled; }
@@ -45,9 +45,8 @@ public:
     bool hasResourceFolders() const { return m_hasResourceFolders; }
 
     // Setters
-    void setPath(const QString& p);
+    void setPath(const QString& p) { m_path = p; }
     void setRawPath(const QString& raw) { m_rawPath = raw; }
-    void setDisplayName(const QString& name);
     void setDescription(const QString& desc) { m_description = desc; }
     void setTier(ResourceTier tier) { m_tier = tier; }
     void setEnabled(bool enabled) { m_isEnabled = enabled; }
@@ -55,25 +54,9 @@ public:
     void setWritable(bool writable) { m_isWritable = writable; }
     void setHasResourceFolders(bool has) { m_hasResourceFolders = has; }
     
-    /**
-     * @brief Generate display name from absolute path
-     * 
-     * Rules:
-     * - Validates path is absolute and doesn't contain env var placeholders
-     * - Short paths (< 24 chars): returned as-is
-     * - Home directory: replaced with "~"
-     * - Drive root: returned as-is (already minimal)
-     * - Long paths: truncated to max length with ellipsis
-     * 
-     * @param absolutePath Absolute filesystem path (must not contain $, %, &&)
-     * @return Display-friendly name
-     */
-    static QString generateDisplayName(const QString& absolutePath);
-    
 private:
     QString m_path;                     ///< Absolute resolved path to the resource location
     QString m_rawPath;                  ///< Original path with env vars (e.g., "$OPENSCAD_LIBRARIES")
-    QString m_displayName;              ///< Display-friendly name
     QString m_description;              ///< User-friendly description
     ResourceTier m_tier;                ///< Tier: Installation, Machine, or User
     bool m_isEnabled = true;            ///< Whether this location is active
@@ -86,6 +69,12 @@ private:
      * @return Max length from settings (default 60 characters)
      */
     static int getMaxDisplayLength();
+    
+    /**
+     * @brief Get configured minimum display name length threshold
+     * @return Min length from settings (default 24 characters)
+     */
+    static int getMinDisplayLength();
 };
 
 } // namespace platformInfo

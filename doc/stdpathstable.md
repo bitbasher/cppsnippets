@@ -79,8 +79,8 @@ See [QtExploration/README.md](../QtExploration/README.md) for the test results s
 
 ## StandardLocation Table
 
-| Path type | Enum Value | Type | Scope | NE | macOS | Windows | Linux/Posix | Qt Vers. | Description  |
-|-----|--|--|-----|--|------|-----|-------|-----|------------------ |
+| Path type | Enum Value | Type | Scope | NE | macOS | Windows | Linux/Posix | Qt Vers. | Description |
+| ----- | -- | -- | ----- | -- | ------ | ----- | ------- | ----- | ------------------ |
 | DesktopLocation | 0 | G | User | | "~/Desktop" | "C:/Users/&lt;USER&gt;/Desktop" | "~/Desktop" | | User's desktop directory. On systems with no concept of a desktop, same as HomeLocation. |
 | DocumentsLocation | 1 | G | User | NE | "~/Documents" | "C:/Users/&lt;USER&gt;/Documents" | "~/Documents" | | Directory containing user document files. |
 | FontsLocation | 2 | G | Sys | | "/System/Library/Fonts" (R-O) | "C:/Windows/Fonts" (R-O) | "~/.fonts", "~/.local/share/fonts", "/usr/local/share/fonts", "/usr/share/fonts" | | Directory containing user's fonts. Installing fonts may require additional platform-specific operations. |

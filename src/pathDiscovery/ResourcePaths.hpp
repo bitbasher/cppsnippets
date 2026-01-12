@@ -40,18 +40,6 @@ using resourceMetadata::groupNameCapture;
 class PLATFORMINFO_API ResourcePaths {
 public:
 
-    // Immutable default search paths by tier (compile-time constants with env var templates)
-    static const QStringList &defaultInstallSearchPaths();
-    static const QStringList &defaultMachineSearchPaths();
-    static const QStringList &defaultUserSearchPaths();
-    
-    // Resolved search paths with environment variables expanded (for testing/debugging)
-    // These expand env vars but do NOT apply folder name suffix rules
-    // For actual discovery, use qualifiedSearchPaths() instead
-    static QStringList resolvedInstallSearchPaths();
-    static QStringList resolvedMachineSearchPaths();
-    static QStringList resolvedUserSearchPaths();
-    
     // PRIMARY API: Single consolidated output of all qualified search paths
     // Returns QList<PathElement> with tier embedded in each element
     // - Expands environment variables to absolute paths
@@ -65,6 +53,9 @@ public:
     static QStringList userDesignatedPaths();
 
 private:
+
+    // Internal tier-specific path access
+    static const QStringList& defaultSearchPaths(resourceMetadata::ResourceTier tier);
 
     // Environment variable expansion helper
     // Expands ${VAR} and %VAR% style environment variables to their values

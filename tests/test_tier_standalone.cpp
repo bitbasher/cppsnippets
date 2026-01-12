@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     }
     
     // Set test application name for resource discovery
-    appInfo::setBaseName(appName);
+    appInfo::setTestAppName(appName);
     
     std::cout << "=== ResourceTier Standalone Test ===\n";
     std::cout << "Application Name: " << appName.toStdString() << "\n\n";

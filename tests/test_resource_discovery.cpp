@@ -370,7 +370,7 @@ TEST_F(ResourceDiscoveryTest, ResourceItemPropertiesPopulated) {
             auto item = items.first();
             
             // Validate required properties
-            EXPECT_FALSE(item.displayName().isEmpty()) << "Resource name should not be empty";
+            EXPECT_FALSE(item.getDisplayName().isEmpty()) << "Resource name should not be empty";
             EXPECT_FALSE(item.path().isEmpty()) << "Resource path should not be empty";
             EXPECT_TRUE(QFile::exists(item.path())) << "Resource path should point to existing file";
             EXPECT_EQ(item.tier(), ri::ResourceTier::Installation);

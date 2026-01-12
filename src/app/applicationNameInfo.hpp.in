@@ -42,6 +42,22 @@ namespace appInfo {
     // Full display name = baseName + suffix (computed at compile time)
     constexpr const char* displayName = "@APP_DISPLAY_NAME@";
     
+    // Get sibling installation folder name (for discovering alternate versions)
+    // When running LTS (no suffix): returns "baseName (Nightly)" as candidate sibling
+    // When running Nightly (has suffix): returns just baseName (LTS version)
+    // ResourcePaths adds this to discovery; ResourceScanner checks if it exists
+    inline QString getSiblingName() {
+        QString base = getBaseName();
+        QString suf = QString::fromUtf8(suffix);
+        
+        // LTS → Nightly sibling candidate
+        if (suf.isEmpty()) {
+            return base + QStringLiteral(" (Nightly)");
+        }
+        // Nightly → LTS sibling
+        return base;
+    }
+    
     // Author and organization
     constexpr const char* author = "@APP_AUTHOR@";
     constexpr const char* organization = "@APP_ORGANIZATION@";

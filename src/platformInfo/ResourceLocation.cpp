@@ -12,11 +12,10 @@
 
 namespace platformInfo {
 
-// Default constructor - displayName will be empty until path is set
+// Default constructor
 ResourceLocation::ResourceLocation()
     : m_path()
     , m_rawPath()
-    , m_displayName()
     , m_description()
     , m_tier(resourceInventory::ResourceTier::User)
     , m_isEnabled(true)
@@ -25,11 +24,10 @@ ResourceLocation::ResourceLocation()
     , m_hasResourceFolders(false)
 {}
 
-// Path-only constructor - generates display name from path
+// Path constructor
 ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QString& rawPath, const QString& name, const QString& desc)
     : m_path(p)
     , m_rawPath(rawPath.isEmpty() ? p : rawPath)
-    , m_displayName(name.isEmpty() ? generateDisplayName(p) : name)
     , m_description(desc)
     , m_tier(tier)
     , m_isEnabled(true)
@@ -42,7 +40,6 @@ ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QS
 ResourceLocation::ResourceLocation(const ResourceLocation& other)
     : m_path(other.m_path)
     , m_rawPath(other.m_rawPath)
-    , m_displayName(other.m_displayName)
     , m_description(other.m_description)
     , m_tier(other.m_tier)
     , m_isEnabled(other.m_isEnabled)
@@ -51,27 +48,26 @@ ResourceLocation::ResourceLocation(const ResourceLocation& other)
     , m_hasResourceFolders(other.m_hasResourceFolders)
 {}
 
-QString ResourceLocation::generateDisplayName(const QString& absolutePath)
+QString ResourceLocation::getDisplayName() const
 {
     // Validate input path
-    if (absolutePath.isEmpty()) {
+    if (m_path.isEmpty()) {
         return QString();
     }
     
-    // Reject paths with environment variable placeholders
-    if (absolutePath.contains("&&") || 
-        absolutePath.contains("$env:", Qt::CaseInsensitive) ||
-        absolutePath.contains("${") ||
-        absolutePath.contains("%")) {
-        qWarning() << "generateDisplayName: Path contains environment variable placeholders:" << absolutePath;
-        return absolutePath;  // Return as-is if invalid
+    // Keep paths with environment variable placeholders as-is - they're unique identifiers
+    if (m_path.contains("&&") || 
+        m_path.contains("$env:", Qt::CaseInsensitive) ||
+        m_path.contains("${") ||
+        m_path.contains("%")) {
+        return m_path;  // Use env var name as display name
     }
     
     // Check if path is absolute
-    QFileInfo pathInfo(absolutePath);
+    QFileInfo pathInfo(m_path);
     if (!pathInfo.isAbsolute()) {
-        qWarning() << "generateDisplayName: Path is not absolute:" << absolutePath;
-        return absolutePath;  // Return as-is if not absolute
+        qWarning() << "getDisplayName: Path is not absolute:" << m_path;
+        return m_path;  // Return as-is if not absolute
     }
     
     // Get canonical path (resolves symlinks and . / .. components)
@@ -81,21 +77,16 @@ QString ResourceLocation::generateDisplayName(const QString& absolutePath)
         canonicalPath = QDir::cleanPath(pathInfo.absoluteFilePath());
     }
     
-    // Check if path is short enough to display as-is
-    const int shortPathThreshold = 24;
-    if (canonicalPath.length() < shortPathThreshold) {
-        return canonicalPath;
+    // Safety check - ensure canonical path is valid
+    if (canonicalPath.isNull() || canonicalPath.length() > 32767) {
+        qWarning() << "getDisplayName: Invalid canonical path for:" << m_path;
+        return m_path;
     }
     
-    // Replace home directory with tilde
+    // Replace home directory with tilde (do this early as it may shorten the path enough)
     QString homeDir = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
     if (!homeDir.isEmpty() && canonicalPath.startsWith(homeDir)) {
-        QString withTilde = "~" + canonicalPath.mid(homeDir.length());
-        if (withTilde.length() < shortPathThreshold) {
-            return withTilde;
-        }
-        // Continue with tilde version for truncation
-        canonicalPath = withTilde;
+        canonicalPath = "~" + canonicalPath.mid(homeDir.length());
     }
     
     // Check drive root (already minimal)
@@ -107,41 +98,36 @@ QString ResourceLocation::generateDisplayName(const QString& absolutePath)
     // Get configured maximum display length
     int maxLength = getMaxDisplayLength();
     
-    // If still too long, truncate with ellipsis
-    if (canonicalPath.length() > maxLength) {
-        // Show beginning and end of path
-        int keepChars = (maxLength - 3) / 2;  // Leave room for "..."
-        return canonicalPath.left(keepChars) + "..." + canonicalPath.right(keepChars);
+    // Validate maxLength to prevent assertion failures
+    if (maxLength < 10) {
+        qWarning() << "getDisplayName: Invalid maxLength" << maxLength << "using default 60";
+        maxLength = 60;
     }
     
-    return canonicalPath;
-}
-
-QString ResourceLocation::displayName() const
-{
-    // If displayName is empty and we have a path, generate it
-    if (m_displayName.isEmpty() && !m_path.isEmpty()) {
-        return generateDisplayName(m_path);
+    // If path is short enough, display as-is
+    if (canonicalPath.length() <= maxLength) {
+        return canonicalPath;
     }
-    return m_displayName;
-}
-
-void ResourceLocation::setDisplayName(const QString& name)
-{
-    m_displayName = name;
-}
-
-void ResourceLocation::setPath(const QString& p)
-{
-    m_path = p;
-    // Regenerate display name when path changes
-    m_displayName = generateDisplayName(m_path);
+    
+    // Path is too long - truncate with ellipsis
+    // Show beginning and end of path
+    int available = maxLength - 3;  // Reserve 3 chars for "..."
+    int keepLeft = available / 2;
+    int keepRight = available - keepLeft;  // Automatically gets remainder when odd
+    
+    return canonicalPath.left(keepLeft) + "..." + canonicalPath.right(keepRight);
 }
 
 int ResourceLocation::getMaxDisplayLength()
 {
     QSettings settings(QStringLiteral("ScadTemplates"), QStringLiteral("ResourcePaths"));
     return settings.value(QStringLiteral("max_display_name_length"), 60).toInt();
+}
+
+int ResourceLocation::getMinDisplayLength()
+{
+    QSettings settings(QStringLiteral("ScadTemplates"), QStringLiteral("ResourcePaths"));
+    return settings.value(QStringLiteral("min_display_name_length"), 24).toInt();
 }
 
 } // namespace platformInfo

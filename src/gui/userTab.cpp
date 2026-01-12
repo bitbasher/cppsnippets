@@ -50,7 +50,7 @@ QVector<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
         // On POSIX/Mac: show as disabled placeholder when not defined
         platformInfo::ResourceLocation loc;
         loc.setPath(QString());
-        loc.setDisplayName(QObject::tr("XDG_DATA_HOME (not set)"));
+        // Display name auto-generated from path
         loc.setDescription(QObject::tr("Set the XDG_DATA_HOME environment variable to add user data paths"));
         loc.setEnabled(false);
         loc.setExists(false);
@@ -73,7 +73,7 @@ QVector<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
             
             platformInfo::ResourceLocation loc;
             loc.setPath(fullPath);
-            loc.setDisplayName(QObject::tr("XDG_DATA_HOME: %1").arg(fullPath));
+            // Display name auto-generated from path
             loc.setDescription(QObject::tr("From environment variable XDG_DATA_HOME"));
             loc.setEnabled(true);  // User can toggle
             bool pathExists = QDir(fullPath).exists();

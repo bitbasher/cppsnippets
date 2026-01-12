@@ -80,7 +80,7 @@ void displayTemplateInventory(QTextStream& out)
     for (const auto& location : allLocations) {
         // Display location header
         out << "----------------------------------------------------------\n";
-        out << "Location: " << location.displayName() << " [" << tierToString(location.tier()) << "]\n";
+        out << "Location: " << location.getDisplayName() << " [" << tierToString(location.tier()) << "]\n";
         
         if (!location.rawPath().isEmpty()) {
             out << "  Raw Path:      " << location.rawPath() << "\n";
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         appName = QString::fromUtf8(argv[1]);
     }
-    appInfo::setBaseName(appName);
+    appInfo::setTestAppName(appName);
     
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationVersion("1.0");

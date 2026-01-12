@@ -88,7 +88,7 @@ QVector<ResourceItem> ResourceScanner::scanLocation(
     }
     
     QString basePath = location.path();
-    QString locationKey = location.displayName();
+    QString locationKey = location.getDisplayName();
     
     // Determine the subfolder for this resource type
     QString subfolder = resourceSubfolder(type);
@@ -206,7 +206,7 @@ void ResourceScanner::scanLibraries(
             libItem.setName(libName);
             libItem.setDisplayName(libName);
             libItem.setSourcePath(libPath);
-            libItem.setSourceLocationKey(loc.displayName());
+            libItem.setSourceLocationKey(loc.getDisplayName());
             libItem.setAccess(ResourceAccess::ReadOnly);
 
             ResourceTreeItem* libNode = tree->addResource(libItem);
@@ -217,7 +217,7 @@ void ResourceScanner::scanLibraries(
                 ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
                                                                   ResourceType::Library,
                                                                   tier,
-                                                                  loc.displayName());
+                                                                  loc.getDisplayName());
                 script.setCategory(libName);  // Tag with library for clarity
                 tree->addChildResource(libNode, script);
             }
@@ -225,7 +225,7 @@ void ResourceScanner::scanLibraries(
             // Examples
             const QString examplesPath = libDir.absoluteFilePath(QStringLiteral("examples"));
             if (QDir(examplesPath).exists()) {
-                QVector<ResourceItem> examples = scanExamples(examplesPath, tier, loc.displayName());
+                QVector<ResourceItem> examples = scanExamples(examplesPath, tier, loc.getDisplayName());
                 for (auto example : examples) {
                     example.setCategory(libName);
                     tree->addChildResource(libNode, example);
@@ -235,7 +235,7 @@ void ResourceScanner::scanLibraries(
             // Tests
             const QString testsPath = libDir.absoluteFilePath(QStringLiteral("tests"));
             if (QDir(testsPath).exists()) {
-                QVector<ResourceItem> tests = scanTests(testsPath, tier, loc.displayName());
+                QVector<ResourceItem> tests = scanTests(testsPath, tier, loc.getDisplayName());
                 for (auto test : tests) {
                     test.setCategory(libName);
                     tree->addChildResource(libNode, test);
@@ -245,7 +245,7 @@ void ResourceScanner::scanLibraries(
             // Templates bundled with the library (read-only)
             const QString templatesPath = libDir.absoluteFilePath(QStringLiteral("templates"));
             if (QDir(templatesPath).exists()) {
-                QVector<ResourceItem> templates = scanTemplates(templatesPath, tier, loc.displayName());
+                QVector<ResourceItem> templates = scanTemplates(templatesPath, tier, loc.getDisplayName());
                 for (auto tmpl : templates) {
                     tmpl.setCategory(libName);
                     tmpl.setAccess(ResourceAccess::ReadOnly);
@@ -256,7 +256,7 @@ void ResourceScanner::scanLibraries(
             // Color schemes bundled with the library
             const QString colorSchemesPath = libDir.absoluteFilePath(QStringLiteral("color-schemes"));
             if (QDir(colorSchemesPath).exists()) {
-                QVector<ResourceItem> colorSchemes = scanColorSchemes(colorSchemesPath, tier, loc.displayName());
+                QVector<ResourceItem> colorSchemes = scanColorSchemes(colorSchemesPath, tier, loc.getDisplayName());
                 for (auto scheme : colorSchemes) {
                     scheme.setCategory(libName);
                     tree->addChildResource(libNode, scheme);

@@ -85,65 +85,11 @@ namespace pathDiscovery {
     }}
 #endif
   };
-const QStringList& ResourcePaths::defaultInstallSearchPaths() {
-    return s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Installation);
-}
 
-const QStringList& ResourcePaths::defaultMachineSearchPaths() {
-    return s_defaultSearchPaths.value(resourceMetadata::ResourceTier::Machine);
-}
-
-const QStringList& ResourcePaths::defaultUserSearchPaths() {
-    return s_defaultSearchPaths.value(resourceMetadata::ResourceTier::User);
-}
-
-// ============================================================================
-// Resolved Search Paths (Environment Variables Expanded)
-// ============================================================================
-//
-// These methods expand environment variables in the compile-time defaults
-// to produce absolute paths usable at runtime.
-//
-// Examples:
-//   Windows: "%APPDATA%/" → "C:/Users/Jeff/AppData/Roaming/"
-//   Linux:   "${HOME}/.config/" → "/home/jeff/.config/"
-//   macOS:   "${HOME}/Library/..." → "/Users/jeff/Library/..."
-
-QStringList ResourcePaths::resolvedInstallSearchPaths() {
-    const QStringList& defaults = defaultInstallSearchPaths();
-    QStringList resolved;
-    resolved.reserve(defaults.size());
-    for (const QString& path : defaults) {
-        resolved.append(expandEnvVars(path));
-    }
-    return resolved;
-}
-
-QStringList ResourcePaths::resolvedMachineSearchPaths() {
-    const QStringList& defaults = defaultMachineSearchPaths();
-    QStringList resolved;
-    resolved.reserve(defaults.size());
-    for (const QString& path : defaults) {
-        resolved.append(expandEnvVars(path));
-    }
-    return resolved;
-}
-
-QStringList ResourcePaths::resolvedUserSearchPaths() {
-    const QStringList& defaults = defaultUserSearchPaths();
-    QStringList resolved;
-    resolved.reserve(defaults.size() + 1); // +1 for Documents path
-    for (const QString& path : defaults) {
-        resolved.append(expandEnvVars(path));
-    }
-    
-    // Add user's Documents folder (with trailing slash for folder name appending)
-    QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    if (!documentsPath.isEmpty()) {
-        resolved.append(documentsPath + QStringLiteral("/"));
-    }
-    
-    return resolved;
+const QStringList& ResourcePaths::defaultSearchPaths(resourceMetadata::ResourceTier tier) {
+    static const QStringList empty;
+    auto it = s_defaultSearchPaths.constFind(tier);
+    return (it != s_defaultSearchPaths.constEnd()) ? it.value() : empty;
 }
 
 // ============================================================================
@@ -171,6 +117,7 @@ QString ResourcePaths::expandEnvVars(const QString& path) {
     QString result;
     result.reserve(path.size());
     int lastIndex = 0;
+    bool hasUndefinedVar = false;
     
     // Iterate through all matches and build the expanded string
     for (auto match = pattern.globalMatch(path); match.hasNext(); ) {
@@ -182,8 +129,16 @@ QString ResourcePaths::expandEnvVars(const QString& path) {
         // Extract variable name from either ${VAR} or %VAR% capture group
         const QString varName = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
         
-        // Append the expanded value (or empty string if undefined)
-        result.append(env.value(varName, QString()));
+        // Check if variable is defined
+        if (!env.contains(varName)) {
+            hasUndefinedVar = true;
+            qWarning() << "ResourcePaths: Undefined environment variable" << varName << "in path:" << path;
+            // Return empty string to signal invalid path
+            return QString();
+        }
+        
+        // Append the expanded value
+        result.append(env.value(varName));
         
         lastIndex = m.capturedEnd();
     }
@@ -216,6 +171,11 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
     // First expand environment variables (normalized to forward slashes, trailing slashes preserved)
     QString expanded = expandEnvVars(path);
     
+    // If expansion failed (undefined variable), skip this path
+    if (expanded.isEmpty()) {
+        return QString();
+    }
+    
     // Check if this is a base path that needs folder name appended
     if (expanded.endsWith(QStringLiteral("/"))) {
         // Build folder name with optional suffix
@@ -227,29 +187,25 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
         expanded += folder;
     }
     
-    // NOW clean the path to resolve . and .. components and normalize separators
-    // This must happen AFTER checking for trailing / but BEFORE absolutePath
-    expanded = QDir::cleanPath(expanded);
+    // Convert to QDir first to resolve relative components correctly
+    QDir dir(expanded);
     
-    // Convert to absolute path and clean again
-    return QDir::cleanPath(QDir(expanded).absolutePath());
+    // Get absolute path (resolves . and .. relative to the expanded base)
+    QString absolutePath = dir.absolutePath();
+    
+    // Clean the absolute path to normalize separators
+    return QDir::cleanPath(absolutePath);
 }
 
 // ============================================================================
 // Sibling Installation Discovery
 // ============================================================================
 //
-// Detects and returns the sibling installation folder name.
-// If current app is "ScadTemplates" → returns "ScadTemplates (Nightly)"
-// If current app is "ScadTemplates (Nightly)" → returns "ScadTemplates"
-//
-// This allows discovering resources from both LTS and Nightly installations.
+// Returns candidate sibling installation name (delegated to appInfo)
+// ResourceScanner will check if this path actually exists
 
 QString ResourcePaths::getSiblingFolderName() const {
-    QString baseName = appInfo::getBaseName();
-    const QString suffix = QString::fromUtf8(appInfo::suffix);
-    
-    return baseName += suffix.isEmpty() ? suffix : QString();
+    return appInfo::getSiblingName();
 }
 
 
@@ -293,14 +249,14 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
     
     // Helper lambda to add path only if not already present
     auto addIfUnique = [&](resourceMetadata::ResourceTier tier, const QString& path) {
-        if (!seenPaths.contains(path)) {
+        if (!path.isEmpty() && !seenPaths.contains(path)) {
             seenPaths.insert(path);
             qualified.append(PathElement(tier, path));
         }
     };
     
     // Process Installation tier paths (with suffix)
-    for (const QString& path : defaultInstallSearchPaths()) {
+    for (const QString& path : defaultSearchPaths(resourceMetadata::ResourceTier::Installation)) {
         QString qualified_path = applyFolderNameRules(path, true);
         addIfUnique(resourceMetadata::ResourceTier::Installation, qualified_path);
         
@@ -319,16 +275,22 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
     addIfUnique(resourceMetadata::ResourceTier::Installation, exePath);
     
     // Process Machine tier paths (no suffix)
-    for (const QString& path : defaultMachineSearchPaths()) {
+    for (const QString& path : defaultSearchPaths(resourceMetadata::ResourceTier::Machine)) {
         QString qualified_path = applyFolderNameRules(path, false);
         addIfUnique(resourceMetadata::ResourceTier::Machine, qualified_path);
     }
     
     // Process User tier paths (no suffix)
-    QStringList resolvedUserPaths = resolvedUserSearchPaths();
-    for (const QString& path : resolvedUserPaths) {
+    for (const QString& path : defaultSearchPaths(resourceMetadata::ResourceTier::User)) {
         QString qualified_path = applyFolderNameRules(path, false);
         addIfUnique(resourceMetadata::ResourceTier::User, qualified_path);
+    }
+    
+    // Add user's Documents folder (with trailing slash for folder name appending)
+    QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (!documentsPath.isEmpty()) {
+        QString docPath = applyFolderNameRules(documentsPath + QStringLiteral("/"), false);
+        addIfUnique(resourceMetadata::ResourceTier::User, docPath);
     }
     
     // Add user-designated paths (User tier, no suffix - these are per-user read-write locations)

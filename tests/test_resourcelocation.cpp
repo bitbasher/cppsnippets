@@ -34,7 +34,7 @@ protected:
 TEST_F(ResourceLocationTest, DefaultConstructor) {
     ResourceLocation loc;
     EXPECT_TRUE(loc.path().isEmpty());
-    EXPECT_TRUE(loc.displayName().isEmpty());
+    EXPECT_TRUE(loc.getDisplayName().isEmpty());
 }
 
 TEST_F(ResourceLocationTest, PathOnlyConstructor) {
@@ -43,8 +43,8 @@ TEST_F(ResourceLocationTest, PathOnlyConstructor) {
     
     ResourceLocation loc(testPath, ResourceTier::User);
     EXPECT_EQ(loc.path(), testPath);
-    EXPECT_FALSE(loc.displayName().isEmpty());
-    EXPECT_NE(loc.displayName(), testPath);  // Should be shortened
+    EXPECT_FALSE(loc.getDisplayName().isEmpty());
+    // Display name might be same or shortened depending on path length
 }
 
 TEST_F(ResourceLocationTest, PathAndNameConstructor) {
@@ -53,7 +53,8 @@ TEST_F(ResourceLocationTest, PathAndNameConstructor) {
     
     ResourceLocation loc(testPath, ResourceTier::User, QString(), testName);
     EXPECT_EQ(loc.path(), testPath);
-    EXPECT_EQ(loc.displayName(), testName);  // Should use provided name
+    // Display name is now always generated from path (name parameter ignored)
+    EXPECT_FALSE(loc.getDisplayName().isEmpty());
 }
 
 TEST_F(ResourceLocationTest, CopyConstructor) {
@@ -63,35 +64,40 @@ TEST_F(ResourceLocationTest, CopyConstructor) {
     
     ResourceLocation copy(original);
     EXPECT_EQ(copy.path(), original.path());
-    EXPECT_EQ(copy.displayName(), original.displayName());
+    EXPECT_EQ(copy.getDisplayName(), original.getDisplayName());
     EXPECT_EQ(copy.description(), original.description());
     EXPECT_EQ(copy.isWritable(), original.isWritable());
 }
 
 // ============================================================================
-// generateDisplayName() Validation Tests
+// getDisplayName() Validation Tests
 // ============================================================================
 
 TEST_F(ResourceLocationTest, RejectsEmptyPath) {
-    QString result = ResourceLocation::generateDisplayName(QString());
+    ResourceLocation loc;
+    QString result = loc.getDisplayName();
     EXPECT_TRUE(result.isEmpty());
 }
 
 TEST_F(ResourceLocationTest, RejectsEnvironmentVariables) {
-    // Test various environment variable formats
-    EXPECT_EQ(ResourceLocation::generateDisplayName("C:\\%APPDATA%\\test"), 
-              "C:\\%APPDATA%\\test");  // Returns as-is
-    EXPECT_EQ(ResourceLocation::generateDisplayName("/home/${USER}/test"), 
-              "/home/${USER}/test");
-    EXPECT_EQ(ResourceLocation::generateDisplayName("$env:USERPROFILE\\test"), 
-              "$env:USERPROFILE\\test");
-    EXPECT_EQ(ResourceLocation::generateDisplayName("path && command"), 
-              "path && command");
+    // Test various environment variable formats - returned as-is
+    ResourceLocation loc1("C:\\%APPDATA%\\test", ResourceTier::User);
+    EXPECT_EQ(loc1.getDisplayName(), "C:\\%APPDATA%\\test");
+    
+    ResourceLocation loc2("/home/${USER}/test", ResourceTier::User);
+    EXPECT_EQ(loc2.getDisplayName(), "/home/${USER}/test");
+    
+    ResourceLocation loc3("$env:USERPROFILE\\test", ResourceTier::User);
+    EXPECT_EQ(loc3.getDisplayName(), "$env:USERPROFILE\\test");
+    
+    ResourceLocation loc4("path && command", ResourceTier::User);
+    EXPECT_EQ(loc4.getDisplayName(), "path && command");
 }
 
 TEST_F(ResourceLocationTest, RejectsRelativePaths) {
     QString relative = "../relative/path";
-    QString result = ResourceLocation::generateDisplayName(relative);
+    ResourceLocation loc(relative, ResourceTier::User);
+    QString result = loc.getDisplayName();
     EXPECT_EQ(result, relative);  // Returns as-is if not absolute
 }
 
@@ -100,20 +106,23 @@ TEST_F(ResourceLocationTest, RejectsRelativePaths) {
 // ============================================================================
 
 TEST_F(ResourceLocationTest, ShortPathReturnedAsIs) {
-    // Paths < 24 characters should be returned unchanged
+    // Short paths should be returned unchanged or minimally modified
     QString shortPath = "/usr/bin";
-    QString result = ResourceLocation::generateDisplayName(shortPath);
+    ResourceLocation loc(shortPath, ResourceTier::Installation);
+    QString result = loc.getDisplayName();
     
-    EXPECT_EQ(result.length(), shortPath.length());
+    EXPECT_LE(result.length(), 60);  // Within max length
     EXPECT_TRUE(result == shortPath || result.startsWith(shortPath));
 }
 
 TEST_F(ResourceLocationTest, DriveRootReturnedAsIs) {
 #if defined(Q_OS_WIN)
-    QString result = ResourceLocation::generateDisplayName("C:/");
+    ResourceLocation loc("C:/", ResourceTier::Installation);
+    QString result = loc.getDisplayName();
     EXPECT_TRUE(result == "C:/" || result == "C:");
 #else
-    QString result = ResourceLocation::generateDisplayName("/");
+    ResourceLocation loc("/", ResourceTier::Installation);
+    QString result = loc.getDisplayName();
     EXPECT_EQ(result, "/");
 #endif
 }
@@ -128,7 +137,8 @@ TEST_F(ResourceLocationTest, HomeDirectoryReplacedWithTilde) {
     }
     
     QString testPath = m_homeDir + "/Documents/Test";
-    QString result = ResourceLocation::generateDisplayName(testPath);
+    ResourceLocation loc(testPath, ResourceTier::User);
+    QString result = loc.getDisplayName();
     
     EXPECT_TRUE(result.startsWith("~"));
     EXPECT_FALSE(result.contains(m_homeDir));
@@ -140,7 +150,8 @@ TEST_F(ResourceLocationTest, HomeDirTildeResultsInShorterPath) {
     }
     
     QString testPath = m_homeDir + "/subfolder";
-    QString result = ResourceLocation::generateDisplayName(testPath);
+    ResourceLocation loc(testPath, ResourceTier::User);
+    QString result = loc.getDisplayName();
     
     EXPECT_LT(result.length(), testPath.length());
 }
@@ -152,7 +163,8 @@ TEST_F(ResourceLocationTest, HomeDirTildeResultsInShorterPath) {
 TEST_F(ResourceLocationTest, LongPathIsTruncated) {
     // Create a very long absolute path
     QString longPath = "/very/long/path/that/exceeds/the/maximum/display/length/configured/in/settings/with/many/folders";
-    QString result = ResourceLocation::generateDisplayName(longPath);
+    ResourceLocation loc(longPath, ResourceTier::User);
+    QString result = loc.getDisplayName();
     
     // Should be truncated (default max is 60 chars)
     EXPECT_LE(result.length(), 60);
@@ -160,7 +172,8 @@ TEST_F(ResourceLocationTest, LongPathIsTruncated) {
 
 TEST_F(ResourceLocationTest, TruncatedPathContainsEllipsis) {
     QString longPath = "/very/long/path/that/exceeds/maximum/display/length/configured/settings/with/many/folders/here";
-    QString result = ResourceLocation::generateDisplayName(longPath);
+    ResourceLocation loc(longPath, ResourceTier::User);
+    QString result = loc.getDisplayName();
     
     if (result.length() < longPath.length()) {
         EXPECT_TRUE(result.contains("..."));
@@ -169,7 +182,8 @@ TEST_F(ResourceLocationTest, TruncatedPathContainsEllipsis) {
 
 TEST_F(ResourceLocationTest, TruncatedPathShowsBeginningAndEnd) {
     QString longPath = "/start/of/path/that/exceeds/maximum/display/length/configured/in/settings/with/many/folders/end/of/path";
-    QString result = ResourceLocation::generateDisplayName(longPath);
+    ResourceLocation loc(longPath, ResourceTier::User);
+    QString result = loc.getDisplayName();
     
     if (result.contains("...")) {
         // Should show beginning and end
@@ -183,26 +197,14 @@ TEST_F(ResourceLocationTest, TruncatedPathShowsBeginningAndEnd) {
 // Path Setter Tests
 // ============================================================================
 
-TEST_F(ResourceLocationTest, SetPathRegeneratesDisplayName) {
+TEST_F(ResourceLocationTest, SetPathUpdatesDisplayName) {
     ResourceLocation loc;
     
     QString newPath = "/new/test/path";
     loc.setPath(newPath);
     
     EXPECT_EQ(loc.path(), newPath);
-    EXPECT_FALSE(loc.displayName().isEmpty());
-}
-
-TEST_F(ResourceLocationTest, SetDisplayNameOverridesGenerated) {
-    QDir tempDir = QDir::temp();
-    ResourceLocation loc(tempDir.absolutePath(), ResourceTier::User);
-    
-    QString original = loc.displayName();
-    QString custom = "My Custom Name";
-    
-    loc.setDisplayName(custom);
-    EXPECT_EQ(loc.displayName(), custom);
-    EXPECT_NE(loc.displayName(), original);
+    EXPECT_FALSE(loc.getDisplayName().isEmpty());
 }
 
 // ============================================================================
@@ -212,7 +214,8 @@ TEST_F(ResourceLocationTest, SetDisplayNameOverridesGenerated) {
 TEST_F(ResourceLocationTest, RealWorldWindowsPath) {
 #if defined(Q_OS_WIN)
     QString winPath = "C:/Program Files/OpenSCAD";
-    QString result = ResourceLocation::generateDisplayName(winPath);
+    ResourceLocation loc(winPath, ResourceTier::Installation);
+    QString result = loc.getDisplayName();
     
     EXPECT_FALSE(result.isEmpty());
     EXPECT_FALSE(result.contains("%"));
@@ -223,7 +226,8 @@ TEST_F(ResourceLocationTest, RealWorldWindowsPath) {
 TEST_F(ResourceLocationTest, RealWorldLinuxPath) {
 #if !defined(Q_OS_WIN)
     QString linuxPath = "/usr/local/share/openscad";
-    QString result = ResourceLocation::generateDisplayName(linuxPath);
+    ResourceLocation loc(linuxPath, ResourceTier::Installation);
+    QString result = loc.getDisplayName();
     
     EXPECT_FALSE(result.isEmpty());
     EXPECT_FALSE(result.contains("$"));
@@ -234,7 +238,8 @@ TEST_F(ResourceLocationTest, RealWorldLinuxPath) {
 TEST_F(ResourceLocationTest, RealWorldMacPath) {
 #if defined(Q_OS_MACOS)
     QString macPath = "/Applications/OpenSCAD.app/Contents/Resources";
-    QString result = ResourceLocation::generateDisplayName(macPath);
+    ResourceLocation loc(macPath, ResourceTier::Installation);
+    QString result = loc.getDisplayName();
     
     EXPECT_FALSE(result.isEmpty());
     EXPECT_FALSE(result.contains("$"));

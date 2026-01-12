@@ -96,7 +96,7 @@ QVector<ResourceTemplate> TemplateScanner::scanLocations(const QVector<platformI
     for (const auto& location : locations) {
         if (!location.exists() || !location.isEnabled()) {
             qDebug() << "TemplateScanner: Skipping disabled/non-existent location:" 
-                    << location.displayName();
+                    << location.getDisplayName();
             continue;
         }
         

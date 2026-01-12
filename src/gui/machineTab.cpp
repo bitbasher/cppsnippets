@@ -59,7 +59,7 @@ platformInfo::ResourceLocation MachineTab::openscadPathLocation()
     if (envPath.isEmpty()) {
         // OPENSCAD_PATH is not defined
         loc.setPath(QString());
-        loc.setDisplayName(QObject::tr("OPENSCAD_PATH (not set)"));
+        // Display name auto-generated from path
         loc.setDescription(QObject::tr("Set the OPENSCAD_PATH environment variable to add a custom search path"));
         loc.setEnabled(false);
         loc.setExists(false);
@@ -68,7 +68,7 @@ platformInfo::ResourceLocation MachineTab::openscadPathLocation()
     } else {
         // OPENSCAD_PATH is defined
         loc.setPath(envPath);
-        loc.setDisplayName(QObject::tr("OPENSCAD_PATH"));
+        // Display name auto-generated from path
         loc.setDescription(QObject::tr("From environment variable: %1").arg(envPath));
         loc.setEnabled(true);  // User can toggle this
         bool pathExists = QDir(envPath).exists();
@@ -109,7 +109,7 @@ QVector<platformInfo::ResourceLocation> MachineTab::xdgDataDirsLocations()
         // On POSIX/Mac: show as disabled placeholder when not defined
         platformInfo::ResourceLocation loc;
         loc.setPath(QString());
-        loc.setDisplayName(QObject::tr("XDG_DATA_DIRS (not set)"));
+        // Display name auto-generated from path
         loc.setDescription(QObject::tr("Set the XDG_DATA_DIRS environment variable to add system-wide data paths"));
         loc.setEnabled(false);
         loc.setExists(false);
@@ -132,7 +132,7 @@ QVector<platformInfo::ResourceLocation> MachineTab::xdgDataDirsLocations()
             
             platformInfo::ResourceLocation loc;
             loc.setPath(fullPath);
-            loc.setDisplayName(QObject::tr("XDG_DATA_DIRS: %1").arg(fullPath));
+            // Display name auto-generated from path
             loc.setDescription(QObject::tr("From environment variable XDG_DATA_DIRS"));
             loc.setEnabled(true);  // User can toggle
             bool pathExists = QDir(fullPath).exists();
