@@ -4,9 +4,9 @@
  */
 
 #include <gtest/gtest.h>
-#include <scadtemplates/edittype.h>
+#include <scadtemplates/edittype.hpp>
 #include <QString>
-#include <QVector>
+#include <QList>
 
 using namespace scadtemplates;
 
@@ -16,7 +16,7 @@ TEST(EditTypeTest, GetTitle) {
     EXPECT_EQ(getTitle(EditType::Markdown), QStringLiteral("Markdown Files"));
     EXPECT_EQ(getTitle(EditType::OpenSCAD), QStringLiteral("OpenSCAD Files"));
     EXPECT_EQ(getTitle(EditType::Json), QStringLiteral("JSON Files"));
-    EXPECT_EQ(getTitle(EditType::Unknown), QStringLiteral("Unknown"));
+    EXPECT_TRUE(getTitle(EditType::Unknown).isEmpty());
 }
 
 // Test getMimeType for all types
@@ -25,12 +25,12 @@ TEST(EditTypeTest, GetMimeType) {
     EXPECT_EQ(getMimeType(EditType::Markdown), QStringLiteral("text/markdown"));
     EXPECT_EQ(getMimeType(EditType::OpenSCAD), QStringLiteral("application/x-openscad"));
     EXPECT_EQ(getMimeType(EditType::Json), QStringLiteral("application/json"));
-    EXPECT_EQ(getMimeType(EditType::Unknown), QStringLiteral("application/octet-stream"));
+    EXPECT_TRUE(getMimeType(EditType::Unknown).isEmpty());
 }
 
 // Test getSubtypes returns correct subtypes for Text
 TEST(EditTypeTest, GetSubtypesText) {
-    QVector<EditSubtype> subtypes = getSubtypes(EditType::Text);
+    QList<EditSubtype> subtypes = getSubtypes(EditType::Text);
     EXPECT_EQ(subtypes.size(), 4);
     EXPECT_EQ(subtypes[0], EditSubtype::Txt);
     EXPECT_EQ(subtypes[1], EditSubtype::Text);
@@ -40,14 +40,14 @@ TEST(EditTypeTest, GetSubtypesText) {
 
 // Test getSubtypes returns correct subtypes for Markdown
 TEST(EditTypeTest, GetSubtypesMarkdown) {
-    QVector<EditSubtype> subtypes = getSubtypes(EditType::Markdown);
+    QList<EditSubtype> subtypes = getSubtypes(EditType::Markdown);
     EXPECT_EQ(subtypes.size(), 1);
     EXPECT_EQ(subtypes[0], EditSubtype::Md);
 }
 
 // Test getSubtypes returns correct subtypes for OpenSCAD
 TEST(EditTypeTest, GetSubtypesOpenSCAD) {
-    QVector<EditSubtype> subtypes = getSubtypes(EditType::OpenSCAD);
+    QList<EditSubtype> subtypes = getSubtypes(EditType::OpenSCAD);
     EXPECT_EQ(subtypes.size(), 2);
     EXPECT_EQ(subtypes[0], EditSubtype::Scad);
     EXPECT_EQ(subtypes[1], EditSubtype::Csg);
@@ -55,7 +55,7 @@ TEST(EditTypeTest, GetSubtypesOpenSCAD) {
 
 // Test getSubtypes returns correct subtypes for Json
 TEST(EditTypeTest, GetSubtypesJson) {
-    QVector<EditSubtype> subtypes = getSubtypes(EditType::Json);
+    QList<EditSubtype> subtypes = getSubtypes(EditType::Json);
     EXPECT_EQ(subtypes.size(), 1);
     EXPECT_EQ(subtypes[0], EditSubtype::Json);
 }
@@ -133,7 +133,7 @@ TEST(EditTypeTest, GetAllFileDialogFilters) {
 
 // Test getAllTypes
 TEST(EditTypeTest, GetAllTypes) {
-    QVector<EditType> types = getAllTypes();
+    QList<EditType> types = getAllTypes();
     EXPECT_EQ(types.size(), 4);
     
     // Should not contain Unknown
