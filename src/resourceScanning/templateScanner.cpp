@@ -11,9 +11,9 @@
 #include <QDebug>
 #include <QDateTime>
 
-QVector<ResourceTemplate> TemplateScanner::scanLocation(const platformInfo::ResourceLocation& location)
+QList<ResourceTemplate> TemplateScanner::scanLocation(const platformInfo::ResourceLocation& location)
 {
-    QVector<ResourceTemplate> templates;
+    QList<ResourceTemplate> templates;
     
     // Build path to templates subfolder
     QString templatesPath = location.path() + "/" + templateSubfolder();
@@ -89,9 +89,9 @@ QVector<ResourceTemplate> TemplateScanner::scanLocation(const platformInfo::Reso
     return templates;
 }
 
-QVector<ResourceTemplate> TemplateScanner::scanLocations(const QVector<platformInfo::ResourceLocation>& locations)
+QList<ResourceTemplate> TemplateScanner::scanLocations(const QList<platformInfo::ResourceLocation>& locations)
 {
-    QVector<ResourceTemplate> allTemplates;
+    QList<ResourceTemplate> allTemplates;
     
     for (const auto& location : locations) {
         if (!location.exists() || !location.isEnabled()) {
@@ -100,7 +100,7 @@ QVector<ResourceTemplate> TemplateScanner::scanLocations(const QVector<platformI
             continue;
         }
         
-        QVector<ResourceTemplate> locationTemplates = scanLocation(location);
+        QList<ResourceTemplate> locationTemplates = scanLocation(location);
         allTemplates.append(locationTemplates);
     }
     

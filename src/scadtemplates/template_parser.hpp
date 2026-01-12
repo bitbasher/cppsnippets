@@ -6,11 +6,13 @@
 #pragma once
 
 #include "export.hpp"
-#include "template.hpp"
-#include <string>
-#include <vector>
+#include "../resourceInventory/resourceItem.hpp"
+#include <QString>
+#include <QList>
 #include <optional>
 #include <QJsonObject>
+
+using resourceInventory::ResourceTemplate;
 
 namespace scadtemplates {
 
@@ -19,8 +21,8 @@ namespace scadtemplates {
  */
 struct SCADTEMPLATES_API ParseResult {
     bool success;
-    std::string errorMessage;
-    std::vector<Template> templates;
+    QString errorMessage;
+    QList<ResourceTemplate> templates;
 };
 
 /**
@@ -41,14 +43,14 @@ public:
      * @param jsonContent The JSON content to parse
      * @return ParseResult containing success status and parsed snippets
      */
-    ParseResult parseJson(const std::string& jsonContent);
+    ParseResult parseJson(const QString& jsonContent);
 
     /**
      * @brief Parse templates from a file
      * @param filePath Path to the template file
      * @return ParseResult containing success status and parsed templates
      */
-    ParseResult parseFile(const std::string& filePath);
+    ParseResult parseFile(const QString& filePath);
 
     /**
      * @brief Convert a template to JSON format with source provenance
@@ -56,22 +58,22 @@ public:
      * @param source The provenance source (default: "cppsnippet-made")
      * @return JSON object in modern format with _source field
      */
-    static QJsonObject templateToJson(const Template& tmpl, 
-                                       const std::string& source = "cppsnippet-made");
+    static QJsonObject templateToJson(const ResourceTemplate& tmpl, 
+                                       const QString& source = QStringLiteral("cppsnippet-made"));
 
     /**
      * @brief Convert a template to JSON format
      * @param tmpl The template to convert
      * @return JSON string representation
      */
-    std::string toJson(const Template& tmpl);
+    QString toJson(const ResourceTemplate& tmpl);
 
     /**
      * @brief Convert multiple templates to JSON format
-     * @param templates Vector of templates to convert
+     * @param templates List of templates to convert
      * @return JSON string representation
      */
-    std::string toJson(const std::vector<Template>& templates);
+    QString toJson(const QList<ResourceTemplate>& templates);
 };
 
 } // namespace scadtemplates

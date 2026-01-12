@@ -126,7 +126,13 @@ ResourceTemplate::ResourceTemplate(const QString& path)
 
 bool ResourceTemplate::isValid() const
 {
-    return ResourceItem::isValid() && !m_body.isEmpty();
+    return ResourceItem::isValid() && !m_body.isEmpty() && !m_prefix.isEmpty();
+}
+
+void ResourceTemplate::setEditSubtype(scadtemplates::EditSubtype subtype)
+{
+    m_editSubtype = subtype;
+    m_editType = scadtemplates::typeFromSubtype(subtype);
 }
 
 } // namespace resourceInventory

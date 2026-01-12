@@ -263,41 +263,41 @@ endif()
 # Library source files
 set(LIB_SOURCES
     src/jsonreader/JsonReader.cpp
-    src/scadtemplates/template.cpp
+    # src/scadtemplates/template.cpp - DELETED (replaced by ResourceTemplate)
     src/scadtemplates/template_parser.cpp
     src/scadtemplates/template_manager.cpp
     src/scadtemplates/legacy_template_converter.cpp
     src/scadtemplates/scad_template_session.cpp
     # src/scadtemplates/editsubtype.cpp - now header-only
     # src/scadtemplates/edittype.cpp - now header-only
-    src/scadtemplates/filesubtype.cpp
+    # src/scadtemplates/filesubtype.cpp - DELETED (redundant with EditSubtype)
     src/platformInfo/platformInfo.cpp
     src/platformInfo/ResourceLocation.cpp
     src/platformInfo/resourceLocationManager.cpp
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
-    src/resourceDiscovery/templateScanner.cpp
+    src/resourceScanning/templateScanner.cpp
 )
 
 set(LIB_HEADERS
     src/jsonreader/JsonReader.hpp
     src/scadtemplates/scadtemplates.hpp
-    src/scadtemplates/template.hpp
+    # src/scadtemplates/template.hpp - DELETED (replaced by ResourceTemplate)
     src/scadtemplates/template_parser.hpp
     src/scadtemplates/template_manager.hpp
     src/scadtemplates/scad_template_session.hpp
     src/scadtemplates/export.hpp
     src/scadtemplates/editsubtype.hpp
     src/scadtemplates/edittype.hpp
-    src/scadtemplates/filesubtype.hpp
+    # src/scadtemplates/filesubtype.hpp - DELETED (redundant with EditSubtype)
     src/platformInfo/export.hpp
     src/platformInfo/platformInfo.hpp
     src/platformInfo/ResourceLocation.hpp
     src/platformInfo/resourceLocationManager.hpp
     src/pathDiscovery/ResourcePaths.hpp
     src/resourceInventory/resourceItem.hpp
-    src/resourceDiscovery/templateScanner.hpp
+    src/resourceScanning/templateScanner.hpp
 )
 
 # Build the shared/dynamic library
@@ -602,7 +602,7 @@ if(BUILD_TESTS)
         src/platformInfo/platformInfo.cpp
         src/platformInfo/ResourceLocation.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
-        src/resourceDiscovery/templateScanner.cpp
+        src/resourceScanning/templateScanner.cpp
         src/resourceInventory/resourceItem.cpp
     )
 

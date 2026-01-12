@@ -4,7 +4,6 @@
  */
 
 #include "legacy_template_converter.hpp"
-#include "scadtemplates/template.hpp"
 #include "platformInfo/resourceLocationManager.hpp"
 #include "jsonreader/JsonReader.hpp"
 #include <QDir>
@@ -44,20 +43,25 @@ LegacyTemplateConverter::convertFromLegacyJson(const QJsonObject& legacyJson, co
     // Convert content to snippet body
     QStringList bodyLines = convertContentToBody(content);
     
-    // Create template
-    Template tmpl;
-    tmpl.setPrefix(key.toStdString());
+    // Create ResourceTemplate
+    ResourceTemplate tmpl;
+    tmpl.setPrefix(key);
     
     // Join lines into single body string with newlines
     QString bodyJoined = bodyLines.join('\n');
-    tmpl.setBody(bodyJoined.toStdString());
+    tmpl.setBody(bodyJoined);
     
     // Set description
     QString desc = QStringLiteral("Converted from legacy template");
     if (!sourceFilePath.isEmpty()) {
         desc += QStringLiteral(" (") + QFileInfo(sourceFilePath).fileName() + QStringLiteral(")");
     }
-    tmpl.setDescription(desc.toStdString());
+    tmpl.setDescription(desc);
+    
+    // Set metadata
+    tmpl.setFormat(QStringLiteral("text/scad.template"));
+    tmpl.setSource(QStringLiteral("legacy-converted"));
+    tmpl.setName(key);
     
     result.convertedTemplate = tmpl;
     result.success = true;
@@ -111,12 +115,12 @@ QString LegacyTemplateConverter::unescapeNewlines(const QString& text)
     return result;
 }
 
-std::vector<LegacyTemplateConverter::ConversionResult> 
+QList<LegacyTemplateConverter::ConversionResult> 
 LegacyTemplateConverter::discoverAndConvertTemplates(
     const platformInfo::ResourceLocationManager& resourceManager,
     const QString& outputDir)
 {
-    std::vector<ConversionResult> results;
+    QList<ConversionResult> results;
     
     // Structure: outputDir/tier/mangled-filename.json
     QDir baseDir(outputDir);
@@ -182,7 +186,7 @@ LegacyTemplateConverter::discoverAndConvertTemplates(
                     }
                 }
                 
-                results.push_back(result);
+                results.append(result);
             }
         }
     }
@@ -226,12 +230,12 @@ bool LegacyTemplateConverter::isLegacyFormat(const QJsonObject& jsonObj)
     return jsonObj.contains("key") && jsonObj.contains("content");
 }
 
-QJsonObject LegacyTemplateConverter::templateToModernJson(const Template& tmpl)
+QJsonObject LegacyTemplateConverter::templateToModernJson(const ResourceTemplate& tmpl)
 {
     QJsonObject snippetObj;
     
     // Get prefix as QString
-    QString prefix = QString::fromStdString(tmpl.getPrefix());
+    QString prefix = tmpl.prefix();
     
     // Add provenance markers for tracking resource source
     // legacy-converted = converted from old OpenSCAD template format by this tool
@@ -243,15 +247,14 @@ QJsonObject LegacyTemplateConverter::templateToModernJson(const Template& tmpl)
     snippetObj["prefix"] = prefix;
     
     // Add description
-    QString desc = QString::fromStdString(tmpl.getDescription());
+    QString desc = tmpl.description();
     if (desc.isEmpty()) {
         desc = QStringLiteral("Converted from legacy OpenSCAD template");
     }
     snippetObj["description"] = desc;
     
     // Add body as array of lines
-    // Template::getBody() returns a single string, split it by newlines
-    QString bodyStr = QString::fromStdString(tmpl.getBody());
+    QString bodyStr = tmpl.body();
     QStringList bodyLines = bodyStr.split('\n', Qt::KeepEmptyParts);
     
     QJsonArray bodyArray;
@@ -267,7 +270,7 @@ QJsonObject LegacyTemplateConverter::templateToModernJson(const Template& tmpl)
     return rootObj;
 }
 
-bool LegacyTemplateConverter::saveAsModernJson(const Template& tmpl, const QString& outputPath)
+bool LegacyTemplateConverter::saveAsModernJson(const ResourceTemplate& tmpl, const QString& outputPath)
 {
     // Convert to JSON
     QJsonObject json = templateToModernJson(tmpl);

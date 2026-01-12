@@ -6,12 +6,13 @@
 #pragma once
 
 #include "export.hpp"
-#include "template.hpp"
+#include "../resourceInventory/resourceItem.hpp"
 #include <QString>
 #include <QJsonObject>
-#include <string>
+#include <QList>
 #include <optional>
-#include <vector>
+
+using resourceInventory::ResourceTemplate;
 
 namespace platformInfo {
 class ResourceLocationManager;
@@ -47,7 +48,7 @@ public:
     struct ConversionResult {
         bool success = false;
         QString errorMessage;
-        Template convertedTemplate;
+        ResourceTemplate convertedTemplate;
         QString rawContent;  // Original content for re-conversion
         QString sourceFilePath;  // Where it came from
     };
@@ -93,9 +94,9 @@ public:
      * @brief Scan resource locations for legacy template files and convert them
      * @param resourceManager Resource location manager with tier locations
      * @param outputDir Base directory for converted templates (e.g., "templates/")
-     * @return Vector of conversion results
+     * @return List of conversion results
      */
-    static std::vector<ConversionResult> discoverAndConvertTemplates(
+    static QList<ConversionResult> discoverAndConvertTemplates(
         const platformInfo::ResourceLocationManager& resourceManager,
         const QString& outputDir);
 
@@ -114,19 +115,19 @@ public:
     static bool isLegacyFormat(const QJsonObject& jsonObj);
 
     /**
-     * @brief Save a Template to modern VS Code snippet JSON format
+     * @brief Save a ResourceTemplate to modern VS Code snippet JSON format
      * @param tmpl The template to save
      * @param outputPath Path where to write the JSON file
      * @return true if successful, false on error
      */
-    static bool saveAsModernJson(const Template& tmpl, const QString& outputPath);
+    static bool saveAsModernJson(const ResourceTemplate& tmpl, const QString& outputPath);
 
     /**
-     * @brief Convert a Template to modern JSON format
+     * @brief Convert a ResourceTemplate to modern JSON format
      * @param tmpl The template to convert
      * @return JSON object in modern format
      */
-    static QJsonObject templateToModernJson(const Template& tmpl);
+    static QJsonObject templateToModernJson(const ResourceTemplate& tmpl);
 };
 
 } // namespace scadtemplates

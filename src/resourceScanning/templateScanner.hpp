@@ -1,12 +1,12 @@
 #ifndef TEMPLATESCANNER_HPP
 #define TEMPLATESCANNER_HPP
 
-#include <QVector>
+#include <QList>
 #include <QString>
 #include <QStringList>
 #include <QJsonDocument>
 
-#include "../platformInfo/export.hpp"
+#include "../resourceScanning/export.hpp"
 #include "../platformInfo/ResourceLocation.hpp"
 #include "../resourceInventory/resourceItem.hpp"
 
@@ -39,20 +39,20 @@ public:
     /**
      * @brief Scan a single location for template resources
      * @param location The resource location to scan
-     * @return Vector of discovered templates with metadata
+     * @return List of discovered templates with metadata
      * 
      * Scans the "templates" subfolder within the location for .json files.
      * Each valid template file is parsed, validated, and converted to a ResourceTemplate.
      * Invalid files are logged but do not abort the scan.
      */
-    static QVector<ResourceTemplate> scanLocation(const platformInfo::ResourceLocation& location);
+    static QList<ResourceTemplate> scanLocation(const platformInfo::ResourceLocation& location);
     
     /**
      * @brief Scan multiple locations for template resources
-     * @param locations Vector of resource locations to scan
-     * @return Combined vector of all discovered templates
+     * @param locations List of resource locations to scan
+     * @return Combined list of all discovered templates
      */
-    static QVector<ResourceTemplate> scanLocations(const QVector<platformInfo::ResourceLocation>& locations);
+    static QList<ResourceTemplate> scanLocations(const QList<platformInfo::ResourceLocation>& locations);
     
     /**
      * @brief Validate template JSON structure

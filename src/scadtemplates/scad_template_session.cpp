@@ -8,7 +8,7 @@
 
 namespace scadtemplates {
 
-TemplateSession::TemplateSession(EditorWidget* editor, const Template& tmpl)
+TemplateSession::TemplateSession(EditorWidget* editor, const ResourceTemplate& tmpl)
     : m_editor(editor), m_template(tmpl), m_currentIndex(0) {
     parsePlaceholders();
 }
@@ -17,7 +17,7 @@ void TemplateSession::insert() {
     // Replace current selection with template body
     if (!m_editor) return;
 #ifdef HAS_QSCINTILLA
-    m_editor->replaceSelectedText(QString::fromStdString(m_template.getBody()));
+    m_editor->replaceSelectedText(m_template.body());
     // Move cursor to first placeholder if any
     if (!m_placeholders.empty()) {
         const auto& ph = m_placeholders[0];
@@ -55,7 +55,7 @@ void TemplateSession::cancel() {
     m_currentIndex = 0;
 }
 
-void TemplateSession::merge(const Template& tmpl) {
+void TemplateSession::merge(const ResourceTemplate& tmpl) {
     // For simplicity, just replace the body and re-parse placeholders
     m_template = tmpl;
     parsePlaceholders();
@@ -74,22 +74,23 @@ int TemplateSession::getCurrentPlaceholderIndex() const {
     return m_currentIndex;
 }
 
-std::vector<Placeholder> TemplateSession::getAllPlaceholders() const {
+QList<Placeholder> TemplateSession::getAllPlaceholders() const {
     return m_placeholders;
 }
 
 void TemplateSession::parsePlaceholders() {
     m_placeholders.clear();
-    const std::string& body = m_template.getBody();
-    std::regex re(R"(\$(\d+)(?::([^}]+))?)");
-    auto begin = std::sregex_iterator(body.begin(), body.end(), re);
+    const QString& body = m_template.body();
+    std::regex re(R"(\$(\d+)(?::([^}]+))?))");
+    std::string bodyStd = body.toStdString();
+    auto begin = std::sregex_iterator(bodyStd.begin(), bodyStd.end(), re);
     auto end = std::sregex_iterator();
     for (auto it = begin; it != end; ++it) {
         int idx = std::stoi((*it)[1]);
-        std::string def = (*it)[2];
+        QString def = QString::fromStdString((*it)[2]);
         int start = static_cast<int>(it->position());
         int matchLen = static_cast<int>(it->length());
-        m_placeholders.push_back({idx, start, start + matchLen, def});
+        m_placeholders.append({idx, start, start + matchLen, def});
     }
 }
 

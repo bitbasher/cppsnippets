@@ -6,108 +6,97 @@
 #include "scadtemplates/template_manager.hpp"
 #include "scadtemplates/template_parser.hpp"
 #include <algorithm>
-#include <fstream>
+#include <QFile>
 
 namespace scadtemplates {
 
-class TemplateManager::Impl {
-public:
-    std::vector<Template> templates;
-};
-
-TemplateManager::TemplateManager()
-    : m_impl(std::make_unique<Impl>()) {
-}
-
-TemplateManager::~TemplateManager() = default;
-
-bool TemplateManager::addTemplate(const Template& tmpl) {
+bool TemplateManager::addTemplate(const ResourceTemplate& tmpl) {
     if (!tmpl.isValid()) {
         return false;
     }
     
     // Check for duplicate prefix
-    auto it = std::find_if(m_impl->templates.begin(), m_impl->templates.end(),
-        [&tmpl](const Template& t) {
-            return t.getPrefix() == tmpl.getPrefix();
+    auto it = std::find_if(m_templates.begin(), m_templates.end(),
+        [&tmpl](const ResourceTemplate& t) {
+            return t.prefix() == tmpl.prefix();
         });
     
-    if (it != m_impl->templates.end()) {
+    if (it != m_templates.end()) {
         // Update existing template
         *it = tmpl;
     } else {
-        m_impl->templates.push_back(tmpl);
+        m_templates.append(tmpl);
     }
     
     return true;
 }
 
-bool TemplateManager::removeTemplate(const std::string& prefix) {
-    auto it = std::find_if(m_impl->templates.begin(), m_impl->templates.end(),
-        [&prefix](const Template& t) {
-            return t.getPrefix() == prefix;
+bool TemplateManager::removeTemplate(const QString& prefix) {
+    auto it = std::find_if(m_templates.begin(), m_templates.end(),
+        [&prefix](const ResourceTemplate& t) {
+            return t.prefix() == prefix;
         });
     
-    if (it != m_impl->templates.end()) {
-        m_impl->templates.erase(it);
+    if (it != m_templates.end()) {
+        m_templates.erase(it);
         return true;
     }
     
     return false;
 }
 
-std::optional<Template> TemplateManager::findByPrefix(const std::string& prefix) const {
-    auto it = std::find_if(m_impl->templates.begin(), m_impl->templates.end(),
-        [&prefix](const Template& t) {
-            return t.getPrefix() == prefix;
+std::optional<ResourceTemplate> TemplateManager::findByPrefix(const QString& prefix) const {
+    auto it = std::find_if(m_templates.begin(), m_templates.end(),
+        [&prefix](const ResourceTemplate& t) {
+            return t.prefix() == prefix;
         });
     
-    if (it != m_impl->templates.end()) {
+    if (it != m_templates.end()) {
         return *it;
     }
     
     return std::nullopt;
 }
 
-std::vector<Template> TemplateManager::findByScope(const std::string& scope) const {
-    std::vector<Template> result;
+QList<ResourceTemplate> TemplateManager::findByScope(const QString& scope) const {
+    QList<ResourceTemplate> result;
     
-    for (const auto& tmpl : m_impl->templates) {
-        const auto& scopes = tmpl.getScopes();
-        if (std::find(scopes.begin(), scopes.end(), scope) != scopes.end()) {
-            result.push_back(tmpl);
+    for (const auto& tmpl : m_templates) {
+        const auto& scopes = tmpl.scopes();
+        if (scopes.contains(scope)) {
+            result.append(tmpl);
         }
     }
     
     return result;
 }
 
-std::vector<Template> TemplateManager::search(const std::string& keyword) const {
-    std::vector<Template> result;
+QList<ResourceTemplate> TemplateManager::search(const QString& keyword) const {
+    QList<ResourceTemplate> result;
     
-    for (const auto& tmpl : m_impl->templates) {
-        if (tmpl.getPrefix().find(keyword) != std::string::npos ||
-            tmpl.getDescription().find(keyword) != std::string::npos) {
-            result.push_back(tmpl);
+    for (const auto& tmpl : m_templates) {
+        if (tmpl.prefix().contains(keyword, Qt::CaseInsensitive) ||
+            tmpl.description().contains(keyword, Qt::CaseInsensitive)) {
+            result.append(tmpl);
         }
     }
     
     return result;
 }
 
-std::vector<Template> TemplateManager::getAllTemplates() const {
-    return m_impl->templates;
+QList<ResourceTemplate> TemplateManager::getAllTemplates() const {
+    return m_templates;
 }
 
 size_t TemplateManager::count() const {
-    return m_impl->templates.size();
+    return m_templates.size();
 }
 
 void TemplateManager::clear() {
-    m_impl->templates.clear();
+    m_templates.clear();
 }
 
-bool TemplateManager::loadFromFile(const std::string& filePath) {
+bool TemplateManager::loadFromFile(const QString& filePath) {
     TemplateParser parser;
     auto result = parser.parseFile(filePath);
     
@@ -120,17 +109,17 @@ bool TemplateManager::loadFromFile(const std::string& filePath) {
     return result.success;
 }
 
-bool TemplateManager::saveToFile(const std::string& filePath) const {
+bool TemplateManager::saveToFile(const QString& filePath) const {
     TemplateParser parser;
-    std::string json = parser.toJson(m_impl->templates);
+    QString json = parser.toJson(m_templates);
     
-    std::ofstream file(filePath);
-    if (!file.is_open()) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         return false;
     }
     
-    file << json;
-    return file.good();
+    file.write(json.toUtf8());
+    return file.error() == QFile::NoError;
 }
 
 } // namespace scadtemplates

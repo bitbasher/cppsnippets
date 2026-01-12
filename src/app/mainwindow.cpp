@@ -267,7 +267,7 @@ void MainWindow::setupMenus() {
             tr("Open Templates File"), QString(),
             tr("JSON Files (*.json);;All Files (*)"));
         if (!fileName.isEmpty()) {
-            if (m_templateManager->loadFromFile(fileName.toStdString())) {
+            if (m_templateManager->loadFromFile(fileName)) {
                 refreshInventory();
                 statusBar()->showMessage(tr("Loaded templates from %1").arg(fileName));
             } else {
@@ -283,7 +283,7 @@ void MainWindow::setupMenus() {
             tr("Save Templates File"), QString(),
             tr("JSON Files (*.json);;All Files (*)"));
         if (!fileName.isEmpty()) {
-            if (m_templateManager->saveToFile(fileName.toStdString())) {
+            if (m_templateManager->saveToFile(fileName)) {
                 statusBar()->showMessage(tr("Saved templates to %1").arg(fileName));
             } else {
                 QMessageBox::warning(this, tr("Error"),
@@ -400,9 +400,13 @@ void MainWindow::onSaveTemplate() {
         return;
     }
     
-    scadtemplates::Template tmpl(prefix.toStdString(), 
-                                  body.toStdString(),
-                                  description.toStdString());
+    ResourceTemplate tmpl;
+    tmpl.setPrefix(prefix);
+    tmpl.setBody(body);
+    tmpl.setDescription(description);
+    tmpl.setName(prefix);
+    tmpl.setFormat(QStringLiteral("text/scad.template"));
+    tmpl.setSource(QStringLiteral("cppsnippet-made"));
     
     if (saveTemplateToUser(tmpl)) {
         m_editMode = false;
@@ -565,7 +569,7 @@ QString MainWindow::userTemplatesRoot() const {
            QStringLiteral("/ScadTemplates");
 }
 
-bool MainWindow::saveTemplateToUser(const scadtemplates::Template& tmpl) {
+bool MainWindow::saveTemplateToUser(const ResourceTemplate& tmpl) {
     // TODO: Implement save to user templates
     return true;
 }

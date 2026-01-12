@@ -6,7 +6,6 @@
 #pragma once
 
 #include <QMainWindow>
-#include <scadtemplates/template.hpp>
 #include <resourceInventory/resourceItem.hpp>
 #include <memory>
 
@@ -19,8 +18,9 @@ class QVBoxLayout;
 
 namespace scadtemplates {
 class TemplateManager;
-class Template;
 }
+
+using resourceInventory::ResourceTemplate;
 
 namespace platformInfo {
 class ResourceLocationManager;
@@ -74,7 +74,7 @@ private:
     void refreshInventory();
     void populateEditorFromSelection(const resourceInventory::ResourceItem& item);
     QString userTemplatesRoot() const;
-    bool saveTemplateToUser(const scadtemplates::Template& tmpl);
+    bool saveTemplateToUser(const ResourceTemplate& tmpl);
     void applyFilterToTree(const QString& text);
     
     std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;

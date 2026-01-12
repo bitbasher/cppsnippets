@@ -2,6 +2,8 @@
 #define RESOURCEITEM_H
 
 #include "../platformInfo/export.hpp"
+#include "../scadtemplates/edittype.hpp"
+#include "../scadtemplates/editsubtype.hpp"
 
 #include <QString>
 #include <QStringList>
@@ -186,6 +188,23 @@ public:
     QString rawText() const { return m_rawText; }
     void setRawText(const QString& text) { m_rawText = text; }
     
+    // Template triggering
+    QString prefix() const { return m_prefix; }
+    void setPrefix(const QString& prefix) { m_prefix = prefix; }
+    
+    // Language scopes (e.g., "source.scad", "text.plain")
+    QStringList scopes() const { return m_scopes; }
+    void setScopes(const QStringList& scopes) { m_scopes = scopes; }
+    void addScope(const QString& scope) { m_scopes.append(scope); }
+    void clearScopes() { m_scopes.clear(); }
+    
+    // File type classification
+    scadtemplates::EditType editType() const { return m_editType; }
+    void setEditType(scadtemplates::EditType type) { m_editType = type; }
+    
+    scadtemplates::EditSubtype editSubtype() const { return m_editSubtype; }
+    void setEditSubtype(scadtemplates::EditSubtype subtype);  // Also updates EditType
+    
     bool isValid() const override;
     
 private:
@@ -194,6 +213,10 @@ private:
     QString m_version;      // Version string
     QString m_body;         // Assembled template body
     QString m_rawText;      // Original legacy format text
+    QString m_prefix;       // Trigger text for template insertion
+    QStringList m_scopes;   // Language scopes for filtering
+    scadtemplates::EditType m_editType = scadtemplates::EditType::Text;
+    scadtemplates::EditSubtype m_editSubtype = scadtemplates::EditSubtype::Txt;
 };
 
 /**

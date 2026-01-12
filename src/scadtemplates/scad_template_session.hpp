@@ -1,10 +1,12 @@
 // TemplateSession.h
 #pragma once
 
-#include <vector>
-#include <string>
+#include <QList>
+#include <QString>
 #include <memory>
-#include "template.hpp"
+#include "../resourceInventory/resourceItem.hpp"
+
+using resourceInventory::ResourceTemplate;
 
 #ifdef HAS_QSCINTILLA
 #include <Qsci/qsciscintilla.h>
@@ -24,25 +26,25 @@ struct Placeholder {
     int index; // Placeholder number (e.g., 1 for $1)
     int start; // Start position in the text
     int end;   // End position in the text
-    std::string defaultValue;
+    QString defaultValue;
 };
 
 class TemplateSession {
 public:
-    TemplateSession(EditorWidget* editor, const Template& tmpl);
+    TemplateSession(EditorWidget* editor, const ResourceTemplate& tmpl);
     void insert();
     void nextPlaceholder();
     void prevPlaceholder();
     void cancel();
-    void merge(const Template& tmpl);
+    void merge(const ResourceTemplate& tmpl);
     bool isAtLastPlaceholder() const;
     bool isAtFirstPlaceholder() const;
     int getCurrentPlaceholderIndex() const;
-    std::vector<Placeholder> getAllPlaceholders() const;
+    QList<Placeholder> getAllPlaceholders() const;
 private:
     EditorWidget* m_editor;
-    Template m_template;
-    std::vector<Placeholder> m_placeholders;
+    ResourceTemplate m_template;
+    QList<Placeholder> m_placeholders;
     int m_currentIndex;
     void parsePlaceholders();
 };

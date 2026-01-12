@@ -5,8 +5,7 @@
 
 #include "scadtemplates/template_parser.hpp"
 #include "jsonreader/JsonReader.hpp"
-#include <fstream>
-#include <sstream>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -60,7 +59,7 @@ static bool isModernFormat(const QJsonObject& json) {
     
     return hasValidStructure;
 }
-static Template parseLegacyTemplate(const QJsonObject& json) {
+static ResourceTemplate parseLegacyTemplate(const QJsonObject& json) {
     QString key = json["key"].toString();
     QString content = json["content"].toString();
     
@@ -70,7 +69,12 @@ static Template parseLegacyTemplate(const QJsonObject& json) {
     // Convert cursor marker from ^~^ to $0
     content.replace("^~^", "$0");
     
-    Template tmpl(key.toStdString(), content.toStdString());
+    ResourceTemplate tmpl;
+    tmpl.setPrefix(key);
+    tmpl.setBody(content);
+    tmpl.setName(key);
+    tmpl.setFormat(QStringLiteral("text/scad.template"));
+    tmpl.setSource(QStringLiteral("legacy-converted"));
     return tmpl;
 }
 
@@ -78,17 +82,23 @@ static Template parseLegacyTemplate(const QJsonObject& json) {
  * @brief Parse modern template format
  * Modern format: { "template_name": { "prefix": "...", "body": [...], "description": "..." } }
  */
-static std::vector<Template> parseModernTemplate(const QJsonObject& root) {
-    std::vector<Template> results;
+static QList<ResourceTemplate> parseModernTemplate(const QJsonObject& root) {
+    QList<ResourceTemplate> results;
     
     // Each key in root is a template name
     for (auto it = root.begin(); it != root.end(); ++it) {
         QString templateName = it.key();
+        
+        // Skip metadata fields
+        if (templateName.startsWith('_')) {
+            continue;
+        }
+        
         QJsonObject templateObj = it.value().toObject();
         
         // Extract fields
         QString prefix = templateObj["prefix"].toString(templateName);
-        QString description = templateObj["description"].toString("Converted from template");
+        QString description = templateObj["description"].toString(QStringLiteral("Converted from template"));
         QJsonArray bodyArray = templateObj["body"].toArray();
         
         // Join body lines
@@ -96,28 +106,41 @@ static std::vector<Template> parseModernTemplate(const QJsonObject& root) {
         for (const QJsonValue& line : bodyArray) {
             bodyLines.append(line.toString());
         }
-        QString body = bodyLines.join("\n");
+        QString body = bodyLines.join('\n');
         
-        Template tmpl(prefix.toStdString(), body.toStdString(), description.toStdString());
-        results.push_back(tmpl);
+        ResourceTemplate tmpl;
+        tmpl.setPrefix(prefix);
+        tmpl.setBody(body);
+        tmpl.setDescription(description);
+        tmpl.setName(templateName);
+        tmpl.setFormat(QStringLiteral("text/scad.template"));
+        
+        // Extract source if present
+        if (templateObj.contains("_source")) {
+            tmpl.setSource(templateObj["_source"].toString());
+        } else {
+            tmpl.setSource(QStringLiteral("vscode-snippet"));
+        }
+        
+        results.append(tmpl);
     }
     
     return results;
 }
 
-ParseResult TemplateParser::parseJson(const std::string& jsonContent) {
+ParseResult TemplateParser::parseJson(const QString& jsonContent) {
     ParseResult result;
     result.success = false;
     
-    if (jsonContent.empty()) {
-        result.errorMessage = "Empty JSON content";
+    if (jsonContent.isEmpty()) {
+        result.errorMessage = QStringLiteral("Empty JSON content");
         return result;
     }
     
     // Parse JSON
-    QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(jsonContent));
+    QJsonDocument doc = QJsonDocument::fromJson(jsonContent.toUtf8());
     if (!doc.isObject()) {
-        result.errorMessage = "Invalid JSON: not an object";
+        result.errorMessage = QStringLiteral("Invalid JSON: not an object");
         return result;
     }
     
@@ -141,8 +164,8 @@ ParseResult TemplateParser::parseJson(const std::string& jsonContent) {
     // Check if it's legacy format
     if (isLegacyFormat(root)) {
         // Parse as legacy template
-        Template tmpl = parseLegacyTemplate(root);
-        result.templates.push_back(tmpl);
+        ResourceTemplate tmpl = parseLegacyTemplate(root);
+        result.templates.append(tmpl);
         result.success = true;
         return result;
     }
@@ -157,23 +180,23 @@ ParseResult TemplateParser::parseJson(const std::string& jsonContent) {
         }
     }
     
-    result.errorMessage = "Failed to identify JSON format (not legacy or modern template)";
+    result.errorMessage = QStringLiteral("Failed to identify JSON format (not legacy or modern template)");
     return result;
 }
 
-ParseResult TemplateParser::parseFile(const std::string& filePath) {
+ParseResult TemplateParser::parseFile(const QString& filePath) {
     ParseResult result;
     result.success = false;
     
-    // Try using JsonReader first
+    // Try using JsonReader first (expects std::string)
     QJsonObject jsonObj;
     JsonErrorInfo error;
-    if (JsonReader::readObject(filePath, jsonObj, error)) {
+    if (JsonReader::readObject(filePath.toStdString(), jsonObj, error)) {
         // Successfully read JSON object, check format
         if (isLegacyFormat(jsonObj)) {
             // Legacy format with single template
-            Template tmpl = parseLegacyTemplate(jsonObj);
-            result.templates.push_back(tmpl);
+            ResourceTemplate tmpl = parseLegacyTemplate(jsonObj);
+            result.templates.append(tmpl);
             result.success = true;
             return result;
         }
@@ -188,23 +211,22 @@ ParseResult TemplateParser::parseFile(const std::string& filePath) {
     }
     
     // Fallback: try reading as text and parsing JSON manually
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
-        result.errorMessage = "Failed to open file: " + filePath;
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        result.errorMessage = QStringLiteral("Failed to open file: ") + filePath;
         return result;
     }
     
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return parseJson(buffer.str());
+    QString content = QString::fromUtf8(file.readAll());
+    return parseJson(content);
 }
 
-QJsonObject TemplateParser::templateToJson(const Template& tmpl, const std::string& source)
+QJsonObject TemplateParser::templateToJson(const ResourceTemplate& tmpl, const QString& source)
 {
     QJsonObject snippetObj;
     
     // Get prefix as QString
-    QString prefix = QString::fromStdString(tmpl.getPrefix());
+    QString prefix = tmpl.prefix();
     
     // Add provenance markers for tracking resource source
     // _source indicates where this resource originated:
@@ -212,21 +234,21 @@ QJsonObject TemplateParser::templateToJson(const Template& tmpl, const std::stri
     //   "cppsnippet-made" = created/modified in cppsnippets
     //   "openscad-made" = created/modified in OpenSCAD
     snippetObj["_format"] = QStringLiteral("vscode-snippet");
-    snippetObj["_source"] = QString::fromStdString(source);
+    snippetObj["_source"] = source;
     snippetObj["_version"] = 1;
     
     // Add prefix (same as name for now)
     snippetObj["prefix"] = prefix;
     
     // Add description
-    QString desc = QString::fromStdString(tmpl.getDescription());
+    QString desc = tmpl.description();
     if (desc.isEmpty()) {
         desc = QStringLiteral("Created in cppsnippets");
     }
     snippetObj["description"] = desc;
     
     // Add body as array of lines
-    QString bodyStr = QString::fromStdString(tmpl.getBody());
+    QString bodyStr = tmpl.body();
     QStringList bodyLines = bodyStr.split('\n', Qt::KeepEmptyParts);
     
     QJsonArray bodyArray;
@@ -242,40 +264,40 @@ QJsonObject TemplateParser::templateToJson(const Template& tmpl, const std::stri
     return rootObj;
 }
 
-std::string TemplateParser::toJson(const Template& tmpl) {
-    std::stringstream ss;
-    ss << "{\n";
-    ss << "  \"" << tmpl.getPrefix() << "\": {\n";
-    ss << "    \"_format\": \"vscode-snippet\",\n";
-    ss << "    \"_source\": \"cppsnippet-made\",\n";
-    ss << "    \"_version\": 1,\n";
-    ss << "    \"prefix\": \"" << tmpl.getPrefix() << "\",\n";
-    ss << "    \"body\": \"" << tmpl.getBody() << "\",\n";
-    ss << "    \"description\": \"" << tmpl.getDescription() << "\"\n";
-    ss << "  }\n";
-    ss << "}";
-    return ss.str();
+QString TemplateParser::toJson(const ResourceTemplate& tmpl) {
+    QString json;
+    json += "{\n";
+    json += "  \"" + tmpl.prefix() + "\": {\n";
+    json += "    \"_format\": \"vscode-snippet\",\n";
+    json += "    \"_source\": \"cppsnippet-made\",\n";
+    json += "    \"_version\": 1,\n";
+    json += "    \"prefix\": \"" + tmpl.prefix() + "\",\n";
+    json += "    \"body\": \"" + tmpl.body() + "\",\n";
+    json += "    \"description\": \"" + tmpl.description() + "\"\n";
+    json += "  }\n";
+    json += "}";
+    return json;
 }
 
-std::string TemplateParser::toJson(const std::vector<Template>& templates) {
-    std::stringstream ss;
-    ss << "{\n";
+QString TemplateParser::toJson(const QList<ResourceTemplate>& templates) {
+    QString json;
+    json += "{\n";
     
-    for (size_t i = 0; i < templates.size(); ++i) {
+    for (int i = 0; i < templates.size(); ++i) {
         const auto& tmpl = templates[i];
-        ss << "  \"" << tmpl.getPrefix() << "\": {\n";
-        ss << "    \"prefix\": \"" << tmpl.getPrefix() << "\",\n";
-        ss << "    \"body\": \"" << tmpl.getBody() << "\",\n";
-        ss << "    \"description\": \"" << tmpl.getDescription() << "\"\n";
-        ss << "  }";
+        json += "  \"" + tmpl.prefix() + "\": {\n";
+        json += "    \"prefix\": \"" + tmpl.prefix() + "\",\n";
+        json += "    \"body\": \"" + tmpl.body() + "\",\n";
+        json += "    \"description\": \"" + tmpl.description() + "\"\n";
+        json += "  }";
         if (i < templates.size() - 1) {
-            ss << ",";
+            json += ",";
         }
-        ss << "\n";
+        json += "\n";
     }
     
-    ss << "}";
-    return ss.str();
+    json += "}";
+    return json;
 }
 
 } // namespace scadtemplates

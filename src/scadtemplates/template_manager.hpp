@@ -6,11 +6,12 @@
 #pragma once
 
 #include "export.hpp"
-#include "template.hpp"
-#include <string>
-#include <vector>
-#include <memory>
+#include "../resourceInventory/resourceItem.hpp"
+#include <QString>
+#include <QList>
 #include <optional>
+
+using resourceInventory::ResourceTemplate;
 
 namespace scadtemplates {
 
@@ -25,53 +26,48 @@ public:
     /**
      * @brief Default constructor
      */
-    TemplateManager();
-
-    /**
-     * @brief Destructor
-     */
-    ~TemplateManager();
+    TemplateManager() = default;
 
     /**
      * @brief Add a template to the manager
      * @param tmpl The template to add
      * @return true if the template was added successfully
      */
-    bool addTemplate(const Template& tmpl);
+    bool addTemplate(const ResourceTemplate& tmpl);
 
     /**
      * @brief Remove a template by prefix
      * @param prefix The prefix of the template to remove
      * @return true if a template was removed
      */
-    bool removeTemplate(const std::string& prefix);
+    bool removeTemplate(const QString& prefix);
 
     /**
      * @brief Find a template by prefix
      * @param prefix The prefix to search for
      * @return Optional containing the template if found
      */
-    std::optional<Template> findByPrefix(const std::string& prefix) const;
+    std::optional<ResourceTemplate> findByPrefix(const QString& prefix) const;
 
     /**
      * @brief Find templates matching a scope
      * @param scope The scope to filter by
-     * @return Vector of matching templates
+     * @return List of matching templates
      */
-    std::vector<Template> findByScope(const std::string& scope) const;
+    QList<ResourceTemplate> findByScope(const QString& scope) const;
 
     /**
      * @brief Search templates by keyword in prefix or description
      * @param keyword The search keyword
-     * @return Vector of matching templates
+     * @return List of matching templates
      */
-    std::vector<Template> search(const std::string& keyword) const;
+    QList<ResourceTemplate> search(const QString& keyword) const;
 
     /**
      * @brief Get all templates
-     * @return Vector of all templates
+     * @return List of all templates
      */
-    std::vector<Template> getAllTemplates() const;
+    QList<ResourceTemplate> getAllTemplates() const;
 
     /**
      * @brief Get the number of templates
@@ -89,18 +85,17 @@ public:
      * @param filePath Path to the template file
      * @return true if loading was successful
      */
-    bool loadFromFile(const std::string& filePath);
+    bool loadFromFile(const QString& filePath);
 
     /**
      * @brief Save templates to a file
      * @param filePath Path to save the templates
      * @return true if saving was successful
      */
-    bool saveToFile(const std::string& filePath) const;
+    bool saveToFile(const QString& filePath) const;
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    QList<ResourceTemplate> m_templates;
 };
 
 } // namespace scadtemplates
