@@ -59,6 +59,13 @@ namespace detail {
             QStringLiteral("JSON Files (*.json)")}
         }
     };
+    
+    // Pre-computed complete file dialog filter string for all types
+    inline const QString allFileDialogFilters = 
+        QStringLiteral("Text Files (*.txt *.text *.info *.nfo);;"
+                       "Markdown Files (*.md);;"
+                       "OpenSCAD Files (*.scad *.csg);;"
+                       "JSON Files (*.json)");
 } // namespace detail
 
 /**
@@ -158,27 +165,7 @@ inline QList<EditType> getAllTypes() {
  * @return Combined filter string for file dialogs
  */
 inline QString getAllFileDialogFilters() {
-    // Build "All Supported Files" entry by collecting all patterns
-    QStringList allPatterns;
-    QList<EditType> allTypes = getAllTypes();
-    
-    for (const auto& type : allTypes) {
-        for (const auto& subtype : getSubtypes(type)) {
-            allPatterns << getFilterPattern(subtype);
-        }
-    }
-    
-    QString result = QStringLiteral("All Supported Files (") + allPatterns.join(' ') + ')';
-    
-    // Append individual type filters (pre-built strings from table)
-    for (const auto& type : allTypes) {
-        result += QStringLiteral(";;") + getFileDialogFilter(type);
-    }
-    
-    // Add "All Files" at the end
-    result += QStringLiteral(";;All Files (*.*)");
-    
-    return result;
+    return detail::allFileDialogFilters;
 }
 
 } // namespace scadtemplates

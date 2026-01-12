@@ -112,9 +112,6 @@ TEST(EditTypeTest, GetFileDialogFilterJson) {
 TEST(EditTypeTest, GetAllFileDialogFilters) {
     QString filters = getAllFileDialogFilters();
     
-    // Should start with "All Supported Files"
-    EXPECT_TRUE(filters.contains(QStringLiteral("All Supported Files")));
-    
     // Should contain all individual type filters
     EXPECT_TRUE(filters.contains(QStringLiteral("Text Files")));
     EXPECT_TRUE(filters.contains(QStringLiteral("Markdown Files")));
@@ -127,8 +124,9 @@ TEST(EditTypeTest, GetAllFileDialogFilters) {
     EXPECT_TRUE(filters.contains(QStringLiteral("*.scad")));
     EXPECT_TRUE(filters.contains(QStringLiteral("*.json")));
     
-    // Should end with "All Files"
-    EXPECT_TRUE(filters.contains(QStringLiteral("All Files (*.*)")));
+    // Should NOT contain "All Supported Files" or "All Files"
+    EXPECT_FALSE(filters.contains(QStringLiteral("All Supported Files")));
+    EXPECT_FALSE(filters.contains(QStringLiteral("All Files (*.*)")));
 }
 
 // Test getAllTypes
@@ -161,6 +159,6 @@ TEST(EditTypeTest, FilterStringFormatForQt) {
     
     // Qt uses ";;" as separator between filter entries
     int separatorCount = filters.count(QStringLiteral(";;"));
-    // Should have separators: All Supported ;; Text ;; Markdown ;; OpenSCAD ;; JSON ;; All Files
-    EXPECT_GE(separatorCount, 5);
+    // Should have separators: Text ;; Markdown ;; OpenSCAD ;; JSON (3 separators between 4 types)
+    EXPECT_EQ(separatorCount, 3);
 }
