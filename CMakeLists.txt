@@ -268,7 +268,7 @@ set(LIB_SOURCES
     src/scadtemplates/template_manager.cpp
     src/scadtemplates/legacy_template_converter.cpp
     src/scadtemplates/scad_template_session.cpp
-    src/scadtemplates/editsubtype.cpp
+    # src/scadtemplates/editsubtype.cpp - now header-only
     src/scadtemplates/edittype.cpp
     src/scadtemplates/filesubtype.cpp
     src/platformInfo/platformInfo.cpp
@@ -587,7 +587,7 @@ if(BUILD_TESTS)
         # tests/test_template_parser.cpp
         # tests/test_template_manager.cpp
         # tests/test_scad_template_session.cpp
-        # tests/test_editsubtype.cpp
+        tests/test_editsubtype.cpp
         # tests/test_edittype.cpp
         # tests/test_filesubtype.cpp
         tests/test_resource_metadata_comprehensive.cpp

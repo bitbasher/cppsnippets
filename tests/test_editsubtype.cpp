@@ -4,7 +4,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <scadtemplates/editsubtype.h>
+#include <scadtemplates/editsubtype.hpp>
 #include <QString>
 
 using namespace scadtemplates;
@@ -32,7 +32,7 @@ TEST(EditSubtypeTest, GetTitle) {
     EXPECT_EQ(getTitle(EditSubtype::Scad), QStringLiteral("OpenSCAD File"));
     EXPECT_EQ(getTitle(EditSubtype::Csg), QStringLiteral("CSG File"));
     EXPECT_EQ(getTitle(EditSubtype::Json), QStringLiteral("JSON File"));
-    EXPECT_EQ(getTitle(EditSubtype::Unknown), QStringLiteral("Unknown"));
+    EXPECT_TRUE(getTitle(EditSubtype::Unknown).isEmpty());
 }
 
 // Test getMimeType for all subtypes
@@ -45,7 +45,7 @@ TEST(EditSubtypeTest, GetMimeType) {
     EXPECT_EQ(getMimeType(EditSubtype::Scad), QStringLiteral("application/x-openscad"));
     EXPECT_EQ(getMimeType(EditSubtype::Csg), QStringLiteral("application/x-openscad"));
     EXPECT_EQ(getMimeType(EditSubtype::Json), QStringLiteral("application/json"));
-    EXPECT_EQ(getMimeType(EditSubtype::Unknown), QStringLiteral("application/octet-stream"));
+    EXPECT_TRUE(getMimeType(EditSubtype::Unknown).isEmpty());
 }
 
 // Test subtypeFromExtension with extensions without dot
@@ -93,4 +93,58 @@ TEST(EditSubtypeTest, GetFilterPattern) {
     EXPECT_EQ(getFilterPattern(EditSubtype::Scad), QStringLiteral("*.scad"));
     EXPECT_EQ(getFilterPattern(EditSubtype::Json), QStringLiteral("*.json"));
     EXPECT_EQ(getFilterPattern(EditSubtype::Unknown), QStringLiteral("*.*"));
+}
+
+// Test getSubtypeInfo returns valid reference
+TEST(EditSubtypeTest, GetSubtypeInfo) {
+    const SubtypeInfo& txtInfo = getSubtypeInfo(EditSubtype::Txt);
+    EXPECT_EQ(txtInfo.extension, QStringLiteral("txt"));
+    EXPECT_EQ(txtInfo.title, QStringLiteral("Text File"));
+    EXPECT_EQ(txtInfo.mimeType, QStringLiteral("text/plain"));
+    
+    const SubtypeInfo& scadInfo = getSubtypeInfo(EditSubtype::Scad);
+    EXPECT_EQ(scadInfo.extension, QStringLiteral("scad"));
+    EXPECT_EQ(scadInfo.title, QStringLiteral("OpenSCAD File"));
+    EXPECT_EQ(scadInfo.mimeType, QStringLiteral("application/x-openscad"));
+    
+    const SubtypeInfo& unknownInfo = getSubtypeInfo(EditSubtype::Unknown);
+    EXPECT_TRUE(unknownInfo.extension.isEmpty());
+    EXPECT_TRUE(unknownInfo.title.isEmpty());
+    EXPECT_TRUE(unknownInfo.mimeType.isEmpty());
+}
+
+// Test subtypeFromExtension with whitespace
+TEST(EditSubtypeTest, SubtypeFromExtensionWithWhitespace) {
+    // Leading/trailing whitespace should not match
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral(" txt")), EditSubtype::Unknown);
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral("txt ")), EditSubtype::Unknown);
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral(" .scad ")), EditSubtype::Unknown);
+}
+
+// Test subtypeFromExtension with multiple dots
+TEST(EditSubtypeTest, SubtypeFromExtensionMultipleDots) {
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral("..txt")), EditSubtype::Unknown);
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral(".txt.scad")), EditSubtype::Unknown);
+}
+
+// Test subtypeFromExtension edge cases
+TEST(EditSubtypeTest, SubtypeFromExtensionEdgeCases) {
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral(".")), EditSubtype::Unknown);
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral("..")), EditSubtype::Unknown);
+    EXPECT_EQ(subtypeFromExtension(QStringLiteral("...")), EditSubtype::Unknown);
+}
+
+// Test round-trip: extension -> subtype -> extension
+TEST(EditSubtypeTest, RoundTripExtension) {
+    QStringList extensions = {
+        QStringLiteral("txt"), QStringLiteral("text"), QStringLiteral("info"),
+        QStringLiteral("nfo"), QStringLiteral("md"), QStringLiteral("scad"),
+        QStringLiteral("csg"), QStringLiteral("json")
+    };
+    
+    for (const QString& ext : extensions) {
+        EditSubtype subtype = subtypeFromExtension(ext);
+        EXPECT_NE(subtype, EditSubtype::Unknown);
+        EXPECT_EQ(getExtension(subtype), ext);
+    }
 }
