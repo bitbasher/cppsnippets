@@ -9,12 +9,16 @@
 #define RESOURCESCANNER_TEST_H
 
 #include <QString>
-#include <QVector>
+#include <QList>
 #include <functional>
 #include "resourceInventory/resourceItem.hpp"
 #include "platformInfo/ResourceLocation.hpp"
 
 class QStandardItemModel;
+
+namespace platformInfo {
+class ResourceLocationManager;
+}
 
 namespace resourceInventory {
 
@@ -39,7 +43,7 @@ public:
                       const QString& locationKey,
                       ItemCallback onItemFound);
     
-    QVector<ResourceItem> scanTemplatesToList(const QString& basePath,
+    QList<ResourceItem> scanTemplatesToList(const QString& basePath,
                                               ResourceTier tier,
                                               const QString& locationKey);
     
@@ -48,26 +52,32 @@ public:
                              const QString& locationKey,
                              QStandardItemModel* model);
     
+    /**
+     * @brief Scan all resource locations and types, populate model (Phase 2)
+     */
+    void scanToModel(QStandardItemModel* model,
+                     const QList<platformInfo::ResourceLocation>& locations);
+    
     // ========================================================================
     // LEGACY API (stubbed out for tests)
     // ========================================================================
     
-    QVector<ResourceItem> scanLocation(const platformInfo::ResourceLocation& location,
+    QList<ResourceItem> scanLocation(const platformInfo::ResourceLocation& location,
                                         ResourceType type,
                                         ResourceTier tier);
     
-    void scanToTree(const QVector<platformInfo::ResourceLocation>& locations,
+    void scanToTree(const QList<platformInfo::ResourceLocation>& locations,
                     ResourceType type,
                     ResourceTier tier,
                     ResourceTreeWidget* tree);
     
-    void scanAllTiers(const QVector<platformInfo::ResourceLocation>& installLocs,
-                      const QVector<platformInfo::ResourceLocation>& machineLocs,
-                      const QVector<platformInfo::ResourceLocation>& userLocs,
+    void scanAllTiers(const QList<platformInfo::ResourceLocation>& installLocs,
+                      const QList<platformInfo::ResourceLocation>& machineLocs,
+                      const QList<platformInfo::ResourceLocation>& userLocs,
                       ResourceType type,
                       ResourceTreeWidget* tree);
     
-    void scanLibraries(const QVector<platformInfo::ResourceLocation>& locations,
+    void scanLibraries(const QList<platformInfo::ResourceLocation>& locations,
                        ResourceTier tier,
                        ResourceTreeWidget* tree);
     

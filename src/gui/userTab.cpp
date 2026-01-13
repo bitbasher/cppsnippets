@@ -34,9 +34,9 @@ QString UserTab::xdgDataHomeEnv()
     return QString::fromLocal8Bit(qgetenv("XDG_DATA_HOME"));
 }
 
-QVector<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
+QList<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
 {
-    QVector<platformInfo::ResourceLocation> locations;
+    QList<platformInfo::ResourceLocation> locations;
     QString envValue = xdgDataHomeEnv();
     
 #ifdef Q_OS_WIN

@@ -58,7 +58,7 @@ public:
      * 
      * Each path has "/openscad" appended and is checked for existence.
      */
-    static QVector<platformInfo::ResourceLocation> xdgDataHomeLocations();
+    static QList<platformInfo::ResourceLocation> xdgDataHomeLocations();
 
 signals:
     void locationsChanged();

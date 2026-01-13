@@ -36,7 +36,7 @@ void printSeparator(const QString& title = QString())
     }
 }
 
-void printLocations(const QString& tierName, const QVector<pi::ResourceLocation>& locations)
+void printLocations(const QString& tierName, const QList<pi::ResourceLocation>& locations)
 {
     qDebug() << "";
     qDebug() << QString("--- %1 Locations (%2) ---").arg(tierName).arg(locations.size());
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
     locMgr.setApplicationPath(QCoreApplication::applicationDirPath());
     
     // Installation: use effective installation path
-    QVector<pi::ResourceLocation> installLocs;
+    QList<pi::ResourceLocation> installLocs;
     QString installPath = locMgr.effectiveInstallationPath();
     if (!installPath.isEmpty()) {
         pi::ResourceLocation installLoc;
@@ -158,8 +158,8 @@ int main(int argc, char *argv[])
     installLocs.append(locMgr.findSiblingInstallations());
     
     // Machine and User locations from manager
-    QVector<pi::ResourceLocation> machineLocs = locMgr.availableMachineLocations();
-    QVector<pi::ResourceLocation> userLocs = locMgr.availableUserLocations();
+    QList<pi::ResourceLocation> machineLocs = locMgr.availableMachineLocations();
+    QList<pi::ResourceLocation> userLocs = locMgr.availableUserLocations();
     
     // Inject a test path for development testing
     {

@@ -68,7 +68,7 @@ void ResourceLocationWidget::setupUi(const QString& title, bool allowAdd, bool a
     setLayout(mainLayout);
 }
 
-void ResourceLocationWidget::setLocations(const QVector<platformInfo::ResourceLocation>& locations)
+void ResourceLocationWidget::setLocations(const QList<platformInfo::ResourceLocation>& locations)
 {
     m_locations = locations;
     
@@ -114,9 +114,9 @@ void ResourceLocationWidget::setLocations(const QVector<platformInfo::ResourceLo
     }
 }
 
-QVector<platformInfo::ResourceLocation> ResourceLocationWidget::locations() const
+QList<platformInfo::ResourceLocation> ResourceLocationWidget::locations() const
 {
-    QVector<platformInfo::ResourceLocation> result;
+    QList<platformInfo::ResourceLocation> result;
     
     for (int i = 0; i < m_listWidget->count(); ++i) {
         QListWidgetItem* item = m_listWidget->item(i);

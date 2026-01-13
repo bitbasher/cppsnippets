@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QString>
-#include <QVector>
+#include <QList>
 #include <QMap>
 #include <functional>
 #include "resourceInventory/resourceItem.hpp"
@@ -50,7 +50,7 @@ public:
      * @param tier The tier this location belongs to
      * @return Vector of discovered ResourceItems
      */
-    QVector<ResourceItem> scanLocation(const platformInfo::ResourceLocation& location,
+    QList<ResourceItem> scanLocation(const platformInfo::ResourceLocation& location,
                                         ResourceType type,
                                         ResourceTier tier);
     
@@ -61,7 +61,7 @@ public:
      * @param tier The tier these locations belong to
      * @param tree The tree widget to populate
      */
-    void scanToTree(const QVector<platformInfo::ResourceLocation>& locations,
+    void scanToTree(const QList<platformInfo::ResourceLocation>& locations,
                     ResourceType type,
                     ResourceTier tier,
                     ResourceTreeWidget* tree);
@@ -74,9 +74,9 @@ public:
      * @param type The type of resource to look for
      * @param tree The tree widget to populate
      */
-    void scanAllTiers(const QVector<platformInfo::ResourceLocation>& installLocs,
-                      const QVector<platformInfo::ResourceLocation>& machineLocs,
-                      const QVector<platformInfo::ResourceLocation>& userLocs,
+    void scanAllTiers(const QList<platformInfo::ResourceLocation>& installLocs,
+                      const QList<platformInfo::ResourceLocation>& machineLocs,
+                      const QList<platformInfo::ResourceLocation>& userLocs,
                       ResourceType type,
                       ResourceTreeWidget* tree);
     
@@ -86,7 +86,7 @@ public:
      * @param tier The tier these locations belong to
      * @param tree The tree widget to populate
      */
-    void scanLibraries(const QVector<platformInfo::ResourceLocation>& locations,
+    void scanLibraries(const QList<platformInfo::ResourceLocation>& locations,
                        ResourceTier tier,
                        ResourceTreeWidget* tree);
     
@@ -113,7 +113,7 @@ public:
      * @param locationKey Display name of the location
      * @return Vector of discovered templates
      */
-    QVector<ResourceItem> scanTemplatesToList(const QString& basePath,
+    QList<ResourceItem> scanTemplatesToList(const QString& basePath,
                                               ResourceTier tier,
                                               const QString& locationKey);
     
@@ -128,6 +128,17 @@ public:
                              ResourceTier tier,
                              const QString& locationKey,
                              QStandardItemModel* model);
+    
+    /**
+     * @brief Scan all resource locations and types, populate model (Phase 2)
+     * @param model The model to populate with all discovered resources
+     * @param locations All resource locations to scan (tier is in each location)
+     * 
+     * High-level method that iterates all locations and resource types,
+     * streaming items directly to the model using callback pattern.
+     */
+    void scanToModel(QStandardItemModel* model,
+                     const QList<platformInfo::ResourceLocation>& locations);
     
     // ========================================================================
     // LEGACY API (to be removed in Phase 5)
@@ -158,14 +169,14 @@ private:
     void addItemToModel(QStandardItemModel* model, const ResourceItem& item);
     
     // Scanning methods for specific types (LEGACY - returns vectors)
-    QVector<ResourceItem> scanColorSchemes(const QString& basePath, ResourceTier tier, const QString& locationKey);
-    QVector<ResourceItem> scanRenderColors(const QString& basePath, ResourceTier tier, const QString& locationKey);
-    QVector<ResourceItem> scanEditorColors(const QString& basePath, ResourceTier tier, const QString& locationKey);
-    QVector<ResourceItem> scanFonts(const QString& basePath, ResourceTier tier, const QString& locationKey);
-    QVector<ResourceItem> scanExamples(const QString& basePath, ResourceTier tier, const QString& locationKey);
-    QVector<ResourceItem> scanTests(const QString& basePath, ResourceTier tier, const QString& locationKey);
-    QVector<ResourceItem> scanTemplates(const QString& basePath, ResourceTier tier, const QString& locationKey);  // LEGACY
-    QVector<ResourceItem> scanTranslations(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QList<ResourceItem> scanColorSchemes(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QList<ResourceItem> scanRenderColors(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QList<ResourceItem> scanEditorColors(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QList<ResourceItem> scanFonts(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QList<ResourceItem> scanExamples(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QList<ResourceItem> scanTests(const QString& basePath, ResourceTier tier, const QString& locationKey);
+    QList<ResourceItem> scanTemplates(const QString& basePath, ResourceTier tier, const QString& locationKey);  // LEGACY
+    QList<ResourceItem> scanTranslations(const QString& basePath, ResourceTier tier, const QString& locationKey);
     
     // Helper for scanning script files with attachments
     ResourceScript scanScriptWithAttachments(const QString& scriptPath, 
@@ -180,7 +191,7 @@ private:
                              ResourceTier tier,
                              const QString& locationKey,
                              const QString& category,
-                             QVector<ResourceItem>& results);
+                             QList<ResourceItem>& results);
 };
 
 /**
@@ -198,9 +209,9 @@ public:
     /**
      * @brief Set the locations for each tier
      */
-    void setInstallLocations(const QVector<platformInfo::ResourceLocation>& locs);
-    void setMachineLocations(const QVector<platformInfo::ResourceLocation>& locs);
-    void setUserLocations(const QVector<platformInfo::ResourceLocation>& locs);
+    void setInstallLocations(const QList<platformInfo::ResourceLocation>& locs);
+    void setMachineLocations(const QList<platformInfo::ResourceLocation>& locs);
+    void setUserLocations(const QList<platformInfo::ResourceLocation>& locs);
     
     /**
      * @brief Initialize locations from a ResourceLocationManager
@@ -267,9 +278,9 @@ signals:
 
 private:
     ResourceScanner* m_scanner;
-    QVector<platformInfo::ResourceLocation> m_installLocs;
-    QVector<platformInfo::ResourceLocation> m_machineLocs;
-    QVector<platformInfo::ResourceLocation> m_userLocs;
+    QList<platformInfo::ResourceLocation> m_installLocs;
+    QList<platformInfo::ResourceLocation> m_machineLocs;
+    QList<platformInfo::ResourceLocation> m_userLocs;
     
     QMap<ResourceType, ResourceTreeWidget*> m_inventories;
 };

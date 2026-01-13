@@ -7,7 +7,7 @@
 
 namespace scadtemplates {
 
-QVector<EditSubtype> getSubtypes(EditType type) {
+QList<EditSubtype> getSubtypes(EditType type) {
     switch (type) {
         case EditType::Text:
             return { EditSubtype::Txt, EditSubtype::Text, EditSubtype::Info, EditSubtype::Nfo };
@@ -41,7 +41,7 @@ QString getFileDialogFilter(EditType type) {
 
 QString getAllFileDialogFilters() {
     QString result;
-    QVector<EditType> allTypes = getAllTypes();
+    QList<EditType> allTypes = getAllTypes();
     
     // First, add "All Supported Files" entry
     result = QStringLiteral("All Supported Files (");
@@ -68,7 +68,7 @@ QString getAllFileDialogFilters() {
     return result;
 }
 
-QVector<EditType> getAllTypes() {
+QList<EditType> getAllTypes() {
     return { EditType::Text, EditType::Markdown, EditType::OpenSCAD, EditType::Json };
 }
 

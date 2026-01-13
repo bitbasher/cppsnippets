@@ -88,7 +88,7 @@ void PreferencesDialog::loadSettings() {
     QString userInstallPath = m_manager->userSpecifiedInstallationPath();
     bool hasUserInstallPath = !userInstallPath.isEmpty();
     
-    QVector<platformInfo::ResourceLocation> installLocations;
+    QList<platformInfo::ResourceLocation> installLocations;
     ResourceLocationWidget* installWidget = m_installationTab->locationWidget();
     
     if (isValidInstall || hasUserInstallPath) {
@@ -110,7 +110,7 @@ void PreferencesDialog::loadSettings() {
         
         // Add sibling installations
         QStringList enabledSiblings = m_manager->enabledSiblingPaths();
-        QVector<platformInfo::ResourceLocation> siblings = m_manager->findSiblingInstallations();
+        QList<platformInfo::ResourceLocation> siblings = m_manager->findSiblingInstallations();
         for (auto& sibling : siblings) {
             sibling.setEnabled(enabledSiblings.contains(sibling.path()));
             installLocations.append(sibling);
@@ -138,7 +138,7 @@ void PreferencesDialog::loadSettings() {
     
     // ========== Machine Tab ==========
     // Use the manager's locations (which already checks existence)
-    QVector<platformInfo::ResourceLocation> machineLocations = m_manager->availableMachineLocations();
+    QList<platformInfo::ResourceLocation> machineLocations = m_manager->availableMachineLocations();
     // Disable and uncheck locations that don't exist or exist but have no resource folders
     for (auto& loc : machineLocations) {
         if (!loc.exists() || !loc.hasResourceFolders()) {
@@ -157,7 +157,7 @@ void PreferencesDialog::loadSettings() {
     m_machineTab->locationWidget()->setLocations(machineLocations);
     
     // ========== User Tab ==========
-    QVector<platformInfo::ResourceLocation> userLocations = m_manager->availableUserLocations();
+    QList<platformInfo::ResourceLocation> userLocations = m_manager->availableUserLocations();
     // Disable and uncheck locations that don't exist or exist but have no resource folders
     // Exception: OPENSCADPATH placeholder should remain disabled but visible
     for (auto& loc : userLocations) {
@@ -183,7 +183,7 @@ void PreferencesDialog::saveSettings() {
     
     // Save user-specified installation path if not running from valid installation
     if (!m_manager->isRunningFromValidInstallation()) {
-        QVector<platformInfo::ResourceLocation> installLocs = installWidget->locations();
+        QList<platformInfo::ResourceLocation> installLocs = installWidget->locations();
         if (!installLocs.isEmpty()) {
             QString userPath = installLocs.first().path();
             // Assume any non-empty path is valid by definition
@@ -195,7 +195,7 @@ void PreferencesDialog::saveSettings() {
     
     // Save sibling installation enabled state
     // Get the installation locations and extract which siblings are enabled
-    QVector<platformInfo::ResourceLocation> installLocs = installWidget->locations();
+    QList<platformInfo::ResourceLocation> installLocs = installWidget->locations();
     QStringList enabledSiblings;
     QString currentInstallDir = m_manager->findInstallationResourceDir();
     for (const auto& loc : installLocs) {

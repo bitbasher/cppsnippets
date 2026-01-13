@@ -3,7 +3,7 @@
 
 #include <QString>
 #include <QStringList>
-#include <QVector>
+#include <QList>
 #include <memory>
 
 #include "pathDiscovery/ResourcePaths.hpp"
@@ -74,7 +74,7 @@ public:
      * @brief Get the resource types being searched for
      * @return Vector of ResourceType enums to look for
      */
-    QVector<platformInfo::ResourceType> resourceTypes() const { return m_resourceTypes; }
+    QList<platformInfo::ResourceType> resourceTypes() const { return m_resourceTypes; }
 
 protected:
     /**
@@ -86,11 +86,11 @@ protected:
      */
     ResourceIteratorBase(ResourceTier tier,
                          const QStringList& folderLocations,
-                         const QVector<platformInfo::ResourceType>& resourceTypes);
+                         const QList<platformInfo::ResourceType>& resourceTypes);
     
     ResourceTier m_tier;                                    ///< The resource tier being scanned
     QStringList m_folderLocations;                          ///< Folder paths to scan
-    QVector<platformInfo::ResourceType> m_resourceTypes;    ///< Resource types to find
+    QList<platformInfo::ResourceType> m_resourceTypes;    ///< Resource types to find
 };
 
 /**
@@ -104,7 +104,7 @@ protected:
  * @par Example Usage:
  * @code
  * QStringList folders = {"/usr/share/openscad", "/opt/openscad"};
- * QVector<ResourceType> types = {ResourceType::Fonts, ResourceType::ColorSchemes};
+ * QList<ResourceType> types = {ResourceType::Fonts, ResourceType::ColorSchemes};
  * 
  * ResourceIteratorFlat iterator(ResourceTier::Machine, folders, types);
  * if (iterator.scan()) {
@@ -127,7 +127,7 @@ public:
      */
     ResourceIteratorFlat(ResourceTier tier,
                          const QStringList& folderLocations,
-                         const QVector<platformInfo::ResourceType>& resourceTypes);
+                         const QList<platformInfo::ResourceType>& resourceTypes);
     
     /**
      * @brief Scan folders and collect resources into the internal ResLocMap
@@ -186,7 +186,7 @@ private:
  * @par Example Usage:
  * @code
  * QStringList folders = {"~/.local/share/OpenSCAD/libraries"};
- * QVector<ResourceType> types = {ResourceType::Libraries};
+ * QList<ResourceType> types = {ResourceType::Libraries};
  * 
  * ResourceIteratorTree iterator(ResourceTier::User, folders, types);
  * if (iterator.scan()) {
@@ -210,7 +210,7 @@ public:
      */
     ResourceIteratorTree(ResourceTier tier,
                          const QStringList& folderLocations,
-                         const QVector<platformInfo::ResourceType>& resourceTypes,
+                         const QList<platformInfo::ResourceType>& resourceTypes,
                          QWidget* parent = nullptr);
     
     /**
@@ -358,7 +358,7 @@ public:
     static std::unique_ptr<ResourceIteratorBase> create(
         ResourceTier tier,
         const QStringList& folderLocations,
-        const QVector<platformInfo::ResourceType>& resourceTypes,
+        const QList<platformInfo::ResourceType>& resourceTypes,
         QWidget* parent = nullptr);
     
     /**
@@ -376,7 +376,7 @@ public:
     static std::unique_ptr<ResourceIteratorFlat> createFlat(
         ResourceTier tier,
         const QStringList& folderLocations,
-        const QVector<platformInfo::ResourceType>& resourceTypes);
+        const QList<platformInfo::ResourceType>& resourceTypes);
     
     /**
      * @brief Create a hierarchical iterator explicitly
@@ -394,7 +394,7 @@ public:
     static std::unique_ptr<ResourceIteratorTree> createTree(
         ResourceTier tier,
         const QStringList& folderLocations,
-        const QVector<platformInfo::ResourceType>& resourceTypes,
+        const QList<platformInfo::ResourceType>& resourceTypes,
         QWidget* parent = nullptr);
     
     /**
@@ -411,7 +411,7 @@ public:
      * @param types Vector of resource types to check
      * @return true if any type in the list is hierarchical
      */
-    static bool containsHierarchicalType(const QVector<platformInfo::ResourceType>& types);
+    static bool containsHierarchicalType(const QList<platformInfo::ResourceType>& types);
 
 private:
     ResourceIteratorFactory() = delete;  ///< Static factory - no instantiation

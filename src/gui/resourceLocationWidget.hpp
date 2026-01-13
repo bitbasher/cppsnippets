@@ -2,7 +2,7 @@
 #define RESOURCELOCATIONWIDGET_HPP
 
 #include <QWidget>
-#include <QVector>
+#include <QList>
 
 #include <platformInfo/ResourceLocation.hpp>
 
@@ -27,8 +27,8 @@ public:
                                      bool allowRemove = true,
                                      QWidget* parent = nullptr);
     
-    void setLocations(const QVector<platformInfo::ResourceLocation>& locations);
-    QVector<platformInfo::ResourceLocation> locations() const;
+    void setLocations(const QList<platformInfo::ResourceLocation>& locations);
+    QList<platformInfo::ResourceLocation> locations() const;
     QStringList enabledPaths() const;
     
     void setReadOnly(bool readOnly);
@@ -60,7 +60,7 @@ private:
     bool m_readOnly = false;
     bool m_allowAdd = true;
     
-    QVector<platformInfo::ResourceLocation> m_locations;
+    QList<platformInfo::ResourceLocation> m_locations;
 };
 
 #endif // RESOURCELOCATIONWIDGET_HPP

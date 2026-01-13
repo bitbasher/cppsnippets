@@ -105,12 +105,12 @@ void ResourceScanner::scanTemplates(
     }
 }
 
-QVector<ResourceItem> ResourceScanner::scanTemplatesToList(
+QList<ResourceItem> ResourceScanner::scanTemplatesToList(
     const QString& basePath,
     ResourceTier tier,
     const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     
     scanTemplates(basePath, tier, locationKey, [&results](const ResourceItem& item) {
         results.append(item);
@@ -161,10 +161,42 @@ void ResourceScanner::addItemToModel(QStandardItemModel* model, const ResourceIt
 }
 
 // ============================================================================
+// Phase 2: High-Level scanToModel() API
+// ============================================================================
+
+void ResourceScanner::scanToModel(QStandardItemModel* model,
+                                  const QList<platformInfo::ResourceLocation>& locations)
+{
+    if (!model) {
+        return;
+    }
+    
+    // Define callback that adds items to model
+    auto addToModel = [this, model](const ResourceItem& item) {
+        addItemToModel(model, item);
+    };
+    
+    // Scan all locations (tier is encoded in each location)
+    for (const auto& loc : locations) {
+        if (!loc.exists() || !loc.isEnabled()) continue;
+        
+        QString basePath = loc.path();
+        QString displayName = loc.getDisplayName();
+        ResourceTier tier = loc.tier();
+        
+        // Scan templates (only type implemented so far)
+        QString templatesPath = QDir::cleanPath(basePath + QStringLiteral("/templates"));
+        if (QDir(templatesPath).exists()) {
+            scanTemplates(templatesPath, tier, displayName, addToModel);
+        }
+    }
+}
+
+// ============================================================================
 // STUBBED OUT LEGACY METHODS (not used in Phase 1 tests)
 // ============================================================================
 
-QVector<ResourceItem> ResourceScanner::scanLocation(
+QList<ResourceItem> ResourceScanner::scanLocation(
     const platformInfo::ResourceLocation& location,
     ResourceType type,
     ResourceTier tier)
@@ -176,7 +208,7 @@ QVector<ResourceItem> ResourceScanner::scanLocation(
 }
 
 void ResourceScanner::scanToTree(
-    const QVector<platformInfo::ResourceLocation>& locations,
+    const QList<platformInfo::ResourceLocation>& locations,
     ResourceType type,
     ResourceTier tier,
     ResourceTreeWidget* tree)
@@ -189,9 +221,9 @@ void ResourceScanner::scanToTree(
 }
 
 void ResourceScanner::scanAllTiers(
-    const QVector<platformInfo::ResourceLocation>& installLocs,
-    const QVector<platformInfo::ResourceLocation>& machineLocs,
-    const QVector<platformInfo::ResourceLocation>& userLocs,
+    const QList<platformInfo::ResourceLocation>& installLocs,
+    const QList<platformInfo::ResourceLocation>& machineLocs,
+    const QList<platformInfo::ResourceLocation>& userLocs,
     ResourceType type,
     ResourceTreeWidget* tree)
 {
@@ -204,7 +236,7 @@ void ResourceScanner::scanAllTiers(
 }
 
 void ResourceScanner::scanLibraries(
-    const QVector<platformInfo::ResourceLocation>& locations,
+    const QList<platformInfo::ResourceLocation>& locations,
     ResourceTier tier,
     ResourceTreeWidget* tree)
 {

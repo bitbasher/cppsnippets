@@ -20,7 +20,7 @@ namespace resourceInventory {
 
 ResourceIteratorBase::ResourceIteratorBase(ResourceTier tier,
                                            const QStringList& folderLocations,
-                                           const QVector<platformInfo::ResourceType>& resourceTypes)
+                                           const QList<platformInfo::ResourceType>& resourceTypes)
     : m_tier(tier)
     , m_folderLocations(folderLocations)
     , m_resourceTypes(resourceTypes)
@@ -33,7 +33,7 @@ ResourceIteratorBase::ResourceIteratorBase(ResourceTier tier,
 
 ResourceIteratorFlat::ResourceIteratorFlat(ResourceTier tier,
                                            const QStringList& folderLocations,
-                                           const QVector<platformInfo::ResourceType>& resourceTypes)
+                                           const QList<platformInfo::ResourceType>& resourceTypes)
     : ResourceIteratorBase(tier, folderLocations, resourceTypes)
 {
 }
@@ -109,7 +109,7 @@ bool ResourceIteratorFlat::scan()
 
 ResourceIteratorTree::ResourceIteratorTree(ResourceTier tier,
                                            const QStringList& folderLocations,
-                                           const QVector<platformInfo::ResourceType>& resourceTypes,
+                                           const QList<platformInfo::ResourceType>& resourceTypes,
                                            QWidget* parent)
     : ResourceIteratorBase(tier, folderLocations, resourceTypes)
     , m_results(new ResLocTree(parent))
@@ -246,7 +246,7 @@ void ResourceIteratorTree::scanDirectory(ResLocTreeItem* parentItem, const QStri
 std::unique_ptr<ResourceIteratorBase> ResourceIteratorFactory::create(
     ResourceTier tier,
     const QStringList& folderLocations,
-    const QVector<platformInfo::ResourceType>& resourceTypes,
+    const QList<platformInfo::ResourceType>& resourceTypes,
     QWidget* parent)
 {
     if (containsHierarchicalType(resourceTypes)) {
@@ -259,7 +259,7 @@ std::unique_ptr<ResourceIteratorBase> ResourceIteratorFactory::create(
 std::unique_ptr<ResourceIteratorFlat> ResourceIteratorFactory::createFlat(
     ResourceTier tier,
     const QStringList& folderLocations,
-    const QVector<platformInfo::ResourceType>& resourceTypes)
+    const QList<platformInfo::ResourceType>& resourceTypes)
 {
     return std::make_unique<ResourceIteratorFlat>(tier, folderLocations, resourceTypes);
 }
@@ -267,7 +267,7 @@ std::unique_ptr<ResourceIteratorFlat> ResourceIteratorFactory::createFlat(
 std::unique_ptr<ResourceIteratorTree> ResourceIteratorFactory::createTree(
     ResourceTier tier,
     const QStringList& folderLocations,
-    const QVector<platformInfo::ResourceType>& resourceTypes,
+    const QList<platformInfo::ResourceType>& resourceTypes,
     QWidget* parent)
 {
     return std::make_unique<ResourceIteratorTree>(tier, folderLocations, resourceTypes, parent);
@@ -279,7 +279,7 @@ bool ResourceIteratorFactory::isHierarchicalType(platformInfo::ResourceType type
     return (type == platformInfo::ResourceType::Libraries);
 }
 
-bool ResourceIteratorFactory::containsHierarchicalType(const QVector<platformInfo::ResourceType>& types)
+bool ResourceIteratorFactory::containsHierarchicalType(const QList<platformInfo::ResourceType>& types)
 {
     for (const auto& type : types) {
         if (isHierarchicalType(type)) {

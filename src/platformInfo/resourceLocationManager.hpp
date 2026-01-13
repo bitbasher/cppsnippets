@@ -63,9 +63,9 @@ public:
 }
     
     // Stub methods for legacy template converter (low priority)
-    QVector<ResourceLocation> findSiblingInstallations() const { return QVector<ResourceLocation>(); }
-    QVector<ResourceLocation> enabledMachineLocations() const { return QVector<ResourceLocation>(); }
-    QVector<ResourceLocation> enabledUserLocations() const { return QVector<ResourceLocation>(); }
+    QList<ResourceLocation> findSiblingInstallations() const { return QList<ResourceLocation>(); }
+    QList<ResourceLocation> enabledMachineLocations() const { return QList<ResourceLocation>(); }
+    QList<ResourceLocation> enabledUserLocations() const { return QList<ResourceLocation>(); }
     
     // Methods needed by main app (stubbed for now)
     void setApplicationPath(const QString &path) { /* Stub */ }

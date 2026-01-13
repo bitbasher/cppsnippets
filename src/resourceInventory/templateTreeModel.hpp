@@ -14,7 +14,7 @@
 #define TEMPLATETREEMODEL_H
 
 #include <QAbstractItemModel>
-#include <QVector>
+#include <QList>
 #include <memory>
 
 #include "resourceInventory/resourceStore.h"
@@ -77,7 +77,7 @@ public:
 private:
     NodeType m_nodeType;
     TemplateTreeNode* m_parent;
-    QVector<TemplateTreeNode*> m_children;
+    QList<TemplateTreeNode*> m_children;
     
     // Data depending on node type
     ResourceTier m_tier = ResourceTier::Installation;

@@ -93,9 +93,9 @@ QString MachineTab::xdgDataDirsEnv()
     return QString::fromLocal8Bit(qgetenv("XDG_DATA_DIRS"));
 }
 
-QVector<platformInfo::ResourceLocation> MachineTab::xdgDataDirsLocations()
+QList<platformInfo::ResourceLocation> MachineTab::xdgDataDirsLocations()
 {
-    QVector<platformInfo::ResourceLocation> locations;
+    QList<platformInfo::ResourceLocation> locations;
     QString envValue = xdgDataDirsEnv();
     
 #ifdef Q_OS_WIN

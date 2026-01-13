@@ -131,7 +131,7 @@ LegacyTemplateConverter::discoverAndConvertTemplates(
     // Scan each tier
     struct TierInfo {
         QString name;
-        QVector<platformInfo::ResourceLocation> locations;
+        QList<platformInfo::ResourceLocation> locations;
     };
     
     std::vector<TierInfo> tiers = {

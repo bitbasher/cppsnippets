@@ -585,6 +585,40 @@ if(BUILD_APP)
         AUTOMOC ON
     )
 
+    # ScanToModel test (Phase 2) - standalone QTest using compiled sources
+    add_executable(test_scantomodel
+        tests/test_scantomodel.cpp
+        tests/resourceScanner_minimal.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/platformInfo/platformInfo.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
+    target_link_libraries(test_scantomodel PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Test
+    )
+
+    target_include_directories(test_scantomodel PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+
+    # Suppress DLL export macros since we're compiling sources directly
+    target_compile_definitions(test_scantomodel PRIVATE 
+        PLATFORMINFO_STATIC_DEFINE
+        RESOURCEMETADATA_STATIC_DEFINE
+        RESOURCESCANNING_STATIC_DEFINE
+    )
+
+    set_target_properties(test_scantomodel PROPERTIES
+        OUTPUT_NAME test_scantomodel
+        WIN32_EXECUTABLE OFF
+        AUTOMOC ON
+    )
+
     # Copy Qt platform plugins so the console app can find qwindows at runtime
     if(WIN32)
         add_custom_command(TARGET inventory_test POST_BUILD

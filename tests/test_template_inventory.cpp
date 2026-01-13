@@ -48,7 +48,7 @@ void displayTemplateInventory(QTextStream& out)
     out << "  Total Locations: " << qualifiedPaths.size() << "\n\n";
     
     // Create ResourceLocation objects from PathElements
-    QVector<ResourceLocation> allLocations;
+    QList<ResourceLocation> allLocations;
     
     for (const auto& pe : qualifiedPaths) {
         // Cast tier from resourceMetadata to resourceInventory enum

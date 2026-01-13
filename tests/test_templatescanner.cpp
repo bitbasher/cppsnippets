@@ -278,7 +278,7 @@ TEST_F(TemplateScannerTest, MultipleLocationsAreCombined) {
     platformInfo::ResourceLocation loc1(tempDir.path(), ResourceTier::Installation);
     platformInfo::ResourceLocation loc2(tempDir2.path(), ResourceTier::User);
     
-    QVector<platformInfo::ResourceLocation> locations = {loc1, loc2};
+    QList<platformInfo::ResourceLocation> locations = {loc1, loc2};
     auto allTemplates = TemplateScanner::scanLocations(locations);
     
     EXPECT_EQ(allTemplates.size(), 2);
@@ -290,7 +290,7 @@ TEST_F(TemplateScannerTest, DisabledLocationIsSkipped) {
     platformInfo::ResourceLocation loc(tempDir.path(), ResourceTier::User);
     loc.setEnabled(false);
     
-    QVector<platformInfo::ResourceLocation> locations = {loc};
+    QList<platformInfo::ResourceLocation> locations = {loc};
     auto templates = TemplateScanner::scanLocations(locations);
     
     EXPECT_TRUE(templates.isEmpty());
@@ -300,7 +300,7 @@ TEST_F(TemplateScannerTest, NonExistentLocationIsSkipped) {
     platformInfo::ResourceLocation loc("/nonexistent/path", ResourceTier::User);
     loc.setExists(false);
     
-    QVector<platformInfo::ResourceLocation> locations = {loc};
+    QList<platformInfo::ResourceLocation> locations = {loc};
     auto templates = TemplateScanner::scanLocations(locations);
     
     EXPECT_TRUE(templates.isEmpty());

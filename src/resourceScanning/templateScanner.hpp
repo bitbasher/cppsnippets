@@ -22,7 +22,7 @@ using resourceInventory::ResourceAccess;
  * - Scans template folders for .json files
  * - Validates JSON structure (requires "name" field)
  * - Extracts metadata into ResourceTemplate objects
- * - Returns typed QVector<ResourceTemplate> (GUI-independent)
+ * - Returns typed QList<ResourceTemplate> (GUI-independent)
  * - Tracks tier, location, and access permissions
  * 
  * JSON Structure Expected:

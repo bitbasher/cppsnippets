@@ -79,7 +79,7 @@ private slots:
 
 private slots:
     void testCallbackReceivesAllItems() {
-    QVector<ResourceItem> captured;
+    QList<ResourceItem> captured;
     
     scanner->scanTemplates(basePath, ResourceTier::User, "Test Location",
                           [&captured](const ResourceItem& item) {
@@ -188,17 +188,17 @@ void testNullCallbackDoesNotCrash() {
 // ============================================================================
 
 void testScanToListReturnsAllItems() {
-    QVector<ResourceItem> results = scanner->scanTemplatesToList(
+    QList<ResourceItem> results = scanner->scanTemplatesToList(
         basePath, ResourceTier::User, "Test Location");
     
     QCOMPARE(results.size(), 5);
 }
 
 void testScanToListMatchesCallbackResults() {
-    QVector<ResourceItem> fromList = scanner->scanTemplatesToList(
+    QList<ResourceItem> fromList = scanner->scanTemplatesToList(
         basePath, ResourceTier::User, "Test Location");
     
-    QVector<ResourceItem> fromCallback;
+    QList<ResourceItem> fromCallback;
     scanner->scanTemplates(basePath, ResourceTier::User, "Test Location",
                           [&fromCallback](const ResourceItem& item) {
         fromCallback.append(item);

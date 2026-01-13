@@ -19,7 +19,7 @@ static const QStringList kScriptAttachmentFilters = {
 namespace resourceInventory {
 
 // Shared no-op scanner for resource types that are handled elsewhere
-static QVector<ResourceItem> scanNoOp(const QString& basePath,
+static QList<ResourceItem> scanNoOp(const QString& basePath,
                                       ResourceTier tier,
                                       const QString& locationKey)
 {
@@ -80,7 +80,7 @@ QStringList ResourceScanner::resourceExtensions(ResourceType type)
     }
 }
 
-QVector<ResourceItem> ResourceScanner::scanLocation(
+QList<ResourceItem> ResourceScanner::scanLocation(
     const platformInfo::ResourceLocation& location,
     ResourceType type,
     ResourceTier tier)
@@ -129,7 +129,7 @@ QVector<ResourceItem> ResourceScanner::scanLocation(
 }
 
 void ResourceScanner::scanToTree(
-    const QVector<platformInfo::ResourceLocation>& locations,
+    const QList<platformInfo::ResourceLocation>& locations,
     ResourceType type,
     ResourceTier tier,
     ResourceTreeWidget* tree)
@@ -147,7 +147,7 @@ void ResourceScanner::scanToTree(
 
     int totalItems = 0;
     for (const auto& loc : locations) {
-        QVector<ResourceItem> items = scanLocation(loc, type, tier);
+        QList<ResourceItem> items = scanLocation(loc, type, tier);
         
         for (const auto& item : items) {
             tree->addResource(item);
@@ -161,9 +161,9 @@ void ResourceScanner::scanToTree(
 }
 
 void ResourceScanner::scanAllTiers(
-    const QVector<platformInfo::ResourceLocation>& installLocs,
-    const QVector<platformInfo::ResourceLocation>& machineLocs,
-    const QVector<platformInfo::ResourceLocation>& userLocs,
+    const QList<platformInfo::ResourceLocation>& installLocs,
+    const QList<platformInfo::ResourceLocation>& machineLocs,
+    const QList<platformInfo::ResourceLocation>& userLocs,
     ResourceType type,
     ResourceTreeWidget* tree)
 {
@@ -180,7 +180,7 @@ void ResourceScanner::scanAllTiers(
 }
 
 void ResourceScanner::scanLibraries(
-    const QVector<platformInfo::ResourceLocation>& locations,
+    const QList<platformInfo::ResourceLocation>& locations,
     ResourceTier tier,
     ResourceTreeWidget* tree)
 {
@@ -227,7 +227,7 @@ void ResourceScanner::scanLibraries(
             // Examples
             const QString examplesPath = libDir.absoluteFilePath(QStringLiteral("examples"));
             if (QDir(examplesPath).exists()) {
-                QVector<ResourceItem> examples = scanExamples(examplesPath, tier, loc.getDisplayName());
+                QList<ResourceItem> examples = scanExamples(examplesPath, tier, loc.getDisplayName());
                 for (auto example : examples) {
                     example.setCategory(libName);
                     tree->addChildResource(libNode, example);
@@ -237,7 +237,7 @@ void ResourceScanner::scanLibraries(
             // Tests
             const QString testsPath = libDir.absoluteFilePath(QStringLiteral("tests"));
             if (QDir(testsPath).exists()) {
-                QVector<ResourceItem> tests = scanTests(testsPath, tier, loc.getDisplayName());
+                QList<ResourceItem> tests = scanTests(testsPath, tier, loc.getDisplayName());
                 for (auto test : tests) {
                     test.setCategory(libName);
                     tree->addChildResource(libNode, test);
@@ -247,7 +247,7 @@ void ResourceScanner::scanLibraries(
             // Templates bundled with the library (read-only)
             const QString templatesPath = libDir.absoluteFilePath(QStringLiteral("templates"));
             if (QDir(templatesPath).exists()) {
-                QVector<ResourceItem> templates = scanTemplates(templatesPath, tier, loc.getDisplayName());
+                QList<ResourceItem> templates = scanTemplates(templatesPath, tier, loc.getDisplayName());
                 for (auto tmpl : templates) {
                     tmpl.setCategory(libName);
                     tmpl.setAccess(ResourceAccess::ReadOnly);
@@ -258,7 +258,7 @@ void ResourceScanner::scanLibraries(
             // Color schemes bundled with the library
             const QString colorSchemesPath = libDir.absoluteFilePath(QStringLiteral("color-schemes"));
             if (QDir(colorSchemesPath).exists()) {
-                QVector<ResourceItem> colorSchemes = scanColorSchemes(colorSchemesPath, tier, loc.getDisplayName());
+                QList<ResourceItem> colorSchemes = scanColorSchemes(colorSchemesPath, tier, loc.getDisplayName());
                 for (auto scheme : colorSchemes) {
                     scheme.setCategory(libName);
                     tree->addChildResource(libNode, scheme);
@@ -268,10 +268,10 @@ void ResourceScanner::scanLibraries(
     }
 }
 
-QVector<ResourceItem> ResourceScanner::scanColorSchemes(
+QList<ResourceItem> ResourceScanner::scanColorSchemes(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     
     // ColorSchemes is a container type that scans for both editor and render colors
     // Scan for .json files at the basePath level and categorize them
@@ -296,10 +296,10 @@ QVector<ResourceItem> ResourceScanner::scanColorSchemes(
     return results;
 }
 
-QVector<ResourceItem> ResourceScanner::scanRenderColors(
+QList<ResourceItem> ResourceScanner::scanRenderColors(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     QDir dir(basePath);
     
     if (!dir.exists()) return results;
@@ -320,10 +320,10 @@ QVector<ResourceItem> ResourceScanner::scanRenderColors(
     return results;
 }
 
-QVector<ResourceItem> ResourceScanner::scanEditorColors(
+QList<ResourceItem> ResourceScanner::scanEditorColors(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     QDir dir(basePath);
     
     if (!dir.exists()) return results;
@@ -344,17 +344,17 @@ QVector<ResourceItem> ResourceScanner::scanEditorColors(
     return results;
 }
 
-QVector<ResourceItem> ResourceScanner::scanFonts(
+QList<ResourceItem> ResourceScanner::scanFonts(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
     // Fonts are supplied by the system; only bundled font is handled elsewhere.
     return scanNoOp(basePath, tier, locationKey);
 }
 
-QVector<ResourceItem> ResourceScanner::scanExamples(
+QList<ResourceItem> ResourceScanner::scanExamples(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     
     // One-level scan: top-level .scad files plus immediate subfolders
     QDir dir(basePath);
@@ -457,12 +457,12 @@ void ResourceScanner::scanTemplates(
     }
 }
 
-QVector<ResourceItem> ResourceScanner::scanTemplatesToList(
+QList<ResourceItem> ResourceScanner::scanTemplatesToList(
     const QString& basePath,
     ResourceTier tier,
     const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     
     scanTemplates(basePath, tier, locationKey, [&results](const ResourceItem& item) {
         results.append(item);
@@ -513,13 +513,45 @@ void ResourceScanner::addItemToModel(QStandardItemModel* model, const ResourceIt
 }
 
 // ============================================================================
+// Phase 2: High-Level scanToModel() API
+// ============================================================================
+
+void ResourceScanner::scanToModel(QStandardItemModel* model,
+                                  const QList<platformInfo::ResourceLocation>& locations)
+{
+    if (!model) {
+        return;
+    }
+    
+    // Define callback that adds items to model
+    auto addToModel = [this, model](const ResourceItem& item) {
+        addItemToModel(model, item);
+    };
+    
+    // Scan all locations (tier is encoded in each location)
+    for (const auto& loc : locations) {
+        if (!loc.exists() || !loc.isEnabled()) continue;
+        
+        QString basePath = loc.path();
+        QString displayName = loc.getDisplayName();
+        ResourceTier tier = loc.tier();
+        
+        // Scan templates (only type implemented so far)
+        QString templatesPath = QDir::cleanPath(basePath + QStringLiteral("/templates"));
+        if (QDir(templatesPath).exists()) {
+            scanTemplates(templatesPath, tier, displayName, addToModel);
+        }
+    }
+}
+
+// ============================================================================
 // LEGACY API (to be removed in Phase 5)
 // ============================================================================
 
-QVector<ResourceItem> ResourceScanner::scanTemplates(
+QList<ResourceItem> ResourceScanner::scanTemplates(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     QDir dir(basePath);
     
     if (!dir.exists()) return results;
@@ -553,17 +585,17 @@ QVector<ResourceItem> ResourceScanner::scanTemplates(
     return results;
 }
 
-QVector<ResourceItem> ResourceScanner::scanTranslations(
+QList<ResourceItem> ResourceScanner::scanTranslations(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
     // Translations are handled elsewhere; discovery is intentionally disabled here.
     return scanNoOp(basePath, tier, locationKey);
 }
 
-QVector<ResourceItem> ResourceScanner::scanTests(
+QList<ResourceItem> ResourceScanner::scanTests(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
 {
-    QVector<ResourceItem> results;
+    QList<ResourceItem> results;
     
     // One-level scan: top-level .scad files plus immediate subfolders
     QDir dir(basePath);
@@ -643,7 +675,7 @@ void ResourceScanner::scanFolderRecursive(
     ResourceTier tier,
     const QString& locationKey,
     const QString& category,
-    QVector<ResourceItem>& results)
+    QList<ResourceItem>& results)
 {
     QDir dir(folderPath);
     if (!dir.exists()) return;
@@ -691,17 +723,17 @@ ResourceInventoryManager::ResourceInventoryManager(QObject* parent)
 {
 }
 
-void ResourceInventoryManager::setInstallLocations(const QVector<platformInfo::ResourceLocation>& locs)
+void ResourceInventoryManager::setInstallLocations(const QList<platformInfo::ResourceLocation>& locs)
 {
     m_installLocs = locs;
 }
 
-void ResourceInventoryManager::setMachineLocations(const QVector<platformInfo::ResourceLocation>& locs)
+void ResourceInventoryManager::setMachineLocations(const QList<platformInfo::ResourceLocation>& locs)
 {
     m_machineLocs = locs;
 }
 
-void ResourceInventoryManager::setUserLocations(const QVector<platformInfo::ResourceLocation>& locs)
+void ResourceInventoryManager::setUserLocations(const QList<platformInfo::ResourceLocation>& locs)
 {
     m_userLocs = locs;
 }
