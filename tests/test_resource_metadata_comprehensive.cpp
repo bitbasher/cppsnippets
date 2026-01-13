@@ -37,54 +37,46 @@ TEST_F(ResourceTierTest, EnumValuesAreDistinct) {
     EXPECT_NE(ResourceTier::User, ResourceTier::Installation);
 }
 
-TEST_F(ResourceTierTest, TierDisplayNamesMapIsAccessible) {
-    // Verify the inline static const QMap can be accessed
+TEST_F(ResourceTierTest, TierDisplayNameFunctionWorks) {
+    // Verify the tierDisplayName function can be called
     EXPECT_NO_THROW({
-        auto size = tierDisplayNames.size();
-        EXPECT_GT(size, 0);
+        QString name = tierDisplayName(ResourceTier::Installation);
+        EXPECT_FALSE(name.isEmpty());
     });
 }
 
-TEST_F(ResourceTierTest, TierDisplayNamesMapHasThreeEntries) {
-    EXPECT_EQ(tierDisplayNames.size(), 3);
-    EXPECT_FALSE(tierDisplayNames.isEmpty());
+TEST_F(ResourceTierTest, TierDisplayNameReturnsAllThreeTiers) {
+    EXPECT_FALSE(tierDisplayName(ResourceTier::Installation).isEmpty());
+    EXPECT_FALSE(tierDisplayName(ResourceTier::Machine).isEmpty());
+    EXPECT_FALSE(tierDisplayName(ResourceTier::User).isEmpty());
 }
 
-TEST_F(ResourceTierTest, TierDisplayNamesContainsInstallation) {
-    EXPECT_TRUE(tierDisplayNames.contains(ResourceTier::Installation));
-    EXPECT_FALSE(tierDisplayNames[ResourceTier::Installation].isEmpty());
-}
-
-TEST_F(ResourceTierTest, TierDisplayNamesContainsMachine) {
-    EXPECT_TRUE(tierDisplayNames.contains(ResourceTier::Machine));
-    EXPECT_FALSE(tierDisplayNames[ResourceTier::Machine].isEmpty());
-}
-
-TEST_F(ResourceTierTest, TierDisplayNamesContainsUser) {
-    EXPECT_TRUE(tierDisplayNames.contains(ResourceTier::User));
-    EXPECT_FALSE(tierDisplayNames[ResourceTier::User].isEmpty());
-}
-
-TEST_F(ResourceTierTest, DisplayNameForInstallation) {
-    QString name = tierDisplayNames[ResourceTier::Installation];
+TEST_F(ResourceTierTest, TierDisplayNameForInstallation) {
+    QString name = tierDisplayName(ResourceTier::Installation);
+    EXPECT_FALSE(name.isEmpty());
     EXPECT_EQ(name, QString("Installation"));
 }
 
-TEST_F(ResourceTierTest, DisplayNameForMachine) {
-    QString name = tierDisplayNames[ResourceTier::Machine];
+TEST_F(ResourceTierTest, TierDisplayNameForMachine) {
+    QString name = tierDisplayName(ResourceTier::Machine);
+    EXPECT_FALSE(name.isEmpty());
     EXPECT_EQ(name, QString("Machine"));
 }
 
-TEST_F(ResourceTierTest, DisplayNameForUser) {
-    QString name = tierDisplayNames[ResourceTier::User];
+TEST_F(ResourceTierTest, TierDisplayNameForUser) {
+    QString name = tierDisplayName(ResourceTier::User);
+    EXPECT_FALSE(name.isEmpty());
     EXPECT_EQ(name, QString("User"));
 }
 
 TEST_F(ResourceTierTest, DisplayNamesAreNotEmpty) {
-    for (auto it = tierDisplayNames.constBegin(); it != tierDisplayNames.constEnd(); ++it) {
-        EXPECT_FALSE(it.value().isEmpty()) << "Display name is empty";
-        EXPECT_GT(it.value().length(), 0) << "Display name has no length";
-    }
+    EXPECT_FALSE(tierDisplayName(ResourceTier::Installation).isEmpty());
+    EXPECT_FALSE(tierDisplayName(ResourceTier::Machine).isEmpty());
+    EXPECT_FALSE(tierDisplayName(ResourceTier::User).isEmpty());
+    
+    EXPECT_GT(tierDisplayName(ResourceTier::Installation).length(), 0);
+    EXPECT_GT(tierDisplayName(ResourceTier::Machine).length(), 0);
+    EXPECT_GT(tierDisplayName(ResourceTier::User).length(), 0);
 }
 
 // ============================================================================
@@ -345,8 +337,8 @@ TEST_F(ResourceMetadataIntegrationTest, NonContainerTypesHaveValidInfo) {
 }
 
 TEST_F(ResourceMetadataIntegrationTest, TierDisplayNamesComplete) {
-    // All three active tiers should be in tierDisplayNames
-    EXPECT_TRUE(tierDisplayNames.contains(ResourceTier::Installation));
-    EXPECT_TRUE(tierDisplayNames.contains(ResourceTier::Machine));
-    EXPECT_TRUE(tierDisplayNames.contains(ResourceTier::User));
+    // All three active tiers should have display names
+    EXPECT_FALSE(tierDisplayName(ResourceTier::Installation).isEmpty());
+    EXPECT_FALSE(tierDisplayName(ResourceTier::Machine).isEmpty());
+    EXPECT_FALSE(tierDisplayName(ResourceTier::User).isEmpty());
 }

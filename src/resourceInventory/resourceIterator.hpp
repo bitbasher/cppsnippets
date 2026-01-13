@@ -9,22 +9,12 @@
 #include "pathDiscovery/ResourcePaths.hpp"
 #include "resourceInventory/resLocMap.h"
 #include "resourceInventory/resLocTree.h"
+#include "resourceMetadata/ResourceTier.hpp"
 
 namespace resourceInventory {
 
-/**
- * @brief Enumeration of resource tiers
- * 
- * Resources are organized into three tiers based on their scope and accessibility:
- * - Installation: Built-in resources from the application installation
- * - Machine: System-wide resources available to all users
- * - User: Personal resources in the user's home directory
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in resources from application installation
-    Machine,        ///< System-wide resources for all users
-    User            ///< Personal user resources
-};
+// Use Gold Standard enum from resourceMetadata
+using ResourceTier = resourceMetadata::ResourceTier;
 
 /**
  * @brief Abstract base class for resource iterators

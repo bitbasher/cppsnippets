@@ -216,10 +216,10 @@ ResourceTemplate TemplateScanner::extractMetadata(const QJsonDocument& json,
     tmpl.setSourceLocationKey(location.path());
     
     // Set access based on location writeability
-    tmpl.setAccess(location.isWritable() ? ResourceAccess::Writable : ResourceAccess::ReadOnly);
+    tmpl.setAccess(location.isWritable() ? ResourceAccess::ReadWrite : ResourceAccess::ReadOnly);
     
     // Set resource type
-    tmpl.setType(ResourceType::Template);
+    tmpl.setType(ResourceType::Templates);
     
     // Store raw JSON text for potential future use
     tmpl.setRawText(json.toJson(QJsonDocument::Compact));

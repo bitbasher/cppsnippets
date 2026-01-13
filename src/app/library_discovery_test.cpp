@@ -6,7 +6,7 @@
 #include <iostream>
 #include <QApplication>
 #include <QDir>
-#include "resourceInventory/resourceScanner.hpp"
+#include "resourceScanning/resourceScanner.hpp"
 #include "resourceInventory/resourceTreeWidget.hpp"
 #include "resourceInventory/resourceItem.hpp"
 #include "platformInfo/ResourceLocation.hpp"
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
     ri::ResourceScanner scanner;
     ri::ResourceTreeWidget tree;
-    tree.setResourceType(ri::ResourceType::Library);
+    tree.setResourceType(ri::ResourceType::Libraries);
     tree.setShowCategories(true);
 
     scanner.scanLibraries({nightly}, ri::ResourceTier::Installation, &tree);

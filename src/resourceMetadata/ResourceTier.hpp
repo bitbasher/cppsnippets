@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <QMap>
 #include <QString>
 
 namespace resourceMetadata {
@@ -25,15 +24,28 @@ enum class ResourceTier {
 };
 
 /**
- * @brief Display names for resource tier enum values
+ * @brief Get display name for a resource tier (constexpr, no DLL issues)
  * 
- * Use this static const lookup table for displaying tier names in the GUI.
- * This follows the pattern of using static lookup tables for enum display names.
+ * @param tier The tier to get the display name for
+ * @return C-string display name for the tier
  */
-inline static const QMap<ResourceTier, QString> tierDisplayNames = {
-    { ResourceTier::Installation, QStringLiteral("Installation") },
-    { ResourceTier::Machine, QStringLiteral("Machine") },
-    { ResourceTier::User, QStringLiteral("User") }
-};
+constexpr const char* tierToString(ResourceTier tier) noexcept {
+    switch(tier) {
+        case ResourceTier::Installation: return "Installation";
+        case ResourceTier::Machine: return "Machine";
+        case ResourceTier::User: return "User";
+    }
+    return "Unknown";
+}
+
+/**
+ * @brief Get display name for a resource tier as QString
+ * 
+ * @param tier The tier to get the display name for
+ * @return QString display name for the tier
+ */
+inline QString tierDisplayName(ResourceTier tier) {
+    return QString::fromUtf8(tierToString(tier));
+}
 
 } // namespace resourceMetadata

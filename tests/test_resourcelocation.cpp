@@ -107,12 +107,18 @@ TEST_F(ResourceLocationTest, RejectsRelativePaths) {
 
 TEST_F(ResourceLocationTest, ShortPathReturnedAsIs) {
     // Short paths should be returned unchanged or minimally modified
+#if defined(Q_OS_WIN)
+    QString shortPath = "C:/Windows";
+#else
     QString shortPath = "/usr/bin";
+#endif
     ResourceLocation loc(shortPath, ResourceTier::Installation);
     QString result = loc.getDisplayName();
     
     EXPECT_LE(result.length(), 60);  // Within max length
-    EXPECT_TRUE(result == shortPath || result.startsWith(shortPath));
+    EXPECT_TRUE(result == shortPath || result.startsWith(shortPath)) 
+        << "Expected: " << shortPath.toStdString() 
+        << " Got: " << result.toStdString();
 }
 
 TEST_F(ResourceLocationTest, DriveRootReturnedAsIs) {

@@ -65,16 +65,17 @@ bool ResourceScript::isValid() const
 QString resourceTypeToString(ResourceType type)
 {
     switch (type) {
-        case ResourceType::Unknown:     return QStringLiteral("Unknown");
+        case ResourceType::Unknown:      return QStringLiteral("Unknown");
+        case ResourceType::Group:        return QStringLiteral("Group");
         case ResourceType::RenderColors: return QStringLiteral("RenderColors");
         case ResourceType::EditorColors: return QStringLiteral("EditorColors");
-        case ResourceType::Font:        return QStringLiteral("Font");
-        case ResourceType::Library:     return QStringLiteral("Library");
-        case ResourceType::Example:     return QStringLiteral("Example");
-        case ResourceType::Test:        return QStringLiteral("Test");
-        case ResourceType::Template:    return QStringLiteral("Template");
-        case ResourceType::Shader:      return QStringLiteral("Shader");
-        case ResourceType::Translation: return QStringLiteral("Translation");
+        case ResourceType::Fonts:        return QStringLiteral("Fonts");
+        case ResourceType::Libraries:    return QStringLiteral("Libraries");
+        case ResourceType::Examples:     return QStringLiteral("Examples");
+        case ResourceType::Tests:        return QStringLiteral("Tests");
+        case ResourceType::Templates:    return QStringLiteral("Templates");
+        case ResourceType::Shaders:      return QStringLiteral("Shaders");
+        case ResourceType::Translations: return QStringLiteral("Translations");
         case ResourceType::ColorSchemes: return QStringLiteral("ColorSchemes");
     }
     return QStringLiteral("Unknown");
@@ -82,15 +83,16 @@ QString resourceTypeToString(ResourceType type)
 
 ResourceType stringToResourceType(const QString& str)
 {
+    if (str == QLatin1String("Group"))        return ResourceType::Group;
     if (str == QLatin1String("RenderColors")) return ResourceType::RenderColors;
     if (str == QLatin1String("EditorColors")) return ResourceType::EditorColors;
-    if (str == QLatin1String("Font"))        return ResourceType::Font;
-    if (str == QLatin1String("Library"))     return ResourceType::Library;
-    if (str == QLatin1String("Example"))     return ResourceType::Example;
-    if (str == QLatin1String("Test"))        return ResourceType::Test;
-    if (str == QLatin1String("Template"))    return ResourceType::Template;
-    if (str == QLatin1String("Shader"))      return ResourceType::Shader;
-    if (str == QLatin1String("Translation")) return ResourceType::Translation;
+    if (str == QLatin1String("Fonts"))        return ResourceType::Fonts;
+    if (str == QLatin1String("Libraries"))    return ResourceType::Libraries;
+    if (str == QLatin1String("Examples"))     return ResourceType::Examples;
+    if (str == QLatin1String("Tests"))        return ResourceType::Tests;
+    if (str == QLatin1String("Templates"))    return ResourceType::Templates;
+    if (str == QLatin1String("Shaders"))      return ResourceType::Shaders;
+    if (str == QLatin1String("Translations")) return ResourceType::Translations;
     if (str == QLatin1String("ColorSchemes")) return ResourceType::ColorSchemes;
     return ResourceType::Unknown;
 }

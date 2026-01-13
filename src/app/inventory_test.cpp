@@ -16,7 +16,7 @@
 
 #include "platformInfo/resourceLocationManager.hpp"
 #include "pathDiscovery/ResourcePaths.hpp"
-#include "resourceInventory/resourceScanner.hpp"
+#include "resourceScanning/resourceScanner.hpp"
 #include "resourceInventory/resourceTreeWidget.hpp"
 #include "resourceInventory/resourceItem.hpp"
 #include "gui/machineTab.hpp"
@@ -209,11 +209,11 @@ int main(int argc, char *argv[])
     QList<ri::ResourceType> types = {
         ri::ResourceType::RenderColors,
         ri::ResourceType::EditorColors,
-        ri::ResourceType::Font,
-        ri::ResourceType::Example,
-        ri::ResourceType::Template,
-        ri::ResourceType::Library,
-        ri::ResourceType::Translation
+        ri::ResourceType::Fonts,
+        ri::ResourceType::Examples,
+        ri::ResourceType::Templates,
+        ri::ResourceType::Libraries,
+        ri::ResourceType::Translations
     };
     
     for (ri::ResourceType type : types) {

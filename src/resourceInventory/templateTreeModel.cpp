@@ -382,7 +382,7 @@ void TemplateTreeModel::rebuild()
 void TemplateTreeModel::onResourceAdded(const DiscoveredResource& resource)
 {
     // Only care about templates
-    if (resource.type != ResourceType::Template) {
+    if (resource.type != ResourceType::Templates) {
         return;
     }
     
@@ -400,7 +400,7 @@ void TemplateTreeModel::onResourceRemoved(const QString& path)
 
 void TemplateTreeModel::onResourcesCleared(ResourceType type)
 {
-    if (type == ResourceType::Template || type == ResourceType::Unknown) {
+    if (type == ResourceType::Templates || type == ResourceType::Unknown) {
         rebuild();
     }
 }
@@ -416,7 +416,7 @@ void TemplateTreeModel::buildTree()
     }
     
     // Get all templates
-    auto templates = m_store->resourcesOfType(ResourceType::Template);
+    auto templates = m_store->resourcesOfType(ResourceType::Templates);
     
     for (const auto& tmpl : templates) {
         // Find or create tier node

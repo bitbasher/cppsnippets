@@ -39,34 +39,20 @@ int main(int argc, char *argv[]) {
     std::cout << "  Machine enum created: OK\n";
     std::cout << "  User enum created: OK\n\n";
     
-    // Test 2: tierDisplayNames map access
-    std::cout << "Test 2: tierDisplayNames Map\n";
-    std::cout << "  Map size: " << tierDisplayNames.size() << "\n";
-    std::cout << "  Map empty: " << (tierDisplayNames.isEmpty() ? "YES (ERROR!)" : "NO (OK)") << "\n\n";
+    // Test 2: tierDisplayName function
+    std::cout << "Test 2: tierDisplayName Function\n";
     
     // Test 3: Access display names
     std::cout << "Test 3: Display Name Lookup\n";
     try {
-        if (tierDisplayNames.contains(ResourceTier::Installation)) {
-            QString name = tierDisplayNames[ResourceTier::Installation];
-            std::cout << "  Installation: " << name.toStdString() << "\n";
-        } else {
-            std::cout << "  Installation: NOT FOUND\n";
-        }
+        QString instName = tierDisplayName(ResourceTier::Installation);
+        std::cout << "  Installation: " << instName.toStdString() << "\n";
         
-        if (tierDisplayNames.contains(ResourceTier::Machine)) {
-            QString name = tierDisplayNames[ResourceTier::Machine];
-            std::cout << "  Machine: " << name.toStdString() << "\n";
-        } else {
-            std::cout << "  Machine: NOT FOUND\n";
-        }
+        QString machName = tierDisplayName(ResourceTier::Machine);
+        std::cout << "  Machine: " << machName.toStdString() << "\n";
         
-        if (tierDisplayNames.contains(ResourceTier::User)) {
-            QString name = tierDisplayNames[ResourceTier::User];
-            std::cout << "  User: " << name.toStdString() << "\n";
-        } else {
-            std::cout << "  User: NOT FOUND\n";
-        }
+        QString userName = tierDisplayName(ResourceTier::User);
+        std::cout << "  User: " << userName.toStdString() << "\n";
     } catch (const std::exception& e) {
         std::cout << "  ERROR: " << e.what() << "\n";
         return 1;

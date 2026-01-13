@@ -2,6 +2,9 @@
 #define RESOURCEITEM_H
 
 #include "../platformInfo/export.hpp"
+#include "../resourceMetadata/ResourceTier.hpp"
+#include "../resourceMetadata/ResourceTypeInfo.hpp"
+#include "../resourceMetadata/ResourceAccess.hpp"
 #include "../scadtemplates/edittype.hpp"
 #include "../scadtemplates/editsubtype.hpp"
 
@@ -12,39 +15,10 @@
 
 namespace resourceInventory {
 
-/**
- * @brief Tier where a resource was found
- */
-enum class ResourceTier {
-    Installation,   ///< Built-in with application
-    Machine,        ///< System-wide (all users)
-    User            ///< User-specific (personal)
-};
-
-/**
- * @brief Type of resource
- */
-enum class ResourceType {
-    Unknown,
-    ColorSchemes,   ///< Color scheme container folder (contains EditorColors and RenderColors)
-    RenderColors,   ///< Render color scheme (.json)
-    EditorColors,   ///< Editor color scheme (.json)
-    Font,           ///< Font file (.ttf, .otf)
-    Library,        ///< OpenSCAD library (folder with .scad files)
-    Example,        ///< Example script (.scad) with optional attachments (.png, .jpg, .jpeg, .svg, .gif, .json, .txt, .csv, .stl, .off, .dxf, .dat)
-    Test,           ///< Test script (.scad) with optional attachments (.png, .jpg, .jpeg, .svg, .gif, .json, .txt, .csv, .stl, .off, .dxf, .dat)
-    Template,       ///< User template (.scad, writable)
-    Shader,         ///< Shader file
-    Translation     ///< Translation file (.ts, .qm)
-};
-
-/**
- * @brief Access mode for a resource
- */
-enum class ResourceAccess {
-    ReadOnly,       ///< Cannot be modified by user
-    Writable        ///< Can be created/modified by user
-};
+// Use Gold Standard enums from resourceMetadata
+using ResourceTier = resourceMetadata::ResourceTier;
+using ResourceType = resourceMetadata::ResourceType;
+using ResourceAccess = resourceMetadata::Access;
 
 /**
  * @brief Base class for all resource items

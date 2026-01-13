@@ -8,7 +8,7 @@
 #include "applicationNameInfo.hpp"
 #include <scadtemplates/template_manager.hpp>
 #include <platformInfo/resourceLocationManager.hpp>
-#include <resourceInventory/resourceScanner.hpp>
+#include <resourceScanning/resourceScanner.hpp>
 #include <resourceInventory/resourceTreeWidget.hpp>
 
 #include <QMenuBar>
@@ -94,7 +94,7 @@ void MainWindow::setupUi() {
     listLayout->addWidget(m_searchEdit);
     
     // Get the pre-populated template tree from inventory manager
-    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Template);
+    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Templates);
     m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
     m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
     m_templateTree->setColumnHidden(2, true);  // Hide Category column
@@ -461,10 +461,10 @@ void MainWindow::refreshInventory() {
     }
     
     // Refresh creates a new widget
-    m_inventoryManager->refreshInventory(resourceInventory::ResourceType::Template);
+    m_inventoryManager->refreshInventory(resourceInventory::ResourceType::Templates);
     
     // Get the new widget and update our pointer
-    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Template);
+    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Templates);
     m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
     m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
     m_templateTree->setColumnHidden(2, true);  // Hide Category column

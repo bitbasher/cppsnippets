@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     ResourceStore store;
     ResourceScannerDirListing scanner;
     if (!installPath.isEmpty()) {
-        store.scanTypeAndStore(scanner, installPath, ResourceType::Template,
+        store.scanTypeAndStore(scanner, installPath, ResourceType::Templates,
                                ResourceTier::Installation, installPath);
     }
 

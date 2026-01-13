@@ -1,16 +1,12 @@
 #pragma once
 #include "export.hpp"
+#include "../resourceMetadata/ResourceTier.hpp"
 #include <QString>
-
-// Forward declare ResourceTier from resourceInventory namespace
-namespace resourceInventory {
-    enum class ResourceTier;
-}
 
 namespace platformInfo {
 
-// Import ResourceTier for use in this namespace
-using resourceInventory::ResourceTier;
+// Use Gold Standard enum from resourceMetadata
+using ResourceTier = resourceMetadata::ResourceTier;
 
 /**
  * @brief Resource location with smart display name generation
