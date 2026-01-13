@@ -12,13 +12,7 @@
 
 class QStandardItemModel;
 
-namespace platformInfo {
-class ResourceLocationManager;
-}
-
 namespace resourceInventory {
-
-class ResourceTreeWidget;
 
 /**
  * @brief Scans resource locations and builds inventories
@@ -53,42 +47,6 @@ public:
     QList<ResourceItem> scanLocation(const platformInfo::ResourceLocation& location,
                                         ResourceType type,
                                         ResourceTier tier);
-    
-    /**
-     * @brief Scan multiple locations and populate a tree widget
-     * @param locations Vector of locations to scan
-     * @param type The type of resource to look for
-     * @param tier The tier these locations belong to
-     * @param tree The tree widget to populate
-     */
-    void scanToTree(const QList<platformInfo::ResourceLocation>& locations,
-                    ResourceType type,
-                    ResourceTier tier,
-                    ResourceTreeWidget* tree);
-    
-    /**
-     * @brief Scan all tiers for a resource type
-     * @param installLocs Installation tier locations
-     * @param machineLocs Machine tier locations  
-     * @param userLocs User tier locations
-     * @param type The type of resource to look for
-     * @param tree The tree widget to populate
-     */
-    void scanAllTiers(const QList<platformInfo::ResourceLocation>& installLocs,
-                      const QList<platformInfo::ResourceLocation>& machineLocs,
-                      const QList<platformInfo::ResourceLocation>& userLocs,
-                      ResourceType type,
-                      ResourceTreeWidget* tree);
-    
-    /**
-     * @brief Scan for libraries (hierarchical with nested examples/tests)
-     * @param locations Vector of locations to scan
-     * @param tier The tier these locations belong to
-     * @param tree The tree widget to populate
-     */
-    void scanLibraries(const QList<platformInfo::ResourceLocation>& locations,
-                       ResourceTier tier,
-                       ResourceTreeWidget* tree);
     
     // ========================================================================
     // NEW CALLBACK-BASED API (Phase 1)
@@ -175,7 +133,6 @@ private:
     QList<ResourceItem> scanFonts(const QString& basePath, ResourceTier tier, const QString& locationKey);
     QList<ResourceItem> scanExamples(const QString& basePath, ResourceTier tier, const QString& locationKey);
     QList<ResourceItem> scanTests(const QString& basePath, ResourceTier tier, const QString& locationKey);
-    QList<ResourceItem> scanTemplates(const QString& basePath, ResourceTier tier, const QString& locationKey);  // LEGACY
     QList<ResourceItem> scanTranslations(const QString& basePath, ResourceTier tier, const QString& locationKey);
     
     // Helper for scanning script files with attachments

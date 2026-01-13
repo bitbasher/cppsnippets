@@ -1,6 +1,4 @@
 #include "resourceScanner.hpp"
-#include "resourceInventory/resourceTreeWidget.hpp"
-#include <platformInfo/resourceLocationManager.hpp>
 #include <QDir>
 #include <QFileInfo>
 #include <QDirIterator>
@@ -117,156 +115,21 @@ QList<ResourceItem> ResourceScanner::scanLocation(
         case ResourceType::Tests:
             return scanTests(basePath, tier, locationKey);
         case ResourceType::Templates:
-            return scanTemplates(basePath, tier, locationKey);
+            // Use callback-based version - this shouldn't be called
+            return {};
         case ResourceType::Translations:
             return scanTranslations(basePath, tier, locationKey);
         case ResourceType::Libraries:
             // Libraries need special handling - each subfolder is a library
-            return {};  // Use scanLibraries() instead
+            return {};  // Will be converted to callback in Phase 6
         default:
             return {};
     }
 }
 
-void ResourceScanner::scanToTree(
-    const QList<platformInfo::ResourceLocation>& locations,
-    ResourceType type,
-    ResourceTier tier,
-    ResourceTreeWidget* tree)
-{
-    if (!tree) return;
-    
-    emit scanStarted(type, locations.size());
-    
-    // Libraries require hierarchical handling; delegate to dedicated scanner
-    if (type == ResourceType::Libraries) {
-        scanLibraries(locations, tier, tree);
-        emit scanCompleted(type, tree->allItems().size());
-        return;
-    }
-
-    int totalItems = 0;
-    for (const auto& loc : locations) {
-        QList<ResourceItem> items = scanLocation(loc, type, tier);
-        
-        for (const auto& item : items) {
-            tree->addResource(item);
-        }
-        
-        emit locationScanned(loc.path(), items.size());
-        totalItems += items.size();
-    }
-    
-    emit scanCompleted(type, totalItems);
-}
-
-void ResourceScanner::scanAllTiers(
-    const QList<platformInfo::ResourceLocation>& installLocs,
-    const QList<platformInfo::ResourceLocation>& machineLocs,
-    const QList<platformInfo::ResourceLocation>& userLocs,
-    ResourceType type,
-    ResourceTreeWidget* tree)
-{
-    if (!tree) return;
-    
-    tree->setResourceType(type);
-    
-    // Templates use categories (subfolder-based grouping)
-    tree->setShowCategories(type == ResourceType::Templates);
-    
-    scanToTree(installLocs, type, ResourceTier::Installation, tree);
-    scanToTree(machineLocs, type, ResourceTier::Machine, tree);
-    scanToTree(userLocs, type, ResourceTier::User, tree);
-}
-
-void ResourceScanner::scanLibraries(
-    const QList<platformInfo::ResourceLocation>& locations,
-    ResourceTier tier,
-    ResourceTreeWidget* tree)
-{
-    if (!tree) return;
-    
-    tree->setResourceType(ResourceType::Libraries);
-    
-    for (const auto& loc : locations) {
-        if (!loc.exists() || !loc.isEnabled()) continue;
-
-        const QString librariesPath = QDir::cleanPath(loc.path() + QStringLiteral("/libraries"));
-        QDir librariesDir(librariesPath);
-
-        if (!librariesDir.exists()) continue;
-
-        // Each subfolder in libraries/ is a library
-        const QStringList libraryFolders = librariesDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-
-        for (const QString& libName : libraryFolders) {
-            const QString libPath = librariesDir.absoluteFilePath(libName);
-            QDir libDir(libPath);
-
-            // Create library root node regardless of content; children decide visibility
-            ResourceItem libItem(libPath, ResourceType::Libraries, tier);
-            libItem.setName(libName);
-            libItem.setDisplayName(libName);
-            libItem.setSourcePath(libPath);
-            libItem.setSourceLocationKey(loc.getDisplayName());
-            libItem.setAccess(ResourceAccess::ReadOnly);
-
-            ResourceTreeItem* libNode = tree->addResource(libItem);
-
-            // Library root .scad scripts
-            QFileInfoList rootScripts = libDir.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
-            for (const QFileInfo& fi : rootScripts) {
-                ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
-                                                                  ResourceType::Libraries,
-                                                                  tier,
-                                                                  loc.getDisplayName());
-                script.setCategory(libName);  // Tag with library for clarity
-                tree->addChildResource(libNode, script);
-            }
-
-            // Examples
-            const QString examplesPath = libDir.absoluteFilePath(QStringLiteral("examples"));
-            if (QDir(examplesPath).exists()) {
-                QList<ResourceItem> examples = scanExamples(examplesPath, tier, loc.getDisplayName());
-                for (auto example : examples) {
-                    example.setCategory(libName);
-                    tree->addChildResource(libNode, example);
-                }
-            }
-
-            // Tests
-            const QString testsPath = libDir.absoluteFilePath(QStringLiteral("tests"));
-            if (QDir(testsPath).exists()) {
-                QList<ResourceItem> tests = scanTests(testsPath, tier, loc.getDisplayName());
-                for (auto test : tests) {
-                    test.setCategory(libName);
-                    tree->addChildResource(libNode, test);
-                }
-            }
-
-            // Templates bundled with the library (read-only)
-            const QString templatesPath = libDir.absoluteFilePath(QStringLiteral("templates"));
-            if (QDir(templatesPath).exists()) {
-                QList<ResourceItem> templates = scanTemplates(templatesPath, tier, loc.getDisplayName());
-                for (auto tmpl : templates) {
-                    tmpl.setCategory(libName);
-                    tmpl.setAccess(ResourceAccess::ReadOnly);
-                    tree->addChildResource(libNode, tmpl);
-                }
-            }
-
-            // Color schemes bundled with the library
-            const QString colorSchemesPath = libDir.absoluteFilePath(QStringLiteral("color-schemes"));
-            if (QDir(colorSchemesPath).exists()) {
-                QList<ResourceItem> colorSchemes = scanColorSchemes(colorSchemesPath, tier, loc.getDisplayName());
-                for (auto scheme : colorSchemes) {
-                    scheme.setCategory(libName);
-                    tree->addChildResource(libNode, scheme);
-                }
-            }
-        }
-    }
-}
+// ============================================================================
+// Legacy scan methods (will be converted to callbacks in Phase 6)
+// ============================================================================
 
 QList<ResourceItem> ResourceScanner::scanColorSchemes(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
@@ -551,43 +414,6 @@ void ResourceScanner::scanToModel(QStandardItemModel* model,
 // ============================================================================
 // LEGACY API (to be removed in Phase 5)
 // ============================================================================
-
-QList<ResourceItem> ResourceScanner::scanTemplates(
-    const QString& basePath, ResourceTier tier, const QString& locationKey)
-{
-    QList<ResourceItem> results;
-    QDir dir(basePath);
-    
-    if (!dir.exists()) return results;
-    
-    // Templates: subfolders define categories
-    // First scan top-level templates (no category)
-    // Support both .scad (legacy) and .json (modern VS Code snippet format) templates
-    QStringList filters = {QStringLiteral("*.scad"), QStringLiteral("*.json")};
-    QFileInfoList files = dir.entryInfoList(filters, QDir::Files);
-    
-    for (const QFileInfo& fi : files) {
-        ResourceItem item(fi.absoluteFilePath(), ResourceType::Templates, tier);
-        item.setName(fi.baseName());
-        item.setDisplayName(fi.baseName());
-        item.setSourcePath(fi.absoluteFilePath());
-        item.setSourceLocationKey(locationKey);
-        item.setAccess(ResourceAccess::ReadWrite);  // Templates are writable
-        results.append(item);
-    }
-    
-    // Scan subfolders (each is a category)
-    QStringList subfolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-    for (const QString& subfolder : subfolders) {
-        QString subPath = dir.absoluteFilePath(subfolder);
-        
-        scanFolderRecursive(subPath, {QStringLiteral(".scad"), QStringLiteral(".json")},
-                           ResourceType::Templates, tier, locationKey,
-                           subfolder, results);
-    }
-    
-    return results;
-}
 
 QList<ResourceItem> ResourceScanner::scanTranslations(
     const QString& basePath, ResourceTier tier, const QString& locationKey)
