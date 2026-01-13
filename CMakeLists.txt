@@ -153,6 +153,16 @@ find_package(Qt6 COMPONENTS Core Gui REQUIRED)
 message(STATUS "Found Qt6::Core at ${Qt6_DIR}")
 message(STATUS "Found Qt6::Gui at ${Qt6Gui_DIR}")
 
+# Find Qt6::Test for QTest-based tests (optional)
+if(BUILD_TESTS)
+    find_package(Qt6 COMPONENTS Test QUIET)
+    if(Qt6Test_FOUND)
+        message(STATUS "Found Qt6::Test - QTest-based tests will be built")
+    else()
+        message(WARNING "Qt6::Test not found - QTest-based tests will be skipped")
+    endif()
+endif()
+
 # Find JSON libraries (nlohmann-json required by json-schema-validator)
 find_package(nlohmann_json REQUIRED)
 message(STATUS "Found nlohmann_json at ${nlohmann_json_DIR}")
@@ -313,7 +323,11 @@ target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui)
 
 # Set library properties for Windows DLL export
 if(BUILD_SHARED_LIBS)
-    target_compile_definitions(scadtemplates_lib PRIVATE SCADTEMPLATES_EXPORTS PLATFORMINFO_EXPORTS)
+    target_compile_definitions(scadtemplates_lib PRIVATE 
+        SCADTEMPLATES_EXPORTS 
+        PLATFORMINFO_EXPORTS
+        RESOURCESCANNING_EXPORTS
+    )
 endif()
 
 # Set output name and versioning
@@ -351,8 +365,8 @@ if(BUILD_APP)
         src/gui/sysInfoDialog.hpp
 
         # Resource inventory GUI components (require Qt Widgets)
-        src/resourceInventory/resourceScanner.cpp
-        src/resourceInventory/resourceScanner.hpp
+        src/resourceScanning/resourceScanner.cpp
+        src/resourceScanning/resourceScanner.hpp
         src/resourceInventory/resourceTreeWidget.cpp
         src/resourceInventory/resourceTreeWidget.hpp
     )
@@ -410,8 +424,8 @@ if(BUILD_APP)
         src/resourceInventory/resourceItem.hpp
         src/resourceInventory/resourceTreeWidget.cpp
         src/resourceInventory/resourceTreeWidget.hpp
-        src/resourceInventory/resourceScanner.cpp
-        src/resourceInventory/resourceScanner.hpp
+        src/resourceScanning/resourceScanner.cpp
+        src/resourceScanning/resourceScanner.hpp
     )
 
     add_executable(inventory_test EXCLUDE_FROM_ALL ${INVENTORY_TEST_SOURCES})
@@ -449,10 +463,10 @@ if(BUILD_APP)
     # Library discovery test app
     add_executable(library_discovery_test EXCLUDE_FROM_ALL
         src/app/library_discovery_test.cpp
-        src/resourceInventory/resourceScanner.cpp
+        src/resourceScanning/resourceScanner.cpp
         src/resourceInventory/resourceItem.cpp
         src/resourceInventory/resourceTreeWidget.cpp
-        src/resourceInventory/resourceScanner.hpp
+        src/resourceScanning/resourceScanner.hpp
         src/resourceInventory/resourceItem.hpp
         src/resourceInventory/resourceTreeWidget.hpp
     )
@@ -520,6 +534,55 @@ if(BUILD_APP)
     set_target_properties(test_tier_standalone PROPERTIES
         OUTPUT_NAME test_tier_standalone
         WIN32_EXECUTABLE OFF
+    )
+
+    # Model indexing example (console test)
+    add_executable(test_model_indexing
+        tests/test_model_indexing.cpp
+    )
+
+    target_link_libraries(test_model_indexing PRIVATE
+        Qt6::Core
+        Qt6::Gui
+    )
+
+    set_target_properties(test_model_indexing PROPERTIES
+        OUTPUT_NAME test_model_indexing
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Callback scanner test (Phase 1) - standalone QTest using compiled sources
+    add_executable(test_callback_scanner
+        tests/test_callback_scanner.cpp
+        tests/resourceScanner_minimal.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/platformInfo/platformInfo.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
+    target_link_libraries(test_callback_scanner PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Test
+    )
+
+    target_include_directories(test_callback_scanner PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+
+    # Suppress DLL export macros since we're compiling sources directly
+    target_compile_definitions(test_callback_scanner PRIVATE 
+        PLATFORMINFO_STATIC_DEFINE
+        RESOURCEMETADATA_STATIC_DEFINE
+        RESOURCESCANNING_STATIC_DEFINE
+    )
+
+    set_target_properties(test_callback_scanner PROPERTIES
+        OUTPUT_NAME test_callback_scanner
+        WIN32_EXECUTABLE OFF
+        AUTOMOC ON
     )
 
     # Copy Qt platform plugins so the console app can find qwindows at runtime
