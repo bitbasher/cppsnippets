@@ -8,8 +8,9 @@
 #include "applicationNameInfo.hpp"
 #include <scadtemplates/template_manager.hpp>
 #include <platformInfo/resourceLocationManager.hpp>
+#include <platformInfo/ResourceLocation.hpp>
 #include <resourceScanning/resourceScanner.hpp>
-#include <resourceInventory/resourceTreeWidget.hpp>
+#include <resourceInventory/resourceItem.hpp>
 
 #include <QMenuBar>
 #include <QMenu>
@@ -37,19 +38,19 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonValue>
+#include <QStandardItemModel>
+#include <QTreeView>
+#include <QSortFilterProxyModel>
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QStandardItemModel* inventory, QWidget *parent)
     : QMainWindow(parent)
     , m_templateManager(std::make_unique<scadtemplates::TemplateManager>())
     , m_resourceManager(std::make_unique<platformInfo::ResourceLocationManager>())
-    , m_inventoryManager(std::make_unique<resourceInventory::ResourceInventoryManager>())
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
+    , m_inventory(inventory)
 {
     // Set application path for resource manager
     m_resourceManager->setApplicationPath(QCoreApplication::applicationDirPath());
-    
-    // Build resource inventory from all known locations
-    m_inventoryManager->buildInventory(*m_resourceManager);
     
     setupUi();
     setupMenus();
@@ -93,12 +94,14 @@ void MainWindow::setupUi() {
     connect(m_searchEdit, &QLineEdit::textChanged, this, &MainWindow::onSearch);
     listLayout->addWidget(m_searchEdit);
     
-    // Get the pre-populated template tree from inventory manager
-    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Templates);
+    // Create tree view with the pre-built model
+    m_templateTree = new QTreeView(this);
+    m_templateTree->setModel(m_inventory);
     m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
-    m_templateTree->setColumnHidden(2, true);  // Hide Category column
-    connect(m_templateTree, &resourceInventory::ResourceTreeWidget::itemSelectionChanged,
+    m_templateTree->setAlternatingRowColors(true);
+    m_templateTree->setRootIsDecorated(false);
+    m_templateTree->setSortingEnabled(true);
+    connect(m_templateTree->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &MainWindow::onInventorySelectionChanged);
     listLayout->addWidget(m_templateTree);
     
@@ -302,7 +305,7 @@ void MainWindow::setupMenus() {
             resourceDir = tr("(not found)");
         }
         
-        QString resourceCounts = m_inventoryManager->countSummary();
+        QString resourceCounts = tr("%1 templates").arg(m_inventory->rowCount());
         
         QMessageBox::about(this, tr("About ScadTemplates"),
             tr("ScadTemplates v%1\n\n"
@@ -445,38 +448,38 @@ void MainWindow::onInventoryItemSelected(const resourceInventory::ResourceItem& 
 }
 
 void MainWindow::onInventorySelectionChanged() {
-    resourceInventory::ResourceItem item = m_templateTree->selectedItem();
-    if (!item.path().isEmpty()) {
-        onInventoryItemSelected(item);
+    QModelIndexList selected = m_templateTree->selectionModel()->selectedRows();
+    if (selected.isEmpty()) {
+        return;
     }
+    
+    QModelIndex index = selected.first();
+    QStandardItem* item = m_inventory->itemFromIndex(index);
+    if (!item) return;
+    
+    // Retrieve full ResourceItem from Qt::UserRole
+    QVariant itemData = item->data(Qt::UserRole);
+    if (!itemData.isValid()) return;
+    
+    resourceInventory::ResourceItem resItem = itemData.value<resourceInventory::ResourceItem>();
+    if (resItem.sourcePath().isEmpty()) {
+        return;
+    }
+    
+    onInventoryItemSelected(resItem);
 }
 
 void MainWindow::refreshInventory() {
-    // Get the old tree to remove from layout
-    QLayout* parentLayout = m_templateTree->parentWidget() 
-        ? m_templateTree->parentWidget()->layout() : nullptr;
+    // Clear and rescan the model
+    m_inventory->clear();
     
-    if (parentLayout) {
-        parentLayout->removeWidget(m_templateTree);
-    }
+    // TODO: Implement actual discovery when ResourceLocationManager is complete
+    QList<platformInfo::ResourceLocation> allLocations;
     
-    // Refresh creates a new widget
-    m_inventoryManager->refreshInventory(resourceInventory::ResourceType::Templates);
+    resourceInventory::ResourceScanner scanner;
+    scanner.scanToModel(m_inventory, allLocations);
     
-    // Get the new widget and update our pointer
-    m_templateTree = m_inventoryManager->inventory(resourceInventory::ResourceType::Templates);
-    m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_templateTree->setColumnHidden(0, true);  // Hide Tier column (shown in Path)
-    m_templateTree->setColumnHidden(2, true);  // Hide Category column
-    
-    // Reconnect signals
-    connect(m_templateTree, &resourceInventory::ResourceTreeWidget::itemSelectionChanged,
-            this, &MainWindow::onInventorySelectionChanged);
-    
-    // Re-add to layout
-    if (parentLayout) {
-        parentLayout->addWidget(m_templateTree);
-    }
+    statusBar()->showMessage(tr("Inventory refreshed: %1 templates").arg(m_inventory->rowCount()), 3000);
 }
 
 void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceItem& item) {

@@ -60,13 +60,11 @@ TEST_F(ResourceLocationTest, PathAndNameConstructor) {
 TEST_F(ResourceLocationTest, CopyConstructor) {
     ResourceLocation original("/test/path", ResourceTier::User, QString(), "Test Name");
     original.setDescription("Test Description");
-    original.setWritable(true);
     
     ResourceLocation copy(original);
     EXPECT_EQ(copy.path(), original.path());
     EXPECT_EQ(copy.getDisplayName(), original.getDisplayName());
     EXPECT_EQ(copy.description(), original.description());
-    EXPECT_EQ(copy.isWritable(), original.isWritable());
 }
 
 // ============================================================================
@@ -79,19 +77,60 @@ TEST_F(ResourceLocationTest, RejectsEmptyPath) {
     EXPECT_TRUE(result.isEmpty());
 }
 
-TEST_F(ResourceLocationTest, RejectsEnvironmentVariables) {
-    // Test various environment variable formats - returned as-is
-    ResourceLocation loc1("C:\\%APPDATA%\\test", ResourceTier::User);
-    EXPECT_EQ(loc1.getDisplayName(), "C:\\%APPDATA%\\test");
+TEST_F(ResourceLocationTest, ExtractsEnvironmentVariables) {
+    // Test various environment variable formats - extracts just the env var
     
-    ResourceLocation loc2("/home/${USER}/test", ResourceTier::User);
-    EXPECT_EQ(loc2.getDisplayName(), "/home/${USER}/test");
+    // Windows batch style: %VARNAME%
+    ResourceLocation loc1("C:\\%APPDATA%\\test", ResourceTier::User, "C:\\%APPDATA%\\test");
+    EXPECT_EQ(loc1.getDisplayName(), "%APPDATA%");
     
-    ResourceLocation loc3("$env:USERPROFILE\\test", ResourceTier::User);
-    EXPECT_EQ(loc3.getDisplayName(), "$env:USERPROFILE\\test");
+    // Brace style: ${VARNAME}
+    ResourceLocation loc2("/home/${USER}/test", ResourceTier::User, "/home/${USER}/test");
+    EXPECT_EQ(loc2.getDisplayName(), "${USER}");
     
-    ResourceLocation loc4("path && command", ResourceTier::User);
-    EXPECT_EQ(loc4.getDisplayName(), "path && command");
+    // PowerShell style: $env:VARNAME
+    ResourceLocation loc3("$env:USERPROFILE\\test", ResourceTier::User, "$env:USERPROFILE\\test");
+    EXPECT_EQ(loc3.getDisplayName(), "$USERPROFILE");
+    
+    // PowerShell with braces: $env:{VARNAME}
+    ResourceLocation loc4("$env:{USERPROFILE}\\test", ResourceTier::User, "$env:{USERPROFILE}\\test");
+    EXPECT_EQ(loc4.getDisplayName(), "${USERPROFILE}");
+    
+    // Unix style: $VARNAME
+    ResourceLocation loc5("$HOME/test", ResourceTier::User, "$HOME/test");
+    EXPECT_EQ(loc5.getDisplayName(), "$HOME");
+}
+
+TEST_F(ResourceLocationTest, ExtractsFirstEnvironmentVariableOnly) {
+    // When path contains multiple env vars, extracts first one based on check order:
+    // 1. $env:VAR or $env:{VAR}
+    // 2. ${VAR}
+    // 3. $VAR
+    // 4. %VAR%
+    
+    // Test 1: $env:VAR comes first (check order), even though ${VAR} appears first in string
+    ResourceLocation loc1("${HOME}/$env:USERNAME/test", ResourceTier::User, "${HOME}/$env:USERNAME/test");
+    EXPECT_EQ(loc1.getDisplayName(), "$USERNAME") << "Should extract $env:USERNAME (higher priority)";
+    
+    // Test 2: Swap order in string - should still extract $env:VAR first
+    ResourceLocation loc2("$env:USERNAME/${HOME}/test", ResourceTier::User, "$env:USERNAME/${HOME}/test");
+    EXPECT_EQ(loc2.getDisplayName(), "$USERNAME") << "Should extract $env:USERNAME regardless of position";
+    
+    // Test 3: ${VAR} and $VAR - ${VAR} has higher priority
+    ResourceLocation loc3("$HOME/${USER}/test", ResourceTier::User, "$HOME/${USER}/test");
+    EXPECT_EQ(loc3.getDisplayName(), "${USER}") << "Should extract ${USER} (higher priority than $HOME)";
+    
+    // Test 4: Swap order
+    ResourceLocation loc4("${USER}/$HOME/test", ResourceTier::User, "${USER}/$HOME/test");
+    EXPECT_EQ(loc4.getDisplayName(), "${USER}") << "Should extract ${USER} regardless of position";
+    
+    // Test 5: $VAR and %VAR% - $VAR has higher priority
+    ResourceLocation loc5("$HOME/%USERPROFILE%/test", ResourceTier::User, "$HOME/%USERPROFILE%/test");
+    EXPECT_EQ(loc5.getDisplayName(), "$HOME") << "Should extract $HOME (higher priority than %USERPROFILE%)";
+    
+    // Test 6: Swap order
+    ResourceLocation loc6("%USERPROFILE%/$HOME/test", ResourceTier::User, "%USERPROFILE%/$HOME/test");
+    EXPECT_EQ(loc6.getDisplayName(), "$HOME") << "Should extract $HOME regardless of position";
 }
 
 TEST_F(ResourceLocationTest, RejectsRelativePaths) {

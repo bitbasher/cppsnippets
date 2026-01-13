@@ -490,6 +490,7 @@ void ResourceScanner::addItemToModel(QStandardItemModel* model, const ResourceIt
     
     // Custom roles for metadata storage
     enum ItemRole {
+        ItemDataRole = Qt::UserRole,  // Store full ResourceItem
         TypeRole = Qt::UserRole + 1,
         TierRole = Qt::UserRole + 2,
         PathRole = Qt::UserRole + 3,
@@ -500,7 +501,10 @@ void ResourceScanner::addItemToModel(QStandardItemModel* model, const ResourceIt
     
     auto* standardItem = new QStandardItem(item.displayName());
     
-    // Store metadata in custom roles
+    // Store full item as QVariant for easy retrieval
+    standardItem->setData(QVariant::fromValue(item), ItemDataRole);
+    
+    // Store metadata in custom roles (for filtering/sorting)
     standardItem->setData(static_cast<int>(item.type()), TypeRole);
     standardItem->setData(static_cast<int>(item.tier()), TierRole);
     standardItem->setData(item.sourcePath(), PathRole);
@@ -711,142 +715,6 @@ void ResourceScanner::scanFolderRecursive(
         scanFolderRecursive(dir.absoluteFilePath(subfolder), extensions,
                            type, tier, locationKey, newCategory, results);
     }
-}
-
-// ============================================================================
-// ResourceInventoryManager
-// ============================================================================
-
-ResourceInventoryManager::ResourceInventoryManager(QObject* parent)
-    : QObject(parent)
-    , m_scanner(new ResourceScanner(this))
-{
-}
-
-void ResourceInventoryManager::setInstallLocations(const QList<platformInfo::ResourceLocation>& locs)
-{
-    m_installLocs = locs;
-}
-
-void ResourceInventoryManager::setMachineLocations(const QList<platformInfo::ResourceLocation>& locs)
-{
-    m_machineLocs = locs;
-}
-
-void ResourceInventoryManager::setUserLocations(const QList<platformInfo::ResourceLocation>& locs)
-{
-    m_userLocs = locs;
-}
-
-void ResourceInventoryManager::setLocationsFrom(const platformInfo::ResourceLocationManager& manager)
-{
-    m_installLocs = manager.findSiblingInstallations();
-    m_machineLocs = manager.enabledMachineLocations();
-    m_userLocs = manager.enabledUserLocations();
-}
-
-void ResourceInventoryManager::buildInventory(const platformInfo::ResourceLocationManager& manager)
-{
-    setLocationsFrom(manager);
-    
-    // Build inventories for all resource types
-    buildInventory(ResourceType::Examples);
-    buildInventory(ResourceType::Libraries);
-    buildInventory(ResourceType::Fonts);
-    buildInventory(ResourceType::RenderColors);
-    buildInventory(ResourceType::EditorColors);
-    buildInventory(ResourceType::Templates);
-    buildInventory(ResourceType::Translations);
-}
-
-ResourceTreeWidget* ResourceInventoryManager::buildInventory(ResourceType type)
-{
-    // Remove existing inventory if any
-    if (m_inventories.contains(type)) {
-        delete m_inventories.take(type);
-    }
-    
-    auto* tree = new ResourceTreeWidget();
-    tree->setResourceType(type);
-    
-    if (type == ResourceType::Libraries) {
-        // Libraries need special hierarchical scanning
-        m_scanner->scanLibraries(m_installLocs, ResourceTier::Installation, tree);
-        m_scanner->scanLibraries(m_machineLocs, ResourceTier::Machine, tree);
-        m_scanner->scanLibraries(m_userLocs, ResourceTier::User, tree);
-    } else {
-        m_scanner->scanAllTiers(m_installLocs, m_machineLocs, m_userLocs, type, tree);
-    }
-    
-    m_inventories.insert(type, tree);
-    
-    int count = tree->allItems().size();
-    emit inventoryBuilt(type, count);
-    
-    return tree;
-}
-
-ResourceTreeWidget* ResourceInventoryManager::inventory(ResourceType type)
-{
-    if (!m_inventories.contains(type)) {
-        return buildInventory(type);
-    }
-    return m_inventories.value(type);
-}
-
-void ResourceInventoryManager::refreshInventory(ResourceType type)
-{
-    buildInventory(type);
-    emit inventoryRefreshed(type);
-}
-
-void ResourceInventoryManager::clearAll()
-{
-    qDeleteAll(m_inventories);
-    m_inventories.clear();
-}
-
-int ResourceInventoryManager::itemCount(ResourceType type) const
-{
-    if (m_inventories.contains(type)) {
-        return m_inventories.value(type)->allItems().size();
-    }
-    return 0;
-}
-
-QMap<ResourceType, int> ResourceInventoryManager::allCounts() const
-{
-    QMap<ResourceType, int> counts;
-    for (auto it = m_inventories.constBegin(); it != m_inventories.constEnd(); ++it) {
-        counts.insert(it.key(), it.value()->allItems().size());
-    }
-    return counts;
-}
-
-QString ResourceInventoryManager::countSummary() const
-{
-    QStringList parts;
-    
-    auto addCount = [&](ResourceType type, const QString& label) {
-        int count = itemCount(type);
-        if (count > 0) {
-            parts << QString("%1 %2").arg(count).arg(label);
-        }
-    };
-    
-    addCount(ResourceType::Examples, "Examples");
-    addCount(ResourceType::Libraries, "Libraries");
-    addCount(ResourceType::Fonts, "Fonts");
-    addCount(ResourceType::RenderColors, "Render Color Schemes");
-    addCount(ResourceType::EditorColors, "Editor Color Schemes");
-    addCount(ResourceType::Templates, "Templates");
-    addCount(ResourceType::Translations, "Translations");
-    
-    if (parts.isEmpty()) {
-        return QStringLiteral("No resources found");
-    }
-    
-    return parts.join(QStringLiteral(", "));
 }
 
 } // namespace resourceInventory

@@ -15,6 +15,8 @@ class QPlainTextEdit;
 class QSettings;
 class QPushButton;
 class QVBoxLayout;
+class QStandardItemModel;
+class QTreeView;
 
 namespace scadtemplates {
 class TemplateManager;
@@ -27,7 +29,6 @@ class ResourceLocationManager;
 }
 
 namespace resourceInventory {
-class ResourceInventoryManager;
 class ResourceTreeWidget;
 class ResourceItem;
 }
@@ -41,9 +42,10 @@ class MainWindow : public QMainWindow {
 public:
     /**
      * @brief Constructor
+     * @param inventory Pre-built resource inventory model
      * @param parent Parent widget
      */
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QStandardItemModel* inventory, QWidget *parent = nullptr);
     
     /**
      * @brief Destructor
@@ -79,12 +81,12 @@ private:
     
     std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;
     std::unique_ptr<platformInfo::ResourceLocationManager> m_resourceManager;
-    std::unique_ptr<resourceInventory::ResourceInventoryManager> m_inventoryManager;
     std::unique_ptr<QSettings> m_settings;
+    QStandardItemModel* m_inventory;  // Owned by QApplication
     
     // Template panel
     QVBoxLayout* m_inventoryLayout;
-    resourceInventory::ResourceTreeWidget* m_templateTree;
+    QTreeView* m_templateTree;
     QLineEdit* m_prefixEdit;
     QTextEdit* m_bodyEdit;
     QTextEdit* m_descriptionEdit;

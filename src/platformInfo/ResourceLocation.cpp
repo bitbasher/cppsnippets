@@ -5,10 +5,17 @@
 
 #include "ResourceLocation.hpp"
 #include "resourceInventory/resourceItem.hpp"
+
+#include <algorithm>
+
 #include <QDir>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QStringView>
+#include <QDebug>
+#include <QRegularExpressionMatch>
 
 namespace platformInfo {
 
@@ -18,10 +25,6 @@ ResourceLocation::ResourceLocation()
     , m_rawPath()
     , m_description()
     , m_tier(ResourceTier::User)
-    , m_isEnabled(true)
-    , m_exists(false)
-    , m_isWritable(false)
-    , m_hasResourceFolders(false)
 {}
 
 // Path constructor
@@ -30,10 +33,6 @@ ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QS
     , m_rawPath(rawPath.isEmpty() ? p : rawPath)
     , m_description(desc)
     , m_tier(tier)
-    , m_isEnabled(true)
-    , m_exists(false)
-    , m_isWritable(false)
-    , m_hasResourceFolders(false)
 {}
 
 // Copy constructor
@@ -42,71 +41,73 @@ ResourceLocation::ResourceLocation(const ResourceLocation& other)
     , m_rawPath(other.m_rawPath)
     , m_description(other.m_description)
     , m_tier(other.m_tier)
-    , m_isEnabled(other.m_isEnabled)
-    , m_exists(other.m_exists)
-    , m_isWritable(other.m_isWritable)
-    , m_hasResourceFolders(other.m_hasResourceFolders)
 {}
 
 QString ResourceLocation::getDisplayName() const
 {
-    // Validate input path
-    if (m_path.isEmpty()) {
-        return QString();
-    }
-    
-    // Keep paths with environment variable placeholders as-is - they're unique identifiers
-    if (m_path.contains("&&") || 
-        m_path.contains("$env:", Qt::CaseInsensitive) ||
-        m_path.contains("${") ||
-        m_path.contains("%")) {
-        return m_path;  // Use env var name as display name
-    }
-    
-    // Check if path is absolute
-    QFileInfo pathInfo(m_path);
-    if (!pathInfo.isAbsolute()) {
-        qWarning() << "getDisplayName: Path is not absolute:" << m_path;
-        return m_path;  // Return as-is if not absolute
-    }
-    
-    // Get canonical path (resolves symlinks and . / .. components)
-    QString canonicalPath = pathInfo.canonicalFilePath();
-    if (canonicalPath.isEmpty()) {
-        // Path doesn't exist, use cleaned absolute path
-        canonicalPath = QDir::cleanPath(pathInfo.absoluteFilePath());
-    }
-    
-    // Safety check - ensure canonical path is valid
-    if (canonicalPath.isNull() || canonicalPath.length() > 32767) {
-        qWarning() << "getDisplayName: Invalid canonical path for:" << m_path;
+    // Check drive root - the root is going to be the shortest possible unique path
+    // so we can skip all other checks including length checks
+    QDir dir(m_path);
+    if (dir.isRoot()) {
         return m_path;
     }
+     
+    // Keep paths with environment variable placeholders as-is - they're unique identifiers
+    // Matches: ${VARNAME}, $VARNAME, %VARNAME%, or PowerShell $env:VARNAME
+    // QRegularExpression envVarRegex(R"(\$\{[a-zA-Z_][a-zA-Z0-9_]*\}|\$[a-zA-Z_][a-zA-Z0-9_]*|%[a-zA-Z_][a-zA-Z0-9_]*%)");
+    QRegularExpression matedBraces(R"(\$\{[A-Z_][A-Z0-9_]*\})");
+    QRegularExpression leadingDollar(R"(\$[A-Z_][A-Z0-9_]*)");
+    QRegularExpression leadingEnv(R"(\$[eE][nN][vV]:(\{[A-Z_][A-Z0-9_]*\}|[A-Z_][A-Z0-9_]*))");
+    QRegularExpression percentages(R"(%[A-Z_][A-Z0-9_]*%)");
+
+    // Keep paths with environment variable placeholders as-is - they're unique identifiers
+    QRegularExpressionMatch match;
+    QString envVarString;
     
-    // Replace home directory with tilde (do this early as it may shorten the path enough)
-    QString homeDir = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-    if (!homeDir.isEmpty() && canonicalPath.startsWith(homeDir)) {
-        canonicalPath = "~" + canonicalPath.mid(homeDir.length());
+    match = leadingEnv.match(m_rawPath);
+    if (match.hasMatch()) {
+        envVarString = QStringLiteral("$") + match.captured(1);
+    } else {
+        match = matedBraces.match(m_rawPath);
+        if (match.hasMatch()) {
+            envVarString = match.captured(0);
+        } else {
+            match = leadingDollar.match(m_rawPath);
+            if (match.hasMatch()) {
+                envVarString = match.captured(0);
+            } else {
+                match = percentages.match(m_rawPath);
+                if (match.hasMatch()) {
+                    envVarString = match.captured(0);
+                }
+            }
+        }
     }
     
-    // Check drive root (already minimal)
-    QDir dir(canonicalPath);
-    if (dir.isRoot()) {
-        return canonicalPath;  // "C:", "/", etc.
+    QString candidateName;
+    if (match.hasMatch())
+        candidateName = envVarString;
+    else {
+        // Get canonical path (resolves symlinks and . / .. components)
+        QString canonicalPath = QFileInfo(m_path).canonicalFilePath();
+        if (canonicalPath.isEmpty()) {
+            canonicalPath = m_path;  // Fallback if path doesn't exist
+        }
+        
+        // Replace home directory with tilde (do this early as it may shorten the path enough)
+        QString homeDir = QDir::homePath(); // homeDir cannot be empty
+        if ( canonicalPath.startsWith(homeDir)) {
+            canonicalPath = "~" + canonicalPath.mid(homeDir.length());
+        }
+        candidateName = canonicalPath;
     }
-    
-    // Get configured maximum display length
-    int maxLength = getMaxDisplayLength();
-    
-    // Validate maxLength to prevent assertion failures
-    if (maxLength < 10) {
-        qWarning() << "getDisplayName: Invalid maxLength" << maxLength << "using default 60";
-        maxLength = 60;
-    }
+
+    // ensure that the max display length is within reasonable bounds
+    int maxLength = std::max(20, std::min( getMaxDisplayLength(), 60));
     
     // If path is short enough, display as-is
-    if (canonicalPath.length() <= maxLength) {
-        return canonicalPath;
+    if (candidateName.length() <= maxLength) {
+        return candidateName;
     }
     
     // Path is too long - truncate with ellipsis
@@ -115,19 +116,13 @@ QString ResourceLocation::getDisplayName() const
     int keepLeft = available / 2;
     int keepRight = available - keepLeft;  // Automatically gets remainder when odd
     
-    return canonicalPath.left(keepLeft) + "..." + canonicalPath.right(keepRight);
+    return candidateName.left(keepLeft) + "..." + candidateName.right(keepRight);
 }
 
 int ResourceLocation::getMaxDisplayLength()
 {
     QSettings settings(QStringLiteral("ScadTemplates"), QStringLiteral("ResourcePaths"));
     return settings.value(QStringLiteral("max_display_name_length"), 60).toInt();
-}
-
-int ResourceLocation::getMinDisplayLength()
-{
-    QSettings settings(QStringLiteral("ScadTemplates"), QStringLiteral("ResourcePaths"));
-    return settings.value(QStringLiteral("min_display_name_length"), 24).toInt();
 }
 
 } // namespace platformInfo

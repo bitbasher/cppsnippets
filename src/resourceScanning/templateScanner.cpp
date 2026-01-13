@@ -94,8 +94,9 @@ QList<ResourceTemplate> TemplateScanner::scanLocations(const QList<platformInfo:
     QList<ResourceTemplate> allTemplates;
     
     for (const auto& location : locations) {
-        if (!location.exists() || !location.isEnabled()) {
-            qDebug() << "TemplateScanner: Skipping disabled/non-existent location:" 
+        QString templatesPath = location.path() + "/templates";
+        if (!QDir(templatesPath).exists()) {
+            qDebug() << "TemplateScanner: Skipping non-existent templates folder:" 
                     << location.getDisplayName();
             continue;
         }
@@ -215,8 +216,8 @@ ResourceTemplate TemplateScanner::extractMetadata(const QJsonDocument& json,
     tmpl.setSourcePath(location.path());
     tmpl.setSourceLocationKey(location.path());
     
-    // Set access based on location writeability
-    tmpl.setAccess(location.isWritable() ? ResourceAccess::ReadWrite : ResourceAccess::ReadOnly);
+    // Set access to ReadOnly (scanner doesn't track writeability)
+    tmpl.setAccess(ResourceAccess::ReadOnly);
     
     // Set resource type
     tmpl.setType(ResourceType::Templates);

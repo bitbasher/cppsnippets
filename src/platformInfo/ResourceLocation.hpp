@@ -35,42 +35,24 @@ public:
     QString getDisplayName() const;
     QString description() const { return m_description; }
     ResourceTier tier() const { return m_tier; }
-    bool isEnabled() const { return m_isEnabled; }
-    bool exists() const { return m_exists; }
-    bool isWritable() const { return m_isWritable; }
-    bool hasResourceFolders() const { return m_hasResourceFolders; }
 
     // Setters
     void setPath(const QString& p) { m_path = p; }
     void setRawPath(const QString& raw) { m_rawPath = raw; }
     void setDescription(const QString& desc) { m_description = desc; }
     void setTier(ResourceTier tier) { m_tier = tier; }
-    void setEnabled(bool enabled) { m_isEnabled = enabled; }
-    void setExists(bool exist) { m_exists = exist; }
-    void setWritable(bool writable) { m_isWritable = writable; }
-    void setHasResourceFolders(bool has) { m_hasResourceFolders = has; }
     
 private:
     QString m_path;                     ///< Absolute resolved path to the resource location
     QString m_rawPath;                  ///< Original path with env vars (e.g., "$OPENSCAD_LIBRARIES")
     QString m_description;              ///< User-friendly description
     ResourceTier m_tier;                ///< Tier: Installation, Machine, or User
-    bool m_isEnabled = true;            ///< Whether this location is active
-    bool m_exists = false;              ///< Whether the directory exists
-    bool m_isWritable = false;          ///< Whether the directory is writable
-    bool m_hasResourceFolders = false;  ///< Whether valid resource folders were found
 
     /**
      * @brief Get configured maximum display name length
      * @return Max length from settings (default 60 characters)
      */
     static int getMaxDisplayLength();
-    
-    /**
-     * @brief Get configured minimum display name length threshold
-     * @return Min length from settings (default 24 characters)
-     */
-    static int getMinDisplayLength();
 };
 
 } // namespace platformInfo
