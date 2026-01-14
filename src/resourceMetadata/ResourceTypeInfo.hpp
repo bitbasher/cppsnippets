@@ -9,6 +9,7 @@
 #include "export.hpp"
 
 #include <QList>
+#include <QHash>
 #include <QMap>
 #include <QString>
 #include <QStringList>
@@ -24,20 +25,20 @@ namespace resourceMetadata {
  */
 enum class ResourceType {
   Unknown = 0,  ///< Unknown/invalid resource type
-  Group,        ///< Container holde groups of a resource
-  Examples,     ///< Example .scad files ($RESOURCEDIR/examples)
-  Tests,        ///< Test .scad files ($RESOURCEDIR/tests) - may have .json/.txt/.dat
-                ///< attachments
-  Fonts,        ///< Font files - .ttf, .otf ($RESOURCEDIR/fonts)
   ColorSchemes, ///< Container folder for color schemes
   EditorColors, ///< Color scheme files for the editor - .json
                 ///< ($RESOURCEDIR/color-schemes)
+  Examples,     ///< Example .scad files ($RESOURCEDIR/examples)
+  Fonts,        ///< Font files - .ttf, .otf ($RESOURCEDIR/fonts)
+  Group,        ///< Container holde groups of a resource
+  Libraries,    ///< OpenSCAD library .scad scripts ($RESOURCEDIR/libraries) -
+                ///< extend OpenSCAD features
   RenderColors, ///< Color scheme files for 3D View - .json
                 ///< ($RESOURCEDIR/color-schemes)
   Shaders,      ///< Shader files - .frag, .vert ($RESOURCEDIR/shaders)
   Templates,    ///< Template files ($RESOURCEDIR/templates)
-  Libraries,    ///< OpenSCAD library .scad scripts ($RESOURCEDIR/libraries) -
-                ///< extend OpenSCAD features
+  Tests,        ///< Test .scad files ($RESOURCEDIR/tests) - may have .json/.txt/.dat
+                ///< attachments
   Translations  ///< Translation/locale files ($RESOURCEDIR/locale)
 };
 
@@ -49,6 +50,17 @@ inline static const QList<ResourceType> s_topLevel = {
     ResourceType::Shaders,   ResourceType::Templates,
     ResourceType::Libraries, ResourceType::Translations};
 
+inline static const QHash<QString, ResourceType> s_topLevelReverse = {
+    {QStringLiteral("examples"),      ResourceType::Examples},
+    {QStringLiteral("tests"),         ResourceType::Tests},
+    {QStringLiteral("fonts"),         ResourceType::Fonts},
+    {QStringLiteral("color-schemes"), ResourceType::ColorSchemes},
+    {QStringLiteral("shaders"),       ResourceType::Shaders},
+    {QStringLiteral("templates"),     ResourceType::Templates},
+    {QStringLiteral("libraries"),     ResourceType::Libraries},
+    {QStringLiteral("locale"),        ResourceType::Translations}
+};
+
 inline static const QList<ResourceType> s_nonContainer = {
     ResourceType::Fonts, ResourceType::EditorColors, ResourceType::RenderColors,
     ResourceType::Shaders, ResourceType::Templates};
@@ -56,20 +68,24 @@ inline static const QList<ResourceType> s_nonContainer = {
 inline static const QList<ResourceType> s_exampleSub = {
     ResourceType::Group, ResourceType::Templates, ResourceType::Tests};
 
+inline static const QString groupNameCapture = QStringLiteral("__capture__");
+
 inline static const QList<ResourceType> s_testSub = {ResourceType::Templates};
  
-// All resource folder names that can be discovered in a resource location
-// Note: "newresources" is NOT included - it's a pre-defined location for dropped resources, not a resource folder
-// This list should match the subdirectory values from s_resourceTypes for top-level resource types
+/// All resource folder names that can be discovered in a resource location
+/// This list matches the s_resourceTypes for ONLY top-level resource types, so Group,
+/// EditorColors, and RenderColors are excluded
+/// Note: "newresources" is NOT included - it's a pre-defined location for dropped resources,
+/// not a resource folder, so it is a Location to scan for resources in.
 inline static const QStringList s_allResourceFolders = {
-    QStringLiteral("examples"),
-    QStringLiteral("tests"),
-    QStringLiteral("fonts"),
     QStringLiteral("color-schemes"),
+    QStringLiteral("examples"),
+    QStringLiteral("fonts"),
+    QStringLiteral("libraries"),
+    QStringLiteral("locale"),      // translations by another name
     QStringLiteral("shaders"),
     QStringLiteral("templates"),
-    QStringLiteral("libraries"),
-    QStringLiteral("locale")
+    QStringLiteral("tests"),
 };
 
 inline static const QStringList s_attachments = {
@@ -148,7 +164,5 @@ public:
   // Static resource type registry
   RESOURCEMETADATA_API static const QMap<ResourceType, ResourceTypeInfo> s_resourceTypes;
 };
-
-inline static const QString groupNameCapture = QStringLiteral("__capture__");
 
 } // namespace resourceMetadata

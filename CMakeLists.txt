@@ -625,6 +625,13 @@ if(BUILD_APP)
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
+    # Phase 1: QVariant registration and storage tests
+    add_executable(test_qvariant_phase1
+        tests/test_qvariant_phase1.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
     target_link_libraries(test_scantomodel PRIVATE
         Qt6::Core
         Qt6::Gui
@@ -647,6 +654,26 @@ if(BUILD_APP)
         Qt6::Core
         Qt6::Gui
         Qt6::Test
+    )
+
+    target_link_libraries(test_qvariant_phase1 PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    # Standalone test - compile sources directly, not using DLL
+    target_include_directories(test_qvariant_phase1 PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+    
+    # Neutralize DLL export macros for standalone compilation
+    target_compile_definitions(test_qvariant_phase1 PRIVATE
+        PLATFORMINFO_EXPORTS
+        SCADTEMPLATES_EXPORTS
+        RESOURCESCANNING_EXPORTS
     )
 
     target_include_directories(test_attachment_scanning PRIVATE
