@@ -632,6 +632,14 @@ if(BUILD_APP)
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
+    # Phase 2: ExamplesInventory class tests
+    add_executable(test_examples_inventory
+        tests/test_examples_inventory.cpp
+        src/resourceInventory/ExamplesInventory.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
     target_link_libraries(test_scantomodel PRIVATE
         Qt6::Core
         Qt6::Gui
@@ -671,6 +679,25 @@ if(BUILD_APP)
     
     # Neutralize DLL export macros for standalone compilation
     target_compile_definitions(test_qvariant_phase1 PRIVATE
+        PLATFORMINFO_EXPORTS
+        SCADTEMPLATES_EXPORTS
+        RESOURCESCANNING_EXPORTS
+    )
+
+    target_link_libraries(test_examples_inventory PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    # Standalone test - compile sources directly
+    target_include_directories(test_examples_inventory PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+    
+    target_compile_definitions(test_examples_inventory PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS

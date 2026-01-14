@@ -341,7 +341,21 @@ void ResourceScanner::scanExamples(
 
 ## Multi-Phase Implementation Plan
 
-### Phase 1: Type System Foundation
+**⚠️ DEPRECATED: Phases 2-6 below describe callback-based architecture that was abandoned.**
+
+**Current Implementation:** Option 1 (Manager/Coordinator with specialized scanners) - see "Actual Implementation Phases" section below.
+
+**Why deprecated:** After planning, we decided callbacks are unnecessary because:
+- All scanning happens at startup before GUI exists
+- No progressive updates needed
+- Direct inventory modification simpler than callbacks
+- Composition + Facade pattern chosen over callback streaming
+
+**Phase 1 is still valid** - QVariant registration applies to both architectures.
+
+---
+
+### Phase 1: Type System Foundation ✅ COMPLETE
 **Goal:** Register types with Qt meta-object system, add Q_DECLARE_METATYPE
 
 **Changes:**
@@ -388,7 +402,8 @@ TEST(QVariantRegistration, ResourceScriptPreservesAttachments) {
 
 ---
 
-### Phase 2: Scanner Callback Conversion
+### Phase 2: Scanner Callback Conversion ⚠️ DEPRECATED
+**Status:** Not implemented - callbacks removed from design
 **Goal:** Change scanner callbacks to use QVariant
 
 **Changes:**
@@ -415,7 +430,8 @@ TEST(QVariantRegistration, ResourceScriptPreservesAttachments) {
 
 ---
 
-### Phase 3: Consumer/Storage Updates
+### Phase 3: Consumer/Storage Updates ⚠️ DEPRECATED
+**Status:** Not implemented - callbacks removed from design
 **Goal:** Change storage containers from `QList<ResourceItem>` to `QList<QVariant>`
 
 **Changes:**
@@ -439,7 +455,8 @@ TEST(QVariantRegistration, ResourceScriptPreservesAttachments) {
 
 ---
 
-### Phase 4: Model Integration
+### Phase 4: Model Integration ⚠️ DEPRECATED
+**Status:** Not implemented - callbacks removed from design
 **Goal:** Update QStandardItemModel integration to use QVariant storage
 
 **Changes:**
@@ -464,7 +481,8 @@ TEST(QVariantRegistration, ResourceScriptPreservesAttachments) {
 
 ---
 
-### Phase 5: Attachment Emission
+### Phase 5: Attachment Emission ⚠️ DEPRECATED
+**Status:** Not implemented - attachments stored in parent only
 **Goal:** Scanner emits attachments as separate ResourceAttachment items
 
 **Changes:**
@@ -489,7 +507,8 @@ TEST(QVariantRegistration, ResourceScriptPreservesAttachments) {
 
 ---
 
-### Phase 6: ResourceItem Hierarchy Cleanup (OPTIONAL)
+### Phase 6: ResourceItem Hierarchy Cleanup ⚠️ DEPRECATED
+**Status:** Optional cleanup phase - deferred
 **Goal:** Remove inheritance, make ResourceItem non-polymorphic
 
 **Rationale:**
@@ -506,6 +525,106 @@ TEST(QVariantRegistration, ResourceScriptPreservesAttachments) {
 4. Remove dynamic_cast usage (use QVariant instead)
 
 **Risk:** Low - cleanup phase
+
+---
+
+## Actual Implementation Phases (Option 1: Composition + Facade)
+
+**Current Approach:** Manager/Coordinator pattern with specialized scanners and inventories
+
+### Phase 1: Type System Foundation ✅ COMPLETE
+- Q_DECLARE_METATYPE for ResourceItem, ResourceScript, ResourceTemplate
+- QVariant round-trip tests (9 tests passing)
+- QHash<QString, QVariant> storage validated
+- Results: [doc/2026-01-14-phase1-qvariant-registration-results.md](2026-01-14-phase1-qvariant-registration-results.md)
+
+### Phase 2: ExamplesInventory Class 🔄 IN PROGRESS
+**Goal:** Create inventory class that stores examples with QHash<QString, QVariant>
+
+**Files to Create:**
+- `src/resourceInventory/ExamplesInventory.hpp`
+- `src/resourceInventory/ExamplesInventory.cpp`
+
+**Key Methods:**
+```cpp
+class ExamplesInventory {
+private:
+    QHash<QString, QVariant> m_scripts;  // Key: file path
+    
+public:
+    bool addExample(const QDirEntry& entry, const QString& category = QString());
+    bool addFolder(const QDirEntry& entry, const QString& category);
+    QVariant get(const QString& path) const;
+    QList<QVariant> getAll() const;
+    QList<QVariant> getByCategory(const QString& category) const;
+};
+```
+
+**Implementation Notes:**
+- Store ResourceScript objects in QVariant
+- Use file path as hash key
+- Auto-detect category folders (contains .scad files)
+- Scan for attachments when adding example
+
+### Phase 3: ExamplesScanner Implementation
+**Goal:** Complete scanner that uses ExamplesInventory
+
+**Files to Complete:**
+- `src/resourceScanning/examplesScanner.hpp`
+- `src/resourceScanning/examplesScanner.cpp` (currently draft)
+
+**Key Methods:**
+```cpp
+class ExamplesScanner {
+public:
+    void scanExamplesFolder(const QString& basePath, ExamplesInventory* inventory);
+    
+private:
+    void scanGroupFolder(const QString& path, const QString& category, ExamplesInventory* inventory);
+};
+```
+
+**Two-pass approach:**
+1. Scan directories → delegate to specialized scanners or identify groups
+2. Scan .scad files → add to inventory with attachment detection
+
+### Phase 4: ResourceInventory Facade
+**Goal:** Create unified interface to all specialized inventories
+
+**Files to Create:**
+- `src/resourceInventory/ResourceInventory.hpp`
+- `src/resourceInventory/ResourceInventory.cpp`
+
+**Structure:**
+```cpp
+class ResourceInventory {
+private:
+    ExamplesInventory m_examples;
+    TemplatesInventory m_templates;
+    TestsInventory m_tests;
+    FontsInventory m_fonts;
+    ColorSchemesInventory m_colorSchemes;
+    
+public:
+    void scanAll(const ResourceLocation& location);
+    ExamplesInventory& examples() { return m_examples; }
+    // ... other accessors
+};
+```
+
+### Phase 5: Integration and Testing
+**Goal:** Connect scanners to GUI, verify all resources discovered correctly
+
+**Testing:**
+- Verify all examples found
+- Verify attachments associated correctly
+- Verify category folders detected
+- Verify tree display works
+
+### Phase 6: Remaining Scanners
+**Goal:** Implement TemplatesScanner, TestsScanner, FontsScanner, etc.
+
+**Pattern:** Follow same approach as ExamplesScanner with inventory-specific optimizations
 
 ---
 

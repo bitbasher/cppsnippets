@@ -1,0 +1,133 @@
+/**
+ * @file ExamplesInventory.hpp
+ * @brief Inventory storage for OpenSCAD example scripts
+ * 
+ * Stores examples in QHash<QString, QVariant> for O(1) lookup by path.
+ * Handles attachment detection and category organization.
+ */
+
+#pragma once
+
+#include "../platformInfo/export.hpp"
+#include "../resourceMetadata/ResourceTypeInfo.hpp"
+#include "resourceItem.hpp"
+
+#include <QHash>
+#include <QString>
+#include <QVariant>
+#include <QList>
+#include <QDirListing>
+
+namespace resourceInventory {
+
+/**
+ * @brief Inventory for example scripts with attachment detection
+ * 
+ * Stores ResourceScript objects in QHash using file path as key.
+ * Provides O(1) lookup and filtered list generation for GUI.
+ */
+class PLATFORMINFO_API ExamplesInventory {
+public:
+    ExamplesInventory() = default;
+    ~ExamplesInventory() = default;
+    
+    /**
+     * @brief Add an example script to inventory
+     * 
+     * Scans for attachments (same baseName, different extensions).
+     * Creates ResourceScript with all attachments linked.
+     * Key format: "tier-category-name" (e.g., "installation-recursion-customizer")
+     * 
+     * @param entry QDirEntry for the .scad file
+     * @param tier Resource tier (installation/machine/user)
+     * @param category Category/group name (or "uncategorized")
+     * @return true if added successfully, false if already exists or invalid
+     */
+    bool addExample(const QDirListing::DirEntry& entry, const QString& tier, const QString& category = QStringLiteral("uncategorized"));
+    
+    /**
+     * @brief Add a category folder (auto-detect if contains .scad files)
+     * 
+     * Scans folder for .scad files. If found, treats as category.
+     * If no .scad files, ignores (empty group folder).
+     * 
+     * @param entry QDirEntry for the folder
+     * @param tier Resource tier (installation/machine/user)
+     * @param category Category/group name
+     * @return true if category detected and processed, false if empty/invalid
+     */
+    bool addFolder(const QDirListing::DirEntry& entry, const QString& tier, const QString& category);
+    
+    /**
+     * @brief Get example by hierarchical key
+     * @param key Hierarchical key "tier-category-name"
+     * @return QVariant containing ResourceScript, or invalid QVariant if not found
+     */
+    QVariant get(const QString& key) const;
+    
+    /**
+     * @brief Get example by file path (slower, searches all entries)
+     * @param path Absolute file path
+     * @return QVariant containing ResourceScript, or invalid QVariant if not found
+     */
+    QVariant getByPath(const QString& path) const;
+    
+    /**
+     * @brief Check if example exists by key
+     * @param key Hierarchical key "tier-category-name"
+     * @return true if example in inventory
+     */
+    bool contains(const QString& key) const;
+    
+    /**
+     * @brief Get all examples (for GUI list building)
+     * @return Ephemeral list of all ResourceScript QVariants
+     */
+    QList<QVariant> getAll() const;
+    
+    /**
+     * @brief Get examples by category (filtered)
+     * @param category Category/group name
+     * @return Ephemeral list of matching ResourceScript QVariants
+     */
+    QList<QVariant> getByCategory(const QString& category) const;
+    
+    /**
+     * @brief Get all unique categories
+     * @return List of category names found in inventory
+     */
+    QStringList getCategories() const;
+    
+    /**
+     * @brief Get count of examples
+     * @return Number of examples in inventory
+     */
+    int count() const { return m_scripts.size(); }
+    
+    /**
+     * @brief Clear all examples
+     */
+    void clear() { m_scripts.clear(); }
+
+private:
+    /**
+     * @brief Scan for attachments for a script file
+     * 
+     * Looks for files with same baseName but different extensions.
+     * Uses s_attachments list from ResourceTypeInfo for allowed extensions.
+     * 
+     * @param scriptPath Path to .scad file
+     * @return List of attachment file paths
+     */
+    QStringList scanAttachments(const QString& scriptPath) const;
+    
+    /**
+     * @brief Primary storage - indexed by file path
+     * 
+     * Key: Absolute file path to .scad file
+     * Value: QVariant containing ResourceScript
+     */
+    QHash<QString, QVariant> m_scripts;
+};
+
+} // namespace resourceInventory
