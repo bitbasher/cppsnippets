@@ -52,6 +52,20 @@ public:
                              const QString& locationKey,
                              QStandardItemModel* model);
     
+    void scanExamples(const QString& basePath,
+                     ResourceTier tier,
+                     const QString& locationKey,
+                     ItemCallback onItemFound);
+    
+    QList<ResourceItem> scanExamplesToList(const QString& basePath,
+                                            ResourceTier tier,
+                                            const QString& locationKey);
+    
+    void scanExamplesToModel(const QString& basePath,
+                            ResourceTier tier,
+                            const QString& locationKey,
+                            QStandardItemModel* model);
+    
     /**
      * @brief Scan all resource locations and types, populate model (Phase 2)
      */
@@ -86,6 +100,15 @@ public:
 
 private:
     void addItemToModel(QStandardItemModel* model, const ResourceItem& item);
+    ResourceScript scanScriptWithAttachments(const QString& scriptPath,
+                                             ResourceType type,
+                                             ResourceTier tier,
+                                             const QString& locationKey);
+    void scanGroup(const QString& groupPath,
+                   ResourceTier tier,
+                   const QString& locationKey,
+                   const QString& category,
+                   ItemCallback onItemFound);
 };
 
 } // namespace resourceInventory

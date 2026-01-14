@@ -11,25 +11,26 @@ namespace resourceMetadata {
 const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
     {ResourceType::Unknown,
      ResourceTypeInfo(ResourceType::Unknown, QStringLiteral("unknown"),
-                      QStringLiteral("Unknown resource type"),
+                      QStringLiteral("Unknown Resource Rype"),
                       {}, // no sub-resources
                       {}, {})},
 
     {ResourceType::Examples,
      ResourceTypeInfo(ResourceType::Examples, QStringLiteral("examples"),
-                      QStringLiteral("Example scripts"),
-                      {}, // no sub-resources
+                      QStringLiteral("Example Scripts"),
+                      s_exampleSub,
                       {QStringLiteral(".scad")}, s_attachments)},
 
     {ResourceType::Group,
      ResourceTypeInfo(ResourceType::Group, groupNameCapture,
-                      QStringLiteral("A Category or Group"), {},
+                      QStringLiteral("A Category or Group"),
+                      {}, // no sub-resources
                       {QStringLiteral(".scad")}, {})},
 
     {ResourceType::Tests,
      ResourceTypeInfo(
          ResourceType::Tests, QStringLiteral("tests"),
-         QStringLiteral("Test OpenSCAD scripts"),
+         QStringLiteral("Test Scripts"),
          s_testSub, // possible to want tempates to build test scripts
          {QStringLiteral(".scad")}, s_attachments)},
 
@@ -62,25 +63,26 @@ const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
     {ResourceType::Shaders,
      ResourceTypeInfo(
          ResourceType::Shaders, QStringLiteral("shaders"),
-         QStringLiteral("OpenGL shader files"), {}, // no sub-resources
+         QStringLiteral("OpenGL Shaders"), {}, // no sub-resources
          {QStringLiteral(".frag"), QStringLiteral(".vert")}, {})},
 
     {ResourceType::Templates,
      ResourceTypeInfo(ResourceType::Templates, QStringLiteral("templates"),
-                      QStringLiteral("Template files"),
+                      QStringLiteral("Template Files"),
                       {}, // no sub-resources
                       {QStringLiteral(".json")}, {})},
 
     {ResourceType::Libraries,
      ResourceTypeInfo(
          ResourceType::Libraries, QStringLiteral("libraries"),
-         QStringLiteral("OpenSCAD library scripts that extend features"),
+         QStringLiteral("OpenSCAD Library"),
          s_topLevel, // libraries can contain any top-level resource
-         {QStringLiteral(".scad")}, {})},
+         {QStringLiteral(".scad")},
+         s_attachments)},
 
     {ResourceType::Translations,
      ResourceTypeInfo(ResourceType::Translations, QStringLiteral("locale"),
-                      QStringLiteral("Translation files"),
+                      QStringLiteral("Translation Files"),
                       {}, // no sub-resources
                       {QStringLiteral(".qm"), QStringLiteral(".ts")}, {})}
 };

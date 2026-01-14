@@ -65,6 +65,22 @@ public:
                       ItemCallback onItemFound);
     
     /**
+     * @brief Scan examples with callback for each found item (streaming)
+     * @param basePath The folder to scan (e.g., "/usr/share/openscad/examples")
+     * @param tier The resource tier
+     * @param locationKey Display name of the location
+     * @param onItemFound Callback invoked for each discovered example
+     * 
+     * Scans .scad files with attachments. Structure:
+     * - Top-level .scad files (no category)
+     * - One level of subfolders (subfolder name = category)
+     */
+    void scanExamples(const QString& basePath,
+                     ResourceTier tier,
+                     const QString& locationKey,
+                     ItemCallback onItemFound);
+    
+    /**
      * @brief Scan templates and capture to list (for testing)
      * @param basePath The folder to scan
      * @param tier The resource tier
@@ -86,6 +102,29 @@ public:
                              ResourceTier tier,
                              const QString& locationKey,
                              QStandardItemModel* model);
+    
+    /**
+     * @brief Scan examples and capture to list (for testing)
+     * @param basePath The folder to scan
+     * @param tier The resource tier
+     * @param locationKey Display name of the location
+     * @return Vector of discovered examples
+     */
+    QList<ResourceItem> scanExamplesToList(const QString& basePath,
+                                            ResourceTier tier,
+                                            const QString& locationKey);
+    
+    /**
+     * @brief Scan examples and populate model directly (for production)
+     * @param basePath The folder to scan
+     * @param tier The resource tier
+     * @param locationKey Display name of the location
+     * @param model The model to populate
+     */
+    void scanExamplesToModel(const QString& basePath,
+                            ResourceTier tier,
+                            const QString& locationKey,
+                            QStandardItemModel* model);
     
     /**
      * @brief Scan all resource locations and types, populate model (Phase 2)
@@ -140,6 +179,13 @@ private:
                                               ResourceType type,
                                               ResourceTier tier, 
                                               const QString& locationKey);
+    
+    // Helper for scanning a Group folder (category with .scad files, no recursion)
+    void scanGroup(const QString& groupPath,
+                   ResourceTier tier,
+                   const QString& locationKey,
+                   const QString& category,
+                   ItemCallback onItemFound);
     
     // Helper for recursive folder scanning
     void scanFolderRecursive(const QString& folderPath,

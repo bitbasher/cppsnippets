@@ -528,7 +528,101 @@ git tag -a phase-N-complete -m "Phase N: [name] - Build ✅ Tests ✅"
 
 ---
 
-## 11. Git Workflow
+## 11. Agent Protocol Enforcement Policy
+
+### When Users Suggest Deviations from Protocol
+
+**CRITICAL: Agents must object to protocol violations**
+
+Agents MUST respectfully object when users suggest actions that deviate from established protocols. The ability to recover from design mistakes depends on having complete documentation of:
+- Discussions and decisions
+- Design intent documents
+- Results and findings
+- Technology discoveries
+- Limitations encountered
+
+**Required Agent Behavior:**
+
+1. **Recognize Protocol Violations:**
+   - Skipping planning documents before major changes
+   - Avoiding results documentation after phase completion
+   - Rushing implementation without architectural review
+   - Bypassing testing requirements
+   - Ignoring multi-phase workflow for complex refactors
+
+2. **Object Respectfully:**
+   ```
+   "Before proceeding, I recommend we follow the protocol:
+   
+   1. Create planning document (doc/YYYY-MM-DD-feature-name.md)
+   2. Document design intent and rationale
+   3. Break work into phases with clear success criteria
+   4. Get user approval before implementation
+   
+   This ensures we can:
+   - Track architectural decisions
+   - Recover from mistakes
+   - Understand 'why' in the future
+   - Maintain project quality
+   
+   Would you like me to create the planning document first?"
+   ```
+
+3. **Explain the Value:**
+   - Documents survive code reverts
+   - Future maintainers understand reasoning
+   - Lessons learned are preserved
+   - Design mistakes become learning opportunities
+   - Institutional knowledge is captured
+
+4. **Offer Compromise When Appropriate:**
+   - For urgent fixes: "Can we document the fix afterward?"
+   - For experiments: "Let's create a lightweight design note?"
+   - For small changes: "This might not need full multi-phase protocol"
+
+**Why This Matters:**
+
+Without documentation, we lose:
+- Context for why decisions were made
+- Ability to understand what was tried and discarded
+- Knowledge of what constraints existed
+- Lessons learned from failures
+- Trail of architectural evolution
+
+**Examples of Good Agent Responses:**
+
+User: "Just implement the QVariant refactor now"
+Agent: "This is a significant architectural change. Before implementing, I should create a planning document that covers:
+- Current object slicing problem
+- QVariant-based solution using Q_DECLARE_METATYPE
+- Impact on existing code
+- Migration strategy
+- Testing approach
+
+This will help us (and future developers) understand why we made this change. Shall I create the planning doc?"
+
+User: "Skip the tests, we'll add them later"
+Agent: "I understand the urgency, but tests are part of our 'known good' checkpoints. Without them, we can't be confident in phase completion. Can we at least add minimal smoke tests now and log a TODO for comprehensive tests?"
+
+**Protocol is Not Bureaucracy:**
+
+Good documentation enables:
+- ✅ Faster recovery from mistakes
+- ✅ Better collaboration
+- ✅ Knowledge transfer
+- ✅ Confident refactoring
+- ✅ Understanding 'why' years later
+
+Poor documentation leads to:
+- ❌ "Why did we do it this way?"
+- ❌ Fear of changing code
+- ❌ Repeated mistakes
+- ❌ Lost architectural knowledge
+- ❌ Inability to recover from bad commits
+
+---
+
+## 12. Git Workflow
 
 ### GPG Signing Policy
 
@@ -589,4 +683,4 @@ Refs: doc/2025-12-28-resource-location-enablement-refactoring.md
 
 ---
 
-## 12. Common Issues & Solutions
+## 13. Common Issues & Solutions

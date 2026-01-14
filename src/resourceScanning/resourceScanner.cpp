@@ -252,6 +252,75 @@ QList<ResourceItem> ResourceScanner::scanExamples(
 // NEW CALLBACK-BASED API (Phase 1)
 // ============================================================================
 
+void ResourceScanner::scanExamples(
+    const QString& basePath,
+    ResourceTier tier,
+    const QString& locationKey,
+    ItemCallback onItemFound)
+{
+    if (!onItemFound) return;  // Null callback guard
+    
+    QDir dir(basePath);
+    if (!dir.exists()) return;
+
+    // Scan top-level .scad files (examples without category)
+    QFileInfoList topLevelFiles = dir.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
+    for (const QFileInfo& fi : topLevelFiles) {
+        ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
+                                                          ResourceType::Examples,
+                                                          tier,
+                                                          locationKey);
+        // No category for top-level
+        onItemFound(script);
+    }
+
+    // Process subfolders based on resource type
+    QStringList subfolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString& sub : subfolders) {
+        QString subPath = dir.absoluteFilePath(sub);
+        QString lowerSub = sub.toLower();
+        
+        if (lowerSub == QStringLiteral("templates")) {
+            // Delegate to templates scanner
+            scanTemplates(subPath, tier, locationKey, onItemFound);
+        }
+        else if (lowerSub == QStringLiteral("tests")) {
+            // Delegate to tests scanner (convert to callback first in Phase 6)
+            // For now, scan as Group
+            scanGroup(subPath, tier, locationKey, sub, onItemFound);
+        }
+        else {
+            // It's a Group (category folder) - scan .scad files with attachments
+            scanGroup(subPath, tier, locationKey, sub, onItemFound);
+        }
+    }
+}
+
+// Helper: Scan a Group folder (category with .scad scripts + attachments, no recursion)
+void ResourceScanner::scanGroup(
+    const QString& groupPath,
+    ResourceTier tier,
+    const QString& locationKey,
+    const QString& category,
+    ItemCallback onItemFound)
+{
+    if (!onItemFound) return;
+    
+    QDir dir(groupPath);
+    if (!dir.exists()) return;
+    
+    // Scan all .scad files in this Group folder
+    QFileInfoList files = dir.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
+    for (const QFileInfo& fi : files) {
+        ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
+                                                          ResourceType::Examples,
+                                                          tier,
+                                                          locationKey);
+        script.setCategory(category);
+        onItemFound(script);
+    }
+}
+
 void ResourceScanner::scanTemplates(
     const QString& basePath,
     ResourceTier tier,
@@ -347,6 +416,34 @@ void ResourceScanner::scanTemplatesToModel(
     });
 }
 
+QList<ResourceItem> ResourceScanner::scanExamplesToList(
+    const QString& basePath,
+    ResourceTier tier,
+    const QString& locationKey)
+{
+    QList<ResourceItem> results;
+    
+    scanExamples(basePath, tier, locationKey, [&results](const ResourceItem& item) {
+        results.append(item);
+    });
+    
+    return results;
+}
+
+void ResourceScanner::scanExamplesToModel(
+    const QString& basePath,
+    ResourceTier tier,
+    const QString& locationKey,
+    QStandardItemModel* model)
+{
+    if (!model) return;
+    
+    scanExamples(basePath, tier, locationKey, [this, model](const ResourceItem& item) {
+        addItemToModel(model, item);
+    });
+}
+
+
 void ResourceScanner::addItemToModel(QStandardItemModel* model, const ResourceItem& item)
 {
     if (!model) return;
@@ -397,16 +494,20 @@ void ResourceScanner::scanToModel(QStandardItemModel* model,
     
     // Scan all locations (tier is encoded in each location)
     for (const auto& loc : locations) {
-        if (!loc.exists() || !loc.isEnabled()) continue;
-        
         QString basePath = loc.path();
         QString displayName = loc.getDisplayName();
         ResourceTier tier = loc.tier();
         
-        // Scan templates (only type implemented so far)
+        // Scan templates
         QString templatesPath = QDir::cleanPath(basePath + QStringLiteral("/templates"));
         if (QDir(templatesPath).exists()) {
             scanTemplates(templatesPath, tier, displayName, addToModel);
+        }
+        
+        // Scan examples
+        QString examplesPath = QDir::cleanPath(basePath + QStringLiteral("/examples"));
+        if (QDir(examplesPath).exists()) {
+            scanExamples(examplesPath, tier, displayName, addToModel);
         }
     }
 }

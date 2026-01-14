@@ -594,6 +594,36 @@ if(BUILD_APP)
         src/platformInfo/ResourceLocation.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
+    
+    # ScanExamples test (Phase 6) - standalone QTest using compiled sources
+    add_executable(test_scanexamples
+        tests/test_scanexamples.cpp
+        tests/resourceScanner_minimal.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/platformInfo/platformInfo.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
+    # Examples Tree test - prints tree structure and verifies folder filtering
+    add_executable(test_examples_tree
+        tests/test_examples_tree.cpp
+        tests/resourceScanner_minimal.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/platformInfo/platformInfo.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
+    # Attachment scanning test
+    add_executable(test_attachment_scanning
+        tests/test_attachment_scanning.cpp
+        tests/resourceScanner_minimal.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/platformInfo/platformInfo.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
 
     target_link_libraries(test_scantomodel PRIVATE
         Qt6::Core
@@ -601,7 +631,40 @@ if(BUILD_APP)
         Qt6::Test
     )
 
+    target_link_libraries(test_scanexamples PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Test
+    )
+
+    target_link_libraries(test_examples_tree PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Test
+    )
+
+    target_link_libraries(test_attachment_scanning PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Test
+    )
+
+    target_include_directories(test_attachment_scanning PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+
     target_include_directories(test_scantomodel PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+
+    target_include_directories(test_scanexamples PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+
+    target_include_directories(test_examples_tree PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
@@ -613,8 +676,38 @@ if(BUILD_APP)
         RESOURCESCANNING_STATIC_DEFINE
     )
 
+    target_compile_definitions(test_scanexamples PRIVATE 
+        PLATFORMINFO_STATIC_DEFINE
+        RESOURCEMETADATA_STATIC_DEFINE
+        RESOURCESCANNING_STATIC_DEFINE
+    )
+
+    target_compile_definitions(test_examples_tree PRIVATE 
+        PLATFORMINFO_STATIC_DEFINE
+        RESOURCEMETADATA_STATIC_DEFINE
+        RESOURCESCANNING_STATIC_DEFINE
+    )
+
+    target_compile_definitions(test_attachment_scanning PRIVATE 
+        PLATFORMINFO_STATIC_DEFINE
+        RESOURCEMETADATA_STATIC_DEFINE
+        RESOURCESCANNING_STATIC_DEFINE
+    )
+
     set_target_properties(test_scantomodel PROPERTIES
         OUTPUT_NAME test_scantomodel
+        WIN32_EXECUTABLE OFF
+        AUTOMOC ON
+    )
+
+    set_target_properties(test_scanexamples PROPERTIES
+        OUTPUT_NAME test_scanexamples
+        WIN32_EXECUTABLE OFF
+        AUTOMOC ON
+    )
+
+    set_target_properties(test_examples_tree PROPERTIES
+        OUTPUT_NAME test_examples_tree
         WIN32_EXECUTABLE OFF
         AUTOMOC ON
     )

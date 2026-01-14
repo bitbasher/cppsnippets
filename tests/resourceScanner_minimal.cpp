@@ -132,6 +132,150 @@ void ResourceScanner::scanTemplatesToModel(
     });
 }
 
+// ============================================================================
+// Examples Scanning (Phase 6)
+// ============================================================================
+
+ResourceScript ResourceScanner::scanScriptWithAttachments(
+    const QString& scriptPath,
+    ResourceType type,
+    ResourceTier tier,
+    const QString& locationKey)
+{
+    ResourceScript script(scriptPath);
+    script.setType(type);
+    script.setTier(tier);
+    script.setScriptPath(scriptPath);
+    script.setSourcePath(scriptPath);
+    script.setSourceLocationKey(locationKey);
+    script.setAccess(type == ResourceType::Templates ? ResourceAccess::ReadWrite 
+                                                     : ResourceAccess::ReadOnly);
+    
+    // Look for attachments in the same folder
+    QFileInfo fi(scriptPath);
+    QDir dir = fi.dir();
+    
+    // Only look for attachments that share the script's base name or are in a data subfolder
+    QString baseName = fi.baseName();
+    QFileInfoList candidates = dir.entryInfoList(kScriptAttachmentFilters, QDir::Files);
+    
+    for (const QFileInfo& candidate : candidates) {
+        // Include if filename starts with script's base name
+        if (candidate.baseName().startsWith(baseName)) {
+            script.addAttachment(candidate.absoluteFilePath());
+        }
+    }
+    
+    // Check for a data subfolder with same name as script
+    QString dataFolder = dir.absoluteFilePath(baseName);
+    if (QDir(dataFolder).exists()) {
+        QDirIterator it(dataFolder, kScriptAttachmentFilters, QDir::Files, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+            script.addAttachment(it.next());
+        }
+    }
+    
+    return script;
+}
+
+void ResourceScanner::scanExamples(
+    const QString& basePath,
+    ResourceTier tier,
+    const QString& locationKey,
+    ItemCallback onItemFound)
+{
+    if (!onItemFound) return;  // Null callback guard
+    
+    QDir dir(basePath);
+    if (!dir.exists()) return;
+
+    // Scan top-level .scad files (examples without category)
+    QFileInfoList topLevelFiles = dir.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
+    for (const QFileInfo& fi : topLevelFiles) {
+        ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
+                                                          ResourceType::Examples,
+                                                          tier,
+                                                          locationKey);
+        // No category for top-level
+        onItemFound(script);
+    }
+
+    // Process subfolders based on resource type
+    QStringList subfolders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QString& sub : subfolders) {
+        QString subPath = dir.absoluteFilePath(sub);
+        QString lowerSub = sub.toLower();
+        
+        if (lowerSub == QStringLiteral("templates")) {
+            // Delegate to templates scanner
+            scanTemplates(subPath, tier, locationKey, onItemFound);
+        }
+        else if (lowerSub == QStringLiteral("tests")) {
+            // Delegate to tests scanner (convert to callback first in Phase 6)
+            // For now, scan as Group
+            scanGroup(subPath, tier, locationKey, sub, onItemFound);
+        }
+        else {
+            // It's a Group (category folder) - scan .scad files with attachments
+            scanGroup(subPath, tier, locationKey, sub, onItemFound);
+        }
+    }
+}
+
+// Helper: Scan a Group folder (category with .scad scripts + attachments, no recursion)
+void ResourceScanner::scanGroup(
+    const QString& groupPath,
+    ResourceTier tier,
+    const QString& locationKey,
+    const QString& category,
+    ItemCallback onItemFound)
+{
+    if (!onItemFound) return;
+    
+    QDir dir(groupPath);
+    if (!dir.exists()) return;
+    
+    // Scan all .scad files in this Group folder
+    QFileInfoList files = dir.entryInfoList({QStringLiteral("*.scad")}, QDir::Files);
+    for (const QFileInfo& fi : files) {
+        ResourceScript script = scanScriptWithAttachments(fi.absoluteFilePath(),
+                                                          ResourceType::Examples,
+                                                          tier,
+                                                          locationKey);
+        script.setCategory(category);
+        onItemFound(script);
+    }
+}
+
+
+QList<ResourceItem> ResourceScanner::scanExamplesToList(
+    const QString& basePath,
+    ResourceTier tier,
+    const QString& locationKey)
+{
+    QList<ResourceItem> results;
+    
+    scanExamples(basePath, tier, locationKey, [&results](const ResourceItem& item) {
+        results.append(item);
+    });
+    
+    return results;
+}
+
+void ResourceScanner::scanExamplesToModel(
+    const QString& basePath,
+    ResourceTier tier,
+    const QString& locationKey,
+    QStandardItemModel* model)
+{
+    if (!model) return;
+    
+    scanExamples(basePath, tier, locationKey, [this, model](const ResourceItem& item) {
+        addItemToModel(model, item);
+    });
+}
+
+
 void ResourceScanner::addItemToModel(QStandardItemModel* model, const ResourceItem& item)
 {
     if (!model) return;
@@ -178,9 +322,9 @@ void ResourceScanner::scanToModel(QStandardItemModel* model,
     
     // Scan all locations (tier is encoded in each location)
     for (const auto& loc : locations) {
-        if (!loc.exists() || !loc.isEnabled()) continue;
-        
         QString basePath = loc.path();
+        if (!QDir(basePath).exists()) continue;
+        
         QString displayName = loc.getDisplayName();
         ResourceTier tier = loc.tier();
         

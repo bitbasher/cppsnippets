@@ -57,7 +57,7 @@ inline static const QList<ResourceType> s_exampleSub = {
     ResourceType::Group, ResourceType::Templates, ResourceType::Tests};
 
 inline static const QList<ResourceType> s_testSub = {ResourceType::Templates};
-
+ 
 // All resource folder names that can be discovered in a resource location
 // Note: "newresources" is NOT included - it's a pre-defined location for dropped resources, not a resource folder
 // This list should match the subdirectory values from s_resourceTypes for top-level resource types
