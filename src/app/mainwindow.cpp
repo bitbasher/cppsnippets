@@ -7,9 +7,8 @@
 #include "gui/preferencesdialog.hpp"
 #include "applicationNameInfo.hpp"
 #include <scadtemplates/template_manager.hpp>
-#include <platformInfo/resourceLocationManager.hpp>
 #include <platformInfo/ResourceLocation.hpp>
-#include <resourceScanning/resourceScanner.hpp>
+#include <resourceScanning/ResourceScanner.hpp>
 #include <resourceInventory/resourceItem.hpp>
 
 #include <QMenuBar>

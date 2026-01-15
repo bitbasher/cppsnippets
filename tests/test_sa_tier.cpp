@@ -15,8 +15,31 @@
 
 using namespace resourceMetadata;
 
+void printUsage() {
+    std::cout << "\nUSAGE: test_sa_tier [OPTIONS] [appname]\n\n";
+    std::cout << "Minimal standalone test for ResourceTier enum.\n\n";
+    std::cout << "ARGUMENTS:\n";
+    std::cout << "  appname           Application name for resource discovery (default: OpenSCAD)\n\n";
+    std::cout << "OPTIONS:\n";
+    std::cout << "  -h, --help        Show this help message\n";
+    std::cout << "  --usage           Show this help message\n\n";
+    std::cout << "EXAMPLES:\n";
+    std::cout << "  test_sa_tier\n";
+    std::cout << "  test_sa_tier TestApp\n";
+    std::cout << "  test_sa_tier --help\n\n";
+}
+
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
+    
+    // Check for help options
+    if (argc > 1) {
+        QString arg1 = QString::fromUtf8(argv[1]).toLower();
+        if (arg1 == "-h" || arg1 == "--help" || arg1 == "--usage") {
+            printUsage();
+            return 0;
+        }
+    }
     
     // Parse command line arguments for app name (default: OpenSCAD)
     QString appName = "OpenSCAD";
@@ -45,13 +68,13 @@ int main(int argc, char *argv[]) {
     // Test 3: Access display names
     std::cout << "Test 3: Display Name Lookup\n";
     try {
-        QString instName = tierDisplayName(ResourceTier::Installation);
+        QString instName = tierToString(ResourceTier::Installation);
         std::cout << "  Installation: " << instName.toStdString() << "\n";
         
-        QString machName = tierDisplayName(ResourceTier::Machine);
+        QString machName = tierToString(ResourceTier::Machine);
         std::cout << "  Machine: " << machName.toStdString() << "\n";
         
-        QString userName = tierDisplayName(ResourceTier::User);
+        QString userName = tierToString(ResourceTier::User);
         std::cout << "  User: " << userName.toStdString() << "\n";
     } catch (const std::exception& e) {
         std::cout << "  ERROR: " << e.what() << "\n";

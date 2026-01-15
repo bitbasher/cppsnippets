@@ -6,6 +6,7 @@
 #pragma once
 
 #include <QString>
+#include <QMap>
 
 namespace resourceMetadata {
 
@@ -24,28 +25,30 @@ enum class ResourceTier {
 };
 
 /**
- * @brief Get display name for a resource tier (constexpr, no DLL issues)
- * 
- * @param tier The tier to get the display name for
- * @return C-string display name for the tier
+ * @brief Static map of ResourceTier to display name
  */
-constexpr const char* tierToString(ResourceTier tier) noexcept {
-    switch(tier) {
-        case ResourceTier::Installation: return "Installation";
-        case ResourceTier::Machine: return "Machine";
-        case ResourceTier::User: return "User";
-    }
-    return "Unknown";
-}
+inline static const QMap<ResourceTier, QString> s_tierNames = {
+    {ResourceTier::Installation, QStringLiteral("Installation")},
+    {ResourceTier::Machine, QStringLiteral("Machine")},
+    {ResourceTier::User, QStringLiteral("User")}
+};
+/**
+ * @brief Static list of all ResourceTiers
+ */
+inline static const QList<ResourceTier> s_allTiersList = {
+    ResourceTier::Installation,
+    ResourceTier::Machine,
+    ResourceTier::User
+};
 
 /**
- * @brief Get display name for a resource tier as QString
+ * @brief Get display name for a resource tier
  * 
  * @param tier The tier to get the display name for
  * @return QString display name for the tier
  */
-inline QString tierDisplayName(ResourceTier tier) {
-    return QString::fromUtf8(tierToString(tier));
+inline QString tierToString(ResourceTier tier) {
+    return s_tierNames.value(tier, QStringLiteral("Unknown"));
 }
 
 /**

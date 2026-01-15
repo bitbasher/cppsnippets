@@ -95,7 +95,7 @@ QString ResourceTreeItem::shortenedLocation(const QString& fullPath, ResourceTie
 
 void ResourceTreeItem::updateDisplay()
 {
-    setText(ColTier, resourceMetadata::tierDisplayName(m_item.tier()));
+    setText(ColTier, resourceMetadata::tierToString(m_item.tier()));
     setText(ColName, m_item.displayName());
     setText(ColCategory, m_item.category());
     setText(ColPath, shortenedLocation(m_item.path(), m_item.tier()));

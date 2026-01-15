@@ -26,8 +26,31 @@ using namespace pathDiscovery;
 
 static QTextStream out(stdout);
 
+void printUsage() {
+    out << "\nUSAGE: test_sa_path_discovery [OPTIONS] [appname]\n\n";
+    out << "Demonstrates pathDiscovery workflow - shows how resource paths are discovered.\n\n";
+    out << "ARGUMENTS:\n";
+    out << "  appname           Application name for resource discovery (default: OpenSCAD)\n\n";
+    out << "OPTIONS:\n";
+    out << "  -h, --help        Show this help message\n";
+    out << "  --usage           Show this help message\n\n";
+    out << "EXAMPLES:\n";
+    out << "  test_sa_path_discovery\n";
+    out << "  test_sa_path_discovery TestApp\n";
+    out << "  test_sa_path_discovery --help\n\n";
+}
+
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
+    
+    // Check for help options
+    if (argc > 1) {
+        QString arg1 = QString::fromUtf8(argv[1]).toLower();
+        if (arg1 == "-h" || arg1 == "--help" || arg1 == "--usage") {
+            printUsage();
+            return 0;
+        }
+    }
     
     out << "Starting test...\n";
     out.flush();

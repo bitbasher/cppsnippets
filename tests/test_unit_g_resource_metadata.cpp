@@ -38,45 +38,45 @@ TEST_F(ResourceTierTest, EnumValuesAreDistinct) {
 }
 
 TEST_F(ResourceTierTest, TierDisplayNameFunctionWorks) {
-    // Verify the tierDisplayName function can be called
+    // Verify the tierToString function can be called
     EXPECT_NO_THROW({
-        QString name = tierDisplayName(ResourceTier::Installation);
+        QString name = tierToString(ResourceTier::Installation);
         EXPECT_FALSE(name.isEmpty());
     });
 }
 
-TEST_F(ResourceTierTest, TierDisplayNameReturnsAllThreeTiers) {
-    EXPECT_FALSE(tierDisplayName(ResourceTier::Installation).isEmpty());
-    EXPECT_FALSE(tierDisplayName(ResourceTier::Machine).isEmpty());
-    EXPECT_FALSE(tierDisplayName(ResourceTier::User).isEmpty());
+TEST_F(ResourceTierTest, TierToStringReturnsAllThreeTiers) {
+    EXPECT_FALSE(tierToString(ResourceTier::Installation).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::Machine).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::User).isEmpty());
 }
 
-TEST_F(ResourceTierTest, TierDisplayNameForInstallation) {
-    QString name = tierDisplayName(ResourceTier::Installation);
+TEST_F(ResourceTierTest, TierToStringForInstallation) {
+    QString name = tierToString(ResourceTier::Installation);
     EXPECT_FALSE(name.isEmpty());
     EXPECT_EQ(name, QString("Installation"));
 }
 
-TEST_F(ResourceTierTest, TierDisplayNameForMachine) {
-    QString name = tierDisplayName(ResourceTier::Machine);
+TEST_F(ResourceTierTest, TierToStringForMachine) {
+    QString name = tierToString(ResourceTier::Machine);
     EXPECT_FALSE(name.isEmpty());
     EXPECT_EQ(name, QString("Machine"));
 }
 
-TEST_F(ResourceTierTest, TierDisplayNameForUser) {
-    QString name = tierDisplayName(ResourceTier::User);
+TEST_F(ResourceTierTest, TierToStringForUser) {
+    QString name = tierToString(ResourceTier::User);
     EXPECT_FALSE(name.isEmpty());
     EXPECT_EQ(name, QString("User"));
 }
 
 TEST_F(ResourceTierTest, DisplayNamesAreNotEmpty) {
-    EXPECT_FALSE(tierDisplayName(ResourceTier::Installation).isEmpty());
-    EXPECT_FALSE(tierDisplayName(ResourceTier::Machine).isEmpty());
-    EXPECT_FALSE(tierDisplayName(ResourceTier::User).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::Installation).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::Machine).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::User).isEmpty());
     
-    EXPECT_GT(tierDisplayName(ResourceTier::Installation).length(), 0);
-    EXPECT_GT(tierDisplayName(ResourceTier::Machine).length(), 0);
-    EXPECT_GT(tierDisplayName(ResourceTier::User).length(), 0);
+    EXPECT_GT(tierToString(ResourceTier::Installation).length(), 0);
+    EXPECT_GT(tierToString(ResourceTier::Machine).length(), 0);
+    EXPECT_GT(tierToString(ResourceTier::User).length(), 0);
 }
 
 // ============================================================================
@@ -338,7 +338,7 @@ TEST_F(ResourceMetadataIntegrationTest, NonContainerTypesHaveValidInfo) {
 
 TEST_F(ResourceMetadataIntegrationTest, TierDisplayNamesComplete) {
     // All three active tiers should have display names
-    EXPECT_FALSE(tierDisplayName(ResourceTier::Installation).isEmpty());
-    EXPECT_FALSE(tierDisplayName(ResourceTier::Machine).isEmpty());
-    EXPECT_FALSE(tierDisplayName(ResourceTier::User).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::Installation).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::Machine).isEmpty());
+    EXPECT_FALSE(tierToString(ResourceTier::User).isEmpty());
 }

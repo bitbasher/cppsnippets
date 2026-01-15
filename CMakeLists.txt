@@ -123,7 +123,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(INFO "Display build configuration info at end of cmake config" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Build test suite" OFF)
-option(BUILD_APP "Build Qt application" ON)
+option(BUILD_APP "Build Qt application" OFF)  # Disabled: GUI still uses Phase 1 architecture
 option(USE_QSCINTILLA "Enable QScintilla editor integration" OFF)
 
 # Export compile commands for IDE support
@@ -493,6 +493,28 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF
     )
 
+    # Standalone test: Display resource inventory as a tree
+    add_executable(test_sa_inventory_tree EXCLUDE_FROM_ALL
+        tests/test_sa_inventory_tree.cpp
+    )
+    target_link_libraries(test_sa_inventory_tree PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(test_sa_inventory_tree PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/platformInfo
+        ${CMAKE_SOURCE_DIR}/src/pathDiscovery
+        ${CMAKE_SOURCE_DIR}/src/resourceScanning
+        ${CMAKE_SOURCE_DIR}/src/resourceInventory
+        ${CMAKE_SOURCE_DIR}/src/resourceMetadata
+    )
+    target_compile_definitions(test_sa_inventory_tree PRIVATE 
+        USE_TEST_APP_INFO
+        $<$<CONFIG:Debug>:DEBUG_BUILD>
+    )
+    set_target_properties(test_sa_inventory_tree PROPERTIES
+        OUTPUT_NAME test_sa_inventory_tree
+        WIN32_EXECUTABLE OFF
+    )
+
     # Model indexing example (console test) - Google Test unit test
     add_executable(test_unit_g_model_indexing
         tests/test_unit_g_model_indexing.cpp
@@ -687,7 +709,6 @@ if(BUILD_TESTS)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:scadtemplates_tests>
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:scadtemplates_tests>
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Gui> $<TARGET_FILE_DIR:scadtemplates_tests>
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Widgets> $<TARGET_FILE_DIR:scadtemplates_tests>
             COMMENT "Copy GTest, Qt, and project DLLs to test binary directory")
         
         # Copy Qt platform plugins for tests
