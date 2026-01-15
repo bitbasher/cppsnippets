@@ -285,8 +285,8 @@ set(LIB_SOURCES
     src/resourceInventory/resourceItem.cpp
     src/resourceInventory/ExamplesInventory.cpp
     src/resourceInventory/TemplatesInventory.cpp
-    src/resourceInventory/FontsInventory.cpp
-    src/resourceScanning/ResourceScanner.cpp
+    src/resourceInventory/FontsInventory.cpp    src/resourceInventory/ShadersInventory.cpp
+    src/resourceInventory/TranslationsInventory.cpp    src/resourceScanning/ResourceScanner.cpp
 )
 
 set(LIB_HEADERS

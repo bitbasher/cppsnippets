@@ -25,6 +25,8 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
     m_examplesInventory.clear();
     m_templatesInventory.clear();
     m_fontsInventory.clear();
+    m_shadersInventory.clear();
+    m_translationsInventory.clear();
     
     // Scan each location
     for (const auto& location : locations) {
@@ -49,7 +51,19 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
             qDebug() << "  Added" << fontsAdded << "fonts";
         }
         
-        // Future phases: scanLibrariesAt(), scanShadersAt(), etc.
+        // Phase 5: Shaders
+        int shadersAdded = scanShadersAt(location);
+        if (shadersAdded > 0) {
+            qDebug() << "  Added" << shadersAdded << "shaders";
+        }
+        
+        // Phase 5: Translations
+        int translationsAdded = scanTranslationsAt(location);
+        if (translationsAdded > 0) {
+            qDebug() << "  Added" << translationsAdded << "translations";
+        }
+        
+        // Future phases: scanLibrariesAt(), scanColorSchemesAt(), scanTestsAt(), etc.
     }
     
     // Populate model from inventories
@@ -57,7 +71,9 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
     
     qDebug() << "ResourceScanner: Total examples:" << m_examplesInventory.count()
              << "templates:" << m_templatesInventory.count()
-             << "fonts:" << m_fontsInventory.count();
+             << "fonts:" << m_fontsInventory.count()
+             << "shaders:" << m_shadersInventory.count()
+             << "translations:" << m_translationsInventory.count();
     
     return true;
 }
@@ -188,6 +204,68 @@ int ResourceScanner::scanFontsAt(const platformInfo::ResourceLocation& location)
             fileName.endsWith(".otf", Qt::CaseInsensitive)) {
             
             if (m_fontsInventory.addFont(entry.filePath(), location.tier())) {
+                addedCount++;
+            }
+        }
+    }
+    
+    return addedCount;
+}
+
+int ResourceScanner::scanShadersAt(const platformInfo::ResourceLocation& location)
+{
+    QString shadersPath = location.path() + "/shaders";
+    
+    // Check if shaders folder exists
+    QDir shadersDir(shadersPath);
+    if (!shadersDir.exists()) {
+        return 0; // Not an error - location may not have shaders
+    }
+    
+    int addedCount = 0;
+    
+    // Scan for shader files (.frag, .vert)
+    for (const auto& entry : QDirListing(shadersPath, QDirListing::IteratorFlag::Recursive)) {
+        if (!entry.isFile()) {
+            continue;
+        }
+        
+        QString fileName = entry.fileName();
+        if (fileName.endsWith(".frag", Qt::CaseInsensitive) || 
+            fileName.endsWith(".vert", Qt::CaseInsensitive)) {
+            
+            if (m_shadersInventory.addShader(entry.filePath(), location.tier())) {
+                addedCount++;
+            }
+        }
+    }
+    
+    return addedCount;
+}
+
+int ResourceScanner::scanTranslationsAt(const platformInfo::ResourceLocation& location)
+{
+    QString localePath = location.path() + "/locale";
+    
+    // Check if locale folder exists
+    QDir localeDir(localePath);
+    if (!localeDir.exists()) {
+        return 0; // Not an error - location may not have translations
+    }
+    
+    int addedCount = 0;
+    
+    // Scan for translation files (.qm, .ts)
+    for (const auto& entry : QDirListing(localePath, QDirListing::IteratorFlag::Recursive)) {
+        if (!entry.isFile()) {
+            continue;
+        }
+        
+        QString fileName = entry.fileName();
+        if (fileName.endsWith(".qm", Qt::CaseInsensitive) || 
+            fileName.endsWith(".ts", Qt::CaseInsensitive)) {
+            
+            if (m_translationsInventory.addTranslation(entry.filePath(), location.tier())) {
                 addedCount++;
             }
         }

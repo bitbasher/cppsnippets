@@ -16,6 +16,8 @@
 #include "../resourceInventory/ExamplesInventory.hpp"
 #include "../resourceInventory/TemplatesInventory.hpp"
 #include "../resourceInventory/FontsInventory.hpp"
+#include "../resourceInventory/ShadersInventory.hpp"
+#include "../resourceInventory/TranslationsInventory.hpp"
 
 #include <QStandardItemModel>
 #include <QList>
@@ -85,6 +87,30 @@ public:
      * @return Total number of fonts
      */
     int fontsCount() const { return m_fontsInventory.count(); }
+    
+    /**
+     * @brief Get the shaders inventory (read-only access)
+     * @return Reference to populated shaders inventory
+     */
+    const resourceInventory::ShadersInventory& shadersInventory() const { return m_shadersInventory; }
+    
+    /**
+     * @brief Get count of shaders found across all locations
+     * @return Total number of shaders
+     */
+    int shadersCount() const { return m_shadersInventory.count(); }
+    
+    /**
+     * @brief Get the translations inventory (read-only access)
+     * @return Reference to populated translations inventory
+     */
+    const resourceInventory::TranslationsInventory& translationsInventory() const { return m_translationsInventory; }
+    
+    /**
+     * @brief Get count of translations found across all locations
+     * @return Total number of translations
+     */
+    int translationsCount() const { return m_translationsInventory.count(); }
 
 private:
     /**
@@ -123,6 +149,28 @@ private:
     int scanFontsAt(const platformInfo::ResourceLocation& location);
     
     /**
+     * @brief Scan shaders folder at a single location
+     * 
+     * Uses QDirListing to find .frag and .vert files.
+     * Simple file-based scan (no metadata or attachments).
+     * 
+     * @param location Resource location to scan
+     * @return Number of shaders added, or -1 on error
+     */
+    int scanShadersAt(const platformInfo::ResourceLocation& location);
+    
+    /**
+     * @brief Scan locale folder at a single location
+     * 
+     * Uses QDirListing to find .qm and .ts files.
+     * Simple file-based scan (no metadata or attachments).
+     * 
+     * @param location Resource location to scan
+     * @return Number of translations added, or -1 on error
+     */
+    int scanTranslationsAt(const platformInfo::ResourceLocation& location);
+    
+    /**
      * @brief Populate QStandardItemModel from inventories
      * 
      * Phase 3-4: Populates from examples and templates
@@ -136,7 +184,9 @@ private:
     resourceInventory::ExamplesInventory m_examplesInventory;
     resourceInventory::TemplatesInventory m_templatesInventory;
     resourceInventory::FontsInventory m_fontsInventory;
-    // Future: LibrariesInventory, ShadersInventory, TranslationsInventory, etc.
+    resourceInventory::ShadersInventory m_shadersInventory;
+    resourceInventory::TranslationsInventory m_translationsInventory;
+    // Future: LibrariesInventory, ColorSchemesInventory, TestsInventory, etc.
 };
 
 } // namespace resourceScanning
