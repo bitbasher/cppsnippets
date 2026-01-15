@@ -287,6 +287,8 @@ set(LIB_SOURCES
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
+    src/resourceInventory/ExamplesInventory.cpp
+    src/resourceScanning/ResourceScanner.cpp
 )
 
 set(LIB_HEADERS
@@ -306,6 +308,8 @@ set(LIB_HEADERS
     src/platformInfo/resourceLocationManager.hpp
     src/pathDiscovery/ResourcePaths.hpp
     src/resourceInventory/resourceItem.hpp
+    src/resourceInventory/ExamplesInventory.hpp
+    src/resourceScanning/ResourceScanner.hpp
     src/resourceMetadata/ResourceTypeInfo.hpp
 )
 
@@ -559,6 +563,16 @@ if(BUILD_APP)
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
+    # Phase 3: ResourceScanner orchestration tests
+    add_executable(test_resource_scanner
+        tests/test_resource_scanner.cpp
+        src/resourceScanning/ResourceScanner.cpp
+        src/resourceInventory/ExamplesInventory.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
     target_link_libraries(test_qvariant_phase1 PRIVATE
         Qt6::Core
         Qt6::Gui
@@ -593,6 +607,25 @@ if(BUILD_APP)
     )
     
     target_compile_definitions(test_examples_inventory PRIVATE
+        PLATFORMINFO_EXPORTS
+        SCADTEMPLATES_EXPORTS
+        RESOURCESCANNING_EXPORTS
+    )
+
+    target_link_libraries(test_resource_scanner PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    target_include_directories(test_resource_scanner PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+    
+    target_compile_definitions(test_resource_scanner PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS
