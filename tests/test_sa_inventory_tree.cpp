@@ -49,17 +49,9 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     
-#ifdef USE_TEST_APP_INFO
-    if (argc > 1) {
-        appInfo::setTestAppName(argv[1]);
-    } else {
-        appInfo::setTestAppName("TestInventoryTree");
-    }
-#endif
-    
     QTextStream out(stdout);
     
-    // Parse command-line arguments
+    // Parse command-line arguments first
     if (argc > 1) {
         QString arg = QString(argv[1]).toLower();
         if (arg == "-h" || arg == "--help" || arg == "--usage") {
@@ -67,6 +59,11 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
+    
+#ifdef USE_TEST_APP_INFO
+    // Set app name for path discovery (default to OpenSCAD)
+    appInfo::setTestAppName("OpenSCAD");
+#endif
     
     out << "═══════════════════════════════════════════════════════════════════\n";
     out << "TEMPLATES INVENTORY TREE (Phase 5 Validation)\n";
@@ -81,15 +78,19 @@ int main(int argc, char *argv[])
     ResourcePaths resPaths;
     QList<PathElement> qualifiedPaths = resPaths.qualifiedSearchPaths();
     
+    out << QString("Discovered %1 potential paths\n").arg(qualifiedPaths.size());
+    
     QList<ResourceLocation> allLocations;
     for (const PathElement& pe : qualifiedPaths) {
         QFileInfo info(pe.path());
         if (info.exists() && info.isDir()) {
             allLocations.append(ResourceLocation(pe.path(), pe.tier()));
+        } else {
+            out << QString("  Skipped (not found): %1\n").arg(pe.path());
         }
     }
     
-    out << QString("Found %1 existing locations:\n").arg(allLocations.size());
+    out << QString("\nFound %1 existing locations:\n").arg(allLocations.size());
     for (const ResourceLocation& loc : allLocations) {
         out << QString("  - %1 (%2)\n").arg(loc.getDisplayName()).arg(tierToString(loc.tier()));
     }
