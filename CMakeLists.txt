@@ -287,7 +287,6 @@ set(LIB_SOURCES
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
-    src/resourceScanning/templateScanner.cpp
 )
 
 set(LIB_HEADERS
@@ -307,7 +306,7 @@ set(LIB_HEADERS
     src/platformInfo/resourceLocationManager.hpp
     src/pathDiscovery/ResourcePaths.hpp
     src/resourceInventory/resourceItem.hpp
-    src/resourceScanning/templateScanner.hpp
+    src/resourceMetadata/ResourceTypeInfo.hpp
 )
 
 # Build the shared/dynamic library
@@ -365,8 +364,6 @@ if(BUILD_APP)
         src/gui/sysInfoDialog.hpp
 
         # Resource inventory GUI components (require Qt Widgets)
-        src/resourceScanning/resourceScanner.cpp
-        src/resourceScanning/resourceScanner.hpp
         src/resourceInventory/resourceTreeWidget.cpp
         src/resourceInventory/resourceTreeWidget.hpp
     )
@@ -424,8 +421,6 @@ if(BUILD_APP)
         src/resourceInventory/resourceItem.hpp
         src/resourceInventory/resourceTreeWidget.cpp
         src/resourceInventory/resourceTreeWidget.hpp
-        src/resourceScanning/resourceScanner.cpp
-        src/resourceScanning/resourceScanner.hpp
     )
 
     add_executable(inventory_test EXCLUDE_FROM_ALL ${INVENTORY_TEST_SOURCES})
@@ -463,10 +458,8 @@ if(BUILD_APP)
     # Library discovery test app
     add_executable(library_discovery_test EXCLUDE_FROM_ALL
         src/app/library_discovery_test.cpp
-        src/resourceScanning/resourceScanner.cpp
         src/resourceInventory/resourceItem.cpp
         src/resourceInventory/resourceTreeWidget.cpp
-        src/resourceScanning/resourceScanner.hpp
         src/resourceInventory/resourceItem.hpp
         src/resourceInventory/resourceTreeWidget.hpp
     )
@@ -551,80 +544,6 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF
     )
 
-    # Callback scanner test (Phase 1) - standalone QTest using compiled sources
-    add_executable(test_callback_scanner
-        tests/test_callback_scanner.cpp
-        tests/resourceScanner_minimal.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/platformInfo/platformInfo.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
-    )
-
-    target_link_libraries(test_callback_scanner PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Test
-    )
-
-    target_include_directories(test_callback_scanner PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-
-    # Suppress DLL export macros since we're compiling sources directly
-    target_compile_definitions(test_callback_scanner PRIVATE 
-        PLATFORMINFO_STATIC_DEFINE
-        RESOURCEMETADATA_STATIC_DEFINE
-        RESOURCESCANNING_STATIC_DEFINE
-    )
-
-    set_target_properties(test_callback_scanner PROPERTIES
-        OUTPUT_NAME test_callback_scanner
-        WIN32_EXECUTABLE OFF
-        AUTOMOC ON
-    )
-
-    # ScanToModel test (Phase 2) - standalone QTest using compiled sources
-    add_executable(test_scantomodel
-        tests/test_scantomodel.cpp
-        tests/resourceScanner_minimal.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/platformInfo/platformInfo.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
-    )
-    
-    # ScanExamples test (Phase 6) - standalone QTest using compiled sources
-    add_executable(test_scanexamples
-        tests/test_scanexamples.cpp
-        tests/resourceScanner_minimal.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/platformInfo/platformInfo.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
-    )
-
-    # Examples Tree test - prints tree structure and verifies folder filtering
-    add_executable(test_examples_tree
-        tests/test_examples_tree.cpp
-        tests/resourceScanner_minimal.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/platformInfo/platformInfo.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
-    )
-
-    # Attachment scanning test
-    add_executable(test_attachment_scanning
-        tests/test_attachment_scanning.cpp
-        tests/resourceScanner_minimal.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/platformInfo/platformInfo.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
-    )
-
     # Phase 1: QVariant registration and storage tests
     add_executable(test_qvariant_phase1
         tests/test_qvariant_phase1.cpp
@@ -638,30 +557,6 @@ if(BUILD_APP)
         src/resourceInventory/ExamplesInventory.cpp
         src/resourceInventory/resourceItem.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
-    )
-
-    target_link_libraries(test_scantomodel PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Test
-    )
-
-    target_link_libraries(test_scanexamples PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Test
-    )
-
-    target_link_libraries(test_examples_tree PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Test
-    )
-
-    target_link_libraries(test_attachment_scanning PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Test
     )
 
     target_link_libraries(test_qvariant_phase1 PRIVATE
@@ -701,69 +596,6 @@ if(BUILD_APP)
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS
-    )
-
-    target_include_directories(test_attachment_scanning PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-
-    target_include_directories(test_scantomodel PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-
-    target_include_directories(test_scanexamples PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-
-    target_include_directories(test_examples_tree PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-
-    # Suppress DLL export macros since we're compiling sources directly
-    target_compile_definitions(test_scantomodel PRIVATE 
-        PLATFORMINFO_STATIC_DEFINE
-        RESOURCEMETADATA_STATIC_DEFINE
-        RESOURCESCANNING_STATIC_DEFINE
-    )
-
-    target_compile_definitions(test_scanexamples PRIVATE 
-        PLATFORMINFO_STATIC_DEFINE
-        RESOURCEMETADATA_STATIC_DEFINE
-        RESOURCESCANNING_STATIC_DEFINE
-    )
-
-    target_compile_definitions(test_examples_tree PRIVATE 
-        PLATFORMINFO_STATIC_DEFINE
-        RESOURCEMETADATA_STATIC_DEFINE
-        RESOURCESCANNING_STATIC_DEFINE
-    )
-
-    target_compile_definitions(test_attachment_scanning PRIVATE 
-        PLATFORMINFO_STATIC_DEFINE
-        RESOURCEMETADATA_STATIC_DEFINE
-        RESOURCESCANNING_STATIC_DEFINE
-    )
-
-    set_target_properties(test_scantomodel PROPERTIES
-        OUTPUT_NAME test_scantomodel
-        WIN32_EXECUTABLE OFF
-        AUTOMOC ON
-    )
-
-    set_target_properties(test_scanexamples PROPERTIES
-        OUTPUT_NAME test_scanexamples
-        WIN32_EXECUTABLE OFF
-        AUTOMOC ON
-    )
-
-    set_target_properties(test_examples_tree PROPERTIES
-        OUTPUT_NAME test_examples_tree
-        WIN32_EXECUTABLE OFF
-        AUTOMOC ON
     )
 
     # Copy Qt platform plugins so the console app can find qwindows at runtime
@@ -838,41 +670,38 @@ if(BUILD_TESTS)
         tests/test_resourcelocation.cpp
     )
 
+    # OLD - test_template_inventory uses deleted templateScanner - needs rewrite for Phase 3+
     # Standalone test program to display template inventory
-    # Compiles its own ResourcePaths with test header for runtime app name override
-    add_executable(test_template_inventory EXCLUDE_FROM_ALL
-        tests/test_template_inventory.cpp
-        src/pathDiscovery/ResourcePaths.cpp
-        src/platformInfo/platformInfo.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
-        src/resourceScanning/templateScanner.cpp
-        src/resourceInventory/resourceItem.cpp
-    )
+    # add_executable(test_template_inventory EXCLUDE_FROM_ALL
+    #     tests/test_template_inventory.cpp
+    #     src/pathDiscovery/ResourcePaths.cpp
+    #     src/platformInfo/platformInfo.cpp
+    #     src/platformInfo/ResourceLocation.cpp
+    #     src/resourceMetadata/ResourceTypeInfo.cpp
+    #     src/resourceInventory/resourceItem.cpp
+    # )
+    # 
+    # target_link_libraries(test_template_inventory PRIVATE
+    #     ${QT_LIBRARIES}
+    # )
+    # 
+    # target_include_directories(test_template_inventory PRIVATE
+    #     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    #     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    # )
+    # 
+    # target_compile_definitions(test_template_inventory PRIVATE 
+    #     USE_TEST_APP_INFO
+    #     PLATFORMINFO_STATIC_DEFINE
+    #     RESOURCEMETADATA_STATIC_DEFINE
+    # )
 
-    target_link_libraries(test_template_inventory PRIVATE
-        ${QT_LIBRARIES}
-    )
-
-    target_include_directories(test_template_inventory PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-
-    # Override applicationNameInfo.hpp with test-specific version
-    # Also suppress DLL export macros since we're compiling ResourcePaths directly
-    target_compile_definitions(test_template_inventory PRIVATE 
-        USE_TEST_APP_INFO
-        PLATFORMINFO_STATIC_DEFINE
-        RESOURCEMETADATA_STATIC_DEFINE
-    )
-
-    if (WIN32 AND BUILD_SHARED_LIBS)
-        add_custom_command(TARGET test_template_inventory POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_template_inventory>
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_template_inventory>
-            COMMENT "Copy DLLs to test_template_inventory directory")
-    endif()
+    # if (WIN32 AND BUILD_SHARED_LIBS)
+    #     add_custom_command(TARGET test_template_inventory POST_BUILD
+    #         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_template_inventory>
+    #         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_template_inventory>
+    #         COMMENT "Copy DLLs to test_template_inventory directory")
+    # endif()
 
     target_link_libraries(scadtemplates_tests PRIVATE
         scadtemplates_lib

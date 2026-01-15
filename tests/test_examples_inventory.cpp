@@ -22,8 +22,11 @@ protected:
     
     void SetUp() override {
         // Use existing testFileStructure for repeatable tests
-        testDataPath = QDir::currentPath() + "/testFileStructure/inst/OpenSCAD/examples";
-        ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure not found";
+        // Tests run from build/ directory, testFileStructure is at workspace root
+        QDir current = QDir::current();
+        current.cdUp(); // Go to workspace root
+        testDataPath = current.absolutePath() + "/testFileStructure/inst/OpenSCAD/examples";
+        ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure not found at: " << testDataPath.toStdString();
     }
 };
 
