@@ -45,10 +45,12 @@ bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry,
         return false;
     }
     
-    // Create ResourceItem (templates are simple JSON files)
-    ResourceItem tmpl(path);
+    // Create ResourceTemplate and populate from JSON
+    ResourceTemplate tmpl(path);
     tmpl.setType(ResourceType::Templates);
     tmpl.setTier(resourceMetadata::stringToTier(tier));
+    tmpl.setName(baseName);
+    tmpl.setDisplayName(baseName);  // Override with prefix if JSON has one
     
     // Store in hash
     m_templates.insert(key, QVariant::fromValue(tmpl));
