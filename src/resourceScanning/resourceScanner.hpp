@@ -15,6 +15,7 @@
 #include "../platformInfo/ResourceLocation.hpp"
 #include "../resourceInventory/ExamplesInventory.hpp"
 #include "../resourceInventory/TemplatesInventory.hpp"
+#include "../resourceInventory/FontsInventory.hpp"
 
 #include <QStandardItemModel>
 #include <QList>
@@ -72,6 +73,18 @@ public:
      * @return Total number of templates
      */
     int templatesCount() const { return m_templatesInventory.count(); }
+    
+    /**
+     * @brief Get the fonts inventory (read-only access)
+     * @return Reference to populated fonts inventory
+     */
+    const resourceInventory::FontsInventory& fontsInventory() const { return m_fontsInventory; }
+    
+    /**
+     * @brief Get count of fonts found across all locations
+     * @return Total number of fonts
+     */
+    int fontsCount() const { return m_fontsInventory.count(); }
 
 private:
     /**
@@ -99,6 +112,17 @@ private:
     int scanTemplatesAt(const platformInfo::ResourceLocation& location);
     
     /**
+     * @brief Scan fonts folder at a single location
+     * 
+     * Uses QDirListing to find .ttf and .otf files.
+     * Simple file-based scan (no metadata or attachments).
+     * 
+     * @param location Resource location to scan
+     * @return Number of fonts added, or -1 on error
+     */
+    int scanFontsAt(const platformInfo::ResourceLocation& location);
+    
+    /**
      * @brief Populate QStandardItemModel from inventories
      * 
      * Phase 3-4: Populates from examples and templates
@@ -111,7 +135,8 @@ private:
     // Inventory storage - one per resource type
     resourceInventory::ExamplesInventory m_examplesInventory;
     resourceInventory::TemplatesInventory m_templatesInventory;
-    // Future: LibrariesInventory, FontsInventory, etc.
+    resourceInventory::FontsInventory m_fontsInventory;
+    // Future: LibrariesInventory, ShadersInventory, TranslationsInventory, etc.
 };
 
 } // namespace resourceScanning

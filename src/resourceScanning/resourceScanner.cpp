@@ -24,6 +24,7 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
     model->clear();
     m_examplesInventory.clear();
     m_templatesInventory.clear();
+    m_fontsInventory.clear();
     
     // Scan each location
     for (const auto& location : locations) {
@@ -42,14 +43,21 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
             qDebug() << "  Added" << templatesAdded << "templates";
         }
         
-        // Future phases: scanLibrariesAt(), scanFontsAt(), etc.
+        // Phase 5: Fonts
+        int fontsAdded = scanFontsAt(location);
+        if (fontsAdded > 0) {
+            qDebug() << "  Added" << fontsAdded << "fonts";
+        }
+        
+        // Future phases: scanLibrariesAt(), scanShadersAt(), etc.
     }
     
     // Populate model from inventories
     populateModel(model);
     
     qDebug() << "ResourceScanner: Total examples:" << m_examplesInventory.count()
-             << "templates:" << m_templatesInventory.count();
+             << "templates:" << m_templatesInventory.count()
+             << "fonts:" << m_fontsInventory.count();
     
     return true;
 }
@@ -155,6 +163,37 @@ void ResourceScanner::populateModel(QStandardItemModel* model)
         
         model->appendRow(row);
     }
+}
+
+int ResourceScanner::scanFontsAt(const platformInfo::ResourceLocation& location)
+{
+    QString fontsPath = location.path() + "/fonts";
+    
+    // Check if fonts folder exists
+    QDir fontsDir(fontsPath);
+    if (!fontsDir.exists()) {
+        return 0; // Not an error - location may not have fonts
+    }
+    
+    int addedCount = 0;
+    
+    // Scan for font files (.ttf, .otf)
+    for (const auto& entry : QDirListing(fontsPath, QDirListing::IteratorFlag::Recursive)) {
+        if (!entry.isFile()) {
+            continue;
+        }
+        
+        QString fileName = entry.fileName();
+        if (fileName.endsWith(".ttf", Qt::CaseInsensitive) || 
+            fileName.endsWith(".otf", Qt::CaseInsensitive)) {
+            
+            if (m_fontsInventory.addFont(entry.filePath(), location.tier())) {
+                addedCount++;
+            }
+        }
+    }
+    
+    return addedCount;
 }
 
 } // namespace resourceScanning
