@@ -280,7 +280,6 @@ set(LIB_SOURCES
     src/scadtemplates/scad_template_session.cpp
     src/platformInfo/platformInfo.cpp
     src/platformInfo/ResourceLocation.cpp
-    src/platformInfo/resourceLocationManager.cpp
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
@@ -302,7 +301,6 @@ set(LIB_HEADERS
     src/platformInfo/export.hpp
     src/platformInfo/platformInfo.hpp
     src/platformInfo/ResourceLocation.hpp
-    src/platformInfo/resourceLocationManager.hpp
     src/pathDiscovery/ResourcePaths.hpp
     src/resourceInventory/resourceItem.hpp
     src/resourceInventory/ExamplesInventory.hpp
@@ -420,7 +418,6 @@ if(BUILD_APP)
         src/pathDiscovery/ResourcePaths.cpp
         src/platformInfo/platformInfo.cpp
         src/platformInfo/ResourceLocation.cpp
-        src/platformInfo/resourceLocationManager.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
     
@@ -466,6 +463,33 @@ if(BUILD_APP)
     )
     set_target_properties(test_sa_tier PROPERTIES
         OUTPUT_NAME test_sa_tier
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Location discovery standalone test (demonstrates PathElement → ResourceLocation workflow)
+    add_executable(test_sa_location_discovery EXCLUDE_FROM_ALL
+        tests/test_sa_location_discovery.cpp
+        src/pathDiscovery/ResourcePaths.cpp
+        src/platformInfo/platformInfo.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+    
+    target_link_libraries(test_sa_location_discovery PRIVATE ${QT_LIBRARIES})
+    target_include_directories(test_sa_location_discovery PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+
+    # Override applicationNameInfo.hpp with test-specific version
+    # Also suppress DLL export macros since we're compiling ResourcePaths directly
+    target_compile_definitions(test_sa_location_discovery PRIVATE 
+        USE_TEST_APP_INFO
+        PLATFORMINFO_STATIC_DEFINE
+        RESOURCEMETADATA_STATIC_DEFINE
+    )
+    set_target_properties(test_sa_location_discovery PROPERTIES
+        OUTPUT_NAME test_sa_location_discovery
         WIN32_EXECUTABLE OFF
     )
 

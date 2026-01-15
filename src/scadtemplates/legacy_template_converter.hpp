@@ -14,8 +14,8 @@
 
 using resourceInventory::ResourceTemplate;
 
-namespace platformInfo {
-class ResourceLocationManager;
+namespace pathDiscovery {
+class ResourcePaths;
 }
 
 namespace scadtemplates {
@@ -92,12 +92,12 @@ public:
 
     /**
      * @brief Scan resource locations for legacy template files and convert them
-     * @param resourceManager Resource location manager with tier locations
+     * @param resourcePaths Resource paths provider for discovering locations
      * @param outputDir Base directory for converted templates (e.g., "templates/")
      * @return List of conversion results
      */
     static QList<ConversionResult> discoverAndConvertTemplates(
-        const platformInfo::ResourceLocationManager& resourceManager,
+        const pathDiscovery::ResourcePaths& resourcePaths,
         const QString& outputDir);
 
     /**

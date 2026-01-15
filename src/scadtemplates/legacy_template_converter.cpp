@@ -4,7 +4,8 @@
  */
 
 #include "legacy_template_converter.hpp"
-#include "platformInfo/resourceLocationManager.hpp"
+#include "pathDiscovery/ResourcePaths.hpp"
+#include "platformInfo/ResourceLocation.hpp"
 #include "jsonreader/JsonReader.hpp"
 #include <QDir>
 #include <QFile>
@@ -117,7 +118,7 @@ QString LegacyTemplateConverter::unescapeNewlines(const QString& text)
 
 QList<LegacyTemplateConverter::ConversionResult> 
 LegacyTemplateConverter::discoverAndConvertTemplates(
-    const platformInfo::ResourceLocationManager& resourceManager,
+    const pathDiscovery::ResourcePaths& resourcePaths,
     const QString& outputDir)
 {
     QList<ConversionResult> results;
@@ -128,16 +129,46 @@ LegacyTemplateConverter::discoverAndConvertTemplates(
         baseDir.mkpath(".");
     }
     
-    // Scan each tier
+    // Get all qualified paths and convert to ResourceLocations grouped by tier
+    QList<pathDiscovery::PathElement> allPaths = resourcePaths.qualifiedSearchPaths();
+    
     struct TierInfo {
         QString name;
         QList<platformInfo::ResourceLocation> locations;
     };
     
+    // Group paths by tier
+    QList<platformInfo::ResourceLocation> installationLocs;
+    QList<platformInfo::ResourceLocation> machineLocs;
+    QList<platformInfo::ResourceLocation> userLocs;
+    
+    for (const auto& pe : allPaths) {
+        QFileInfo info(pe.path());
+        if (!info.exists() || !info.isDir()) {
+            continue;  // Skip non-existent paths
+        }
+        
+        platformInfo::ResourceLocation loc(pe.path(), pe.tier());
+        
+        switch (pe.tier()) {
+            case resourceMetadata::ResourceTier::Installation:
+                installationLocs.append(loc);
+                break;
+            case resourceMetadata::ResourceTier::Machine:
+                machineLocs.append(loc);
+                break;
+            case resourceMetadata::ResourceTier::User:
+                userLocs.append(loc);
+                break;
+            default:
+                break;
+        }
+    }
+    
     std::vector<TierInfo> tiers = {
-        { QStringLiteral("installation"), resourceManager.findSiblingInstallations() },
-        { QStringLiteral("machine"), resourceManager.enabledMachineLocations() },
-        { QStringLiteral("user"), resourceManager.enabledUserLocations() }
+        { QStringLiteral("installation"), installationLocs },
+        { QStringLiteral("machine"), machineLocs },
+        { QStringLiteral("user"), userLocs }
     };
     
     for (const auto& tier : tiers) {
