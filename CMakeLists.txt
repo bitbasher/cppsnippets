@@ -274,14 +274,10 @@ endif()
 set(LIB_SOURCES
     src/jsonreader/JsonReader.cpp
     src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
-    # src/scadtemplates/template.cpp - DELETED (replaced by ResourceTemplate)
     src/scadtemplates/template_parser.cpp
     src/scadtemplates/template_manager.cpp
     src/scadtemplates/legacy_template_converter.cpp
     src/scadtemplates/scad_template_session.cpp
-    # src/scadtemplates/editsubtype.cpp - now header-only
-    # src/scadtemplates/edittype.cpp - now header-only
-    # src/scadtemplates/filesubtype.cpp - DELETED (redundant with EditSubtype)
     src/platformInfo/platformInfo.cpp
     src/platformInfo/ResourceLocation.cpp
     src/platformInfo/resourceLocationManager.cpp
@@ -297,14 +293,12 @@ set(LIB_HEADERS
     src/jsonreader/JsonReader.hpp
     src/jsonwriter/jsonwriter-portable/include/JsonWriter/JsonWriter.h
     src/scadtemplates/scadtemplates.hpp
-    # src/scadtemplates/template.hpp - DELETED (replaced by ResourceTemplate)
     src/scadtemplates/template_parser.hpp
     src/scadtemplates/template_manager.hpp
     src/scadtemplates/scad_template_session.hpp
     src/scadtemplates/export.hpp
     src/scadtemplates/editsubtype.hpp
     src/scadtemplates/edittype.hpp
-    # src/scadtemplates/filesubtype.hpp - DELETED (redundant with EditSubtype)
     src/platformInfo/export.hpp
     src/platformInfo/platformInfo.hpp
     src/platformInfo/ResourceLocation.hpp
@@ -399,14 +393,14 @@ if(BUILD_APP)
         WIN32_EXECUTABLE ON
     )
 
-    # Environment variable expansion test utility
-    add_executable(test_env_expansion EXCLUDE_FROM_ALL src/tools/test_env_expansion.cpp)
-    target_link_libraries(test_env_expansion PRIVATE Qt6::Core)
-    target_include_directories(test_env_expansion PRIVATE
+    # Environment variable expansion test utility (standalone)
+    add_executable(test_sa_env_expansion EXCLUDE_FROM_ALL src/tools/test_sa_env_expansion.cpp)
+    target_link_libraries(test_sa_env_expansion PRIVATE Qt6::Core)
+    target_include_directories(test_sa_env_expansion PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     )
-    set_target_properties(test_env_expansion PROPERTIES
-        OUTPUT_NAME test_env_expansion
+    set_target_properties(test_sa_env_expansion PROPERTIES
+        OUTPUT_NAME test_sa_env_expansion
         WIN32_EXECUTABLE OFF # Console app
     )
 
@@ -418,81 +412,11 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF # Console app
     )
 
-    # Inventory test console app (non-GUI)
-    set(INVENTORY_TEST_SOURCES
-        src/app/inventory_test.cpp
-
-        # GUI classes needed for env var helpers
-        src/gui/machineTab.cpp
-        src/gui/machineTab.hpp
-        src/gui/userTab.cpp
-        src/gui/userTab.hpp
-        src/gui/resourcelocationwidget.cpp
-        src/gui/resourceLocationWidget.hpp
-        src/gui/locationInputWidget.cpp
-        src/gui/locationInputWidget.hpp
-
-        # Resource inventory classes
-        src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/resourceItem.hpp
-        src/resourceInventory/resourceTreeWidget.cpp
-        src/resourceInventory/resourceTreeWidget.hpp
-    )
-
-    add_executable(inventory_test EXCLUDE_FROM_ALL ${INVENTORY_TEST_SOURCES})
-    target_link_libraries(inventory_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
-    target_include_directories(inventory_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-    )
-    set_target_properties(inventory_test PROPERTIES
-        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
-        WIN32_EXECUTABLE OFF # Console app, not GUI
-    )
-
-    # Template converter test app
-    add_executable(convert_templates_test EXCLUDE_FROM_ALL src/app/convert_templates_test.cpp)
-    target_link_libraries(convert_templates_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
-    target_include_directories(convert_templates_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-    )
-    set_target_properties(convert_templates_test PROPERTIES
-        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
-        WIN32_EXECUTABLE OFF
-    )
-
-    # Template discovery test app
-    add_executable(template_discovery_test EXCLUDE_FROM_ALL src/app/template_discovery_test.cpp)
-    target_link_libraries(template_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
-    target_include_directories(template_discovery_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-    )
-    set_target_properties(template_discovery_test PROPERTIES
-        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
-        WIN32_EXECUTABLE OFF
-    )
-
-    # Library discovery test app
-    add_executable(library_discovery_test EXCLUDE_FROM_ALL
-        src/app/library_discovery_test.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/resourceTreeWidget.cpp
-        src/resourceInventory/resourceItem.hpp
-        src/resourceInventory/resourceTreeWidget.hpp
-    )
-    target_link_libraries(library_discovery_test PRIVATE scadtemplates_lib ${QT_LIBRARIES})
-    target_include_directories(library_discovery_test PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-    )
-    set_target_properties(library_discovery_test PROPERTIES
-        OUTPUT_NAME test-${APP_DISPLAY_SAFE}
-        WIN32_EXECUTABLE OFF
-    )
-
     # Path discovery test app (resourceMetadata → pathDiscovery workflow)
     # Path discovery test - compiles its own ResourcePaths with test header
     # This avoids DLL boundary issues with runtime app name override
-    add_executable(test_path_discovery EXCLUDE_FROM_ALL
-        tests/test_path_discovery.cpp
+    add_executable(test_sa_path_discovery EXCLUDE_FROM_ALL
+        tests/test_sa_path_discovery.cpp
         src/pathDiscovery/ResourcePaths.cpp
         src/platformInfo/platformInfo.cpp
         src/platformInfo/ResourceLocation.cpp
@@ -500,84 +424,84 @@ if(BUILD_APP)
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
     
-    target_link_libraries(test_path_discovery PRIVATE ${QT_LIBRARIES})
-    target_include_directories(test_path_discovery PRIVATE
+    target_link_libraries(test_sa_path_discovery PRIVATE ${QT_LIBRARIES})
+    target_include_directories(test_sa_path_discovery PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
 
     # Override applicationNameInfo.hpp with test-specific version
     # Also suppress DLL export macros since we're compiling ResourcePaths directly
-    target_compile_definitions(test_path_discovery PRIVATE 
+    target_compile_definitions(test_sa_path_discovery PRIVATE 
         USE_TEST_APP_INFO
         PLATFORMINFO_STATIC_DEFINE
         RESOURCEMETADATA_STATIC_DEFINE
     )
-    set_target_properties(test_path_discovery PROPERTIES
-        OUTPUT_NAME test_path_discovery
+    set_target_properties(test_sa_path_discovery PROPERTIES
+        OUTPUT_NAME test_sa_path_discovery
         WIN32_EXECUTABLE OFF
     )
 
     # Tier standalone test (minimal test for ResourceTier)
-    add_executable(test_tier_standalone EXCLUDE_FROM_ALL
-        tests/test_tier_standalone.cpp
+    add_executable(test_sa_tier EXCLUDE_FROM_ALL
+        tests/test_sa_tier.cpp
         src/pathDiscovery/ResourcePaths.cpp
         src/platformInfo/platformInfo.cpp
         src/platformInfo/ResourceLocation.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
     
-    target_link_libraries(test_tier_standalone PRIVATE ${QT_LIBRARIES})
-    target_include_directories(test_tier_standalone PRIVATE
+    target_link_libraries(test_sa_tier PRIVATE ${QT_LIBRARIES})
+    target_include_directories(test_sa_tier PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
 
     # Override applicationNameInfo.hpp with test-specific version
     # Also suppress DLL export macros since we're compiling ResourcePaths directly
-    target_compile_definitions(test_tier_standalone PRIVATE 
+    target_compile_definitions(test_sa_tier PRIVATE 
         USE_TEST_APP_INFO
         PLATFORMINFO_STATIC_DEFINE
         RESOURCEMETADATA_STATIC_DEFINE
     )
-    set_target_properties(test_tier_standalone PROPERTIES
-        OUTPUT_NAME test_tier_standalone
+    set_target_properties(test_sa_tier PROPERTIES
+        OUTPUT_NAME test_sa_tier
         WIN32_EXECUTABLE OFF
     )
 
-    # Model indexing example (console test)
-    add_executable(test_model_indexing
-        tests/test_model_indexing.cpp
+    # Model indexing example (console test) - Google Test unit test
+    add_executable(test_unit_g_model_indexing
+        tests/test_unit_g_model_indexing.cpp
     )
 
-    target_link_libraries(test_model_indexing PRIVATE
+    target_link_libraries(test_unit_g_model_indexing PRIVATE
         Qt6::Core
         Qt6::Gui
     )
 
-    set_target_properties(test_model_indexing PROPERTIES
-        OUTPUT_NAME test_model_indexing
+    set_target_properties(test_unit_g_model_indexing PROPERTIES
+        OUTPUT_NAME test_unit_g_model_indexing
         WIN32_EXECUTABLE OFF
     )
 
-    # Phase 1: QVariant registration and storage tests
-    add_executable(test_qvariant_phase1
-        tests/test_qvariant_phase1.cpp
+    # Phase 1: QVariant registration and storage tests - Google Test unit test
+    add_executable(test_unit_g_qvariant_phase1
+        tests/test_unit_g_qvariant_phase1.cpp
         src/resourceInventory/resourceItem.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
-    # Phase 2: ExamplesInventory class tests
-    add_executable(test_examples_inventory
-        tests/test_examples_inventory.cpp
+    # Phase 2: ExamplesInventory class tests - Google Test unit test
+    add_executable(test_unit_g_examples_inventory
+        tests/test_unit_g_examples_inventory.cpp
         src/resourceInventory/ExamplesInventory.cpp
         src/resourceInventory/resourceItem.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
-    # Phase 4: TemplatesInventory class tests
-    add_executable(test_templates_inventory
-        tests/test_templates_inventory.cpp
+    # Phase 4: TemplatesInventory class tests - Google Test unit test
+    add_executable(test_unit_g_templates_inventory
+        tests/test_unit_g_templates_inventory.cpp
         src/resourceInventory/TemplatesInventory.cpp
         src/resourceInventory/resourceItem.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
@@ -586,18 +510,12 @@ if(BUILD_APP)
         src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
     )
 
-    # Phase 3: ResourceScanner orchestration tests
-    add_executable(test_resource_scanner
-        tests/test_resource_scanner.cpp
-        src/resourceScanning/ResourceScanner.cpp
-        src/resourceInventory/ExamplesInventory.cpp
-        src/resourceInventory/TemplatesInventory.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
+    # Phase 3: ResourceScanner orchestration tests - Google Test unit test
+    add_executable(test_unit_g_resource_scanner EXCLUDE_FROM_ALL
+        tests/test_unit_g_resource_scanner.cpp
     )
 
-    target_link_libraries(test_qvariant_phase1 PRIVATE
+    target_link_libraries(test_unit_g_qvariant_phase1 PRIVATE
         Qt6::Core
         Qt6::Gui
         GTest::gtest
@@ -605,19 +523,19 @@ if(BUILD_APP)
     )
 
     # Standalone test - compile sources directly, not using DLL
-    target_include_directories(test_qvariant_phase1 PRIVATE
+    target_include_directories(test_unit_g_qvariant_phase1 PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
     
     # Neutralize DLL export macros for standalone compilation
-    target_compile_definitions(test_qvariant_phase1 PRIVATE
+    target_compile_definitions(test_unit_g_qvariant_phase1 PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS
     )
 
-    target_link_libraries(test_examples_inventory PRIVATE
+    target_link_libraries(test_unit_g_examples_inventory PRIVATE
         Qt6::Core
         Qt6::Gui
         GTest::gtest
@@ -625,18 +543,18 @@ if(BUILD_APP)
     )
 
     # Standalone test - compile sources directly
-    target_include_directories(test_examples_inventory PRIVATE
+    target_include_directories(test_unit_g_examples_inventory PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
     
-    target_compile_definitions(test_examples_inventory PRIVATE
+    target_compile_definitions(test_unit_g_examples_inventory PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS
     )
 
-    target_link_libraries(test_templates_inventory PRIVATE
+    target_link_libraries(test_unit_g_templates_inventory PRIVATE
         Qt6::Core
         Qt6::Gui
         nlohmann_json::nlohmann_json
@@ -645,19 +563,20 @@ if(BUILD_APP)
         GTest::gtest_main
     )
 
-    target_include_directories(test_templates_inventory PRIVATE
+    target_include_directories(test_unit_g_templates_inventory PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/jsonwriter/jsonwriter-portable/include>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
     
-    target_compile_definitions(test_templates_inventory PRIVATE
+    target_compile_definitions(test_unit_g_templates_inventory PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS
     )
 
-    target_link_libraries(test_resource_scanner PRIVATE
+    target_link_libraries(test_unit_g_resource_scanner PRIVATE
+        scadtemplates_lib
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
@@ -665,25 +584,10 @@ if(BUILD_APP)
         GTest::gtest_main
     )
 
-    target_include_directories(test_resource_scanner PRIVATE
+    target_include_directories(test_unit_g_resource_scanner PRIVATE
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
-    
-    target_compile_definitions(test_resource_scanner PRIVATE
-        PLATFORMINFO_EXPORTS
-        SCADTEMPLATES_EXPORTS
-        RESOURCESCANNING_EXPORTS
-    )
-
-    # Copy Qt platform plugins so the console app can find qwindows at runtime
-    if(WIN32)
-        add_custom_command(TARGET inventory_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${Qt6_DIR}/../../../plugins/platforms"
-            "$<TARGET_FILE_DIR:inventory_test>/platforms"
-            COMMENT "Copying Qt platform plugins for inventory_test...")
-    endif()
 
     # Copy Qt platform plugins to app output directory
     if(WIN32)
@@ -735,51 +639,11 @@ if(BUILD_TESTS)
     # Test executable
     add_executable(scadtemplates_tests EXCLUDE_FROM_ALL
         tests/test_main.cpp
-
-        # DISABLED: Missing scadtemplates/*.h headers
-        # tests/test_template.cpp
-        # tests/test_template_parser.cpp
-        # tests/test_template_manager.cpp
-        # tests/test_scad_template_session.cpp
-        tests/test_editsubtype.cpp
-        tests/test_edittype.cpp
-        # tests/test_filesubtype.cpp
-        tests/test_resource_metadata_comprehensive.cpp
-        tests/test_resourcelocation.cpp
+        tests/test_unit_g_editsubtype.cpp
+        tests/test_unit_g_edittype.cpp
+        tests/test_unit_g_resource_metadata.cpp
+        tests/test_unit_g_resourcelocation.cpp
     )
-
-    # OLD - test_template_inventory uses deleted templateScanner - needs rewrite for Phase 3+
-    # Standalone test program to display template inventory
-    # add_executable(test_template_inventory EXCLUDE_FROM_ALL
-    #     tests/test_template_inventory.cpp
-    #     src/pathDiscovery/ResourcePaths.cpp
-    #     src/platformInfo/platformInfo.cpp
-    #     src/platformInfo/ResourceLocation.cpp
-    #     src/resourceMetadata/ResourceTypeInfo.cpp
-    #     src/resourceInventory/resourceItem.cpp
-    # )
-    # 
-    # target_link_libraries(test_template_inventory PRIVATE
-    #     ${QT_LIBRARIES}
-    # )
-    # 
-    # target_include_directories(test_template_inventory PRIVATE
-    #     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-    #     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    # )
-    # 
-    # target_compile_definitions(test_template_inventory PRIVATE 
-    #     USE_TEST_APP_INFO
-    #     PLATFORMINFO_STATIC_DEFINE
-    #     RESOURCEMETADATA_STATIC_DEFINE
-    # )
-
-    # if (WIN32 AND BUILD_SHARED_LIBS)
-    #     add_custom_command(TARGET test_template_inventory POST_BUILD
-    #         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:test_template_inventory>
-    #         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:test_template_inventory>
-    #         COMMENT "Copy DLLs to test_template_inventory directory")
-    # endif()
 
     target_link_libraries(scadtemplates_tests PRIVATE
         scadtemplates_lib
@@ -798,7 +662,16 @@ if(BUILD_TESTS)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:GTest::gtest_main> $<TARGET_FILE_DIR:scadtemplates_tests>
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scadtemplates_lib> $<TARGET_FILE_DIR:scadtemplates_tests>
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Core> $<TARGET_FILE_DIR:scadtemplates_tests>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Gui> $<TARGET_FILE_DIR:scadtemplates_tests>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Widgets> $<TARGET_FILE_DIR:scadtemplates_tests>
             COMMENT "Copy GTest, Qt, and project DLLs to test binary directory")
+        
+        # Copy Qt platform plugins for tests
+        add_custom_command(TARGET scadtemplates_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${Qt6_DIR}/../../../plugins/platforms"
+            "$<TARGET_FILE_DIR:scadtemplates_tests>/platforms"
+            COMMENT "Copying Qt platform plugins for tests...")
     endif()
 
     # Discover tests for CTest
@@ -809,6 +682,32 @@ if(BUILD_TESTS)
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 endif()
+
+# Convenience targets for building tests
+if(BUILD_TESTS)
+    # Build all unit tests (Google Test suite)
+    add_custom_target(build-all-unit-tests
+        DEPENDS scadtemplates_tests
+        COMMENT "Building all unit tests (Google Test suite)"
+    )
+
+    # Build all standalone test utilities
+    add_custom_target(build-all-standalone-tests
+        DEPENDS test_env_expansion test_path_discovery test_tier_standalone settings_generator
+        COMMENT "Building all standalone test utilities"
+    )
+
+    # Build everything test-related
+    add_custom_target(build-all-tests
+        DEPENDS scadtemplates_tests test_env_expansion test_path_discovery test_tier_standalone settings_generator
+        COMMENT "Building all tests and utilities"
+    )
+endif()
+
+# NOTE: To run all unit tests, use:
+#   cd build && ctest -C Debug --output-on-failure
+# Or run the test executable directly:
+#   cd build && .\bin\Debug\scadtemplates_tests.exe
 
 # Installation rules
 include(GNUInstallDirs)

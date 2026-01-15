@@ -217,70 +217,12 @@ int main(int argc, char *argv[]) {
         out << QString("  Source: %1\n").arg(source);
         
         // Generate and display the display name
-        platformInfo::ResourceLocation tempLoc(p.path(), static_cast<resourceInventory::ResourceTier>(p.tier()));
+        platformInfo::ResourceLocation tempLoc(p.path(), static_cast<resourceMetadata::ResourceTier>(p.tier()));
         QString displayName = tempLoc.getDisplayName();
         out << QString("  Display Name: %1\n").arg(displayName);
         
         out << "\n";
     }
-    
-    // Test 4: Resource type subdirectories
-    out << "\n\nTEST 4: Resource Type Subdirectories\n";
-    out << QString(80, '-') << "\n";
-    out << "When scanning a base path, these subdirectories are checked:\n\n";
-    
-    QList<ResourceType> types = {
-        ResourceType::Templates,
-        ResourceType::Libraries,
-        ResourceType::Fonts,
-        ResourceType::Examples
-    };
-    
-    for (const auto& type : types) {
-        QString typeName;
-        switch (type) {
-            case ResourceType::Templates: typeName = "Templates"; break;
-            case ResourceType::Libraries: typeName = "Libraries"; break;
-            case ResourceType::Fonts: typeName = "Fonts"; break;
-            case ResourceType::Examples: typeName = "Examples"; break;
-            default: typeName = "Other"; break;
-        }
-        
-        // Use ResourceTypeInfo directly (wrapper methods removed)
-        auto it = ResourceTypeInfo::s_resourceTypes.constFind(type);
-        QString subdir = (it != ResourceTypeInfo::s_resourceTypes.constEnd()) 
-            ? it.value().getSubDir() : QString();
-        QStringList exts = (it != ResourceTypeInfo::s_resourceTypes.constEnd())
-            ? it.value().getPrimaryExtensions() : QStringList();
-        
-        out << QString("  %1:\n").arg(typeName);
-        out << QString("    Subdirectory: %1/\n").arg(subdir);
-        out << QString("    Extensions: %1\n\n").arg(exts.join(", "));
-    }
-    
-    // Test 5: Real-world workflow
-    out << "\nTEST 5: Real-World Discovery Workflow\n";
-    out << QString(80, '-') << "\n";
-    out << "\nStep 1: Application creates ResourcePaths helper\n";
-    out << "Step 2: Set build suffix (empty for release, ' (Nightly)' for nightlies)\n";
-    out << "Step 3: Call qualifiedSearchPaths() to get ALL discovery locations\n";
-    out << QString("Step 4: Got %1 paths to scan\n").arg(discoveryPaths.size());
-    out << "\nStep 5: ResourceScanner would:\n";
-    out << "  - Look for subdirectories matching resource types\n";
-    out << "    (templates/, libraries/, fonts/, etc.)\n";
-    out << "  - Scan for files matching expected extensions\n";
-    out << "    (.json for templates, .scad for libraries, etc.)\n";
-    out << "  - Preserve tier information for each discovered resource\n";
-    out << "\nStep 6: Results stored in ResourceInventory with tier tags:\n";
-    out << "  - Installation tier: Read-only, built-in\n";
-    out << "  - Machine tier: Read-only, system-wide\n";
-    out << "  - User tier: Read-write, per-user\n";
-    
-    out << "\n" << QString(80, '=') << "\n";
-    out << "ALL TESTS COMPLETE\n";
-    out << QString(80, '=') << "\n";
-    out << "\nThe pathDiscovery module correctly processes resource metadata\n";
-    out << "and generates qualified search paths for ResourceScanner.\n";
     
     return 0;
 }

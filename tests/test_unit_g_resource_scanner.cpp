@@ -24,7 +24,6 @@ protected:
     void SetUp() override {
         // Use testFileStructure for repeatable tests
         QDir current = QDir::current();
-        current.cdUp(); // Go to workspace root
         testDataPath = current.absolutePath() + "/testFileStructure";
         ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure not found";
     }
@@ -66,10 +65,13 @@ TEST_F(ResourceScannerTest, ScanMultipleTiers) {
     
     ASSERT_TRUE(scanner.scanToModel(&model, locations));
     
-    // Should aggregate examples from both tiers
+    // Should aggregate examples and templates from both tiers
     int totalExamples = scanner.examplesCount();
+    int totalTemplates = scanner.templatesCount();
     EXPECT_GT(totalExamples, 0);
-    EXPECT_EQ(model.rowCount(), totalExamples);
+    EXPECT_GT(totalTemplates, 0);
+    // Model contains both examples and templates
+    EXPECT_EQ(model.rowCount(), totalExamples + totalTemplates);
 }
 
 TEST_F(ResourceScannerTest, LocationWithoutExamples) {
@@ -99,15 +101,16 @@ TEST_F(ResourceScannerTest, ModelPopulation) {
     
     ASSERT_TRUE(scanner.scanToModel(&model, locations));
     
-    // Check model structure
-    EXPECT_EQ(model.columnCount(), 4); // Name, Category, Tier, Path
+    // Check model structure - now has 5 columns: Type, Name, Category, Tier, Path
+    EXPECT_EQ(model.columnCount(), 5);
     
     // Check first row has data
     if (model.rowCount() > 0) {
-        EXPECT_FALSE(model.item(0, 0)->text().isEmpty()) << "Name should be populated";
-        EXPECT_FALSE(model.item(0, 1)->text().isEmpty()) << "Category should be populated";
-        EXPECT_FALSE(model.item(0, 2)->text().isEmpty()) << "Tier should be populated";
-        EXPECT_FALSE(model.item(0, 3)->text().isEmpty()) << "Path should be populated";
+        EXPECT_FALSE(model.item(0, 0)->text().isEmpty()) << "Type should be populated";
+        EXPECT_FALSE(model.item(0, 1)->text().isEmpty()) << "Name should be populated";
+        EXPECT_FALSE(model.item(0, 2)->text().isEmpty()) << "Category should be populated";
+        EXPECT_FALSE(model.item(0, 3)->text().isEmpty()) << "Tier should be populated";
+        EXPECT_FALSE(model.item(0, 4)->text().isEmpty()) << "Path should be populated";
     }
 }
 
@@ -121,12 +124,14 @@ TEST_F(ResourceScannerTest, InventoryAccessible) {
     
     ASSERT_TRUE(scanner.scanToModel(&model, locations));
     
-    // Should be able to access inventory directly
-    const auto& inventory = scanner.examplesInventory();
-    EXPECT_GT(inventory.count(), 0);
+    // Should be able to access both inventories directly
+    const auto& examplesInv = scanner.examplesInventory();
+    const auto& templatesInv = scanner.templatesInventory();
+    EXPECT_GT(examplesInv.count(), 0);
+    EXPECT_GT(templatesInv.count(), 0);
     
-    // Verify inventory matches model
-    EXPECT_EQ(inventory.count(), model.rowCount());
+    // Verify inventories match model
+    EXPECT_EQ(examplesInv.count() + templatesInv.count(), model.rowCount());
 }
 
 TEST_F(ResourceScannerTest, ClearBetweenScans) {

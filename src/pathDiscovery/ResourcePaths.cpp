@@ -129,16 +129,21 @@ QString ResourcePaths::expandEnvVars(const QString& path) {
         // Extract variable name from either ${VAR} or %VAR% capture group
         const QString varName = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
         
-        // Check if variable is defined
-        if (!env.contains(varName)) {
+        // Special handling for HOME on Windows - use Qt's cross-platform home path
+        QString varValue;
+        if (varName == QStringLiteral("HOME") && !env.contains(varName)) {
+            varValue = QDir::homePath();
+        } else if (!env.contains(varName)) {
             hasUndefinedVar = true;
             qWarning() << "ResourcePaths: Undefined environment variable" << varName << "in path:" << path;
             // Return empty string to signal invalid path
             return QString();
+        } else {
+            varValue = env.value(varName);
         }
         
         // Append the expanded value
-        result.append(env.value(varName));
+        result.append(varValue);
         
         lastIndex = m.capturedEnd();
     }

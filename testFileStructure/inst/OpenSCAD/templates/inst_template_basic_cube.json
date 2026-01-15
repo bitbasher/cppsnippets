@@ -1,12 +1,8 @@
 {
-  "name": "Basic Cube",
-  "description": "Simple cube from installation OpenSCAD",
-  "scope": "source.scad",
-  "body": [
-    "// Basic cube template from installation",
-    "// Location: inst/OpenSCAD/templates/",
-    "cube([${1:10}, ${2:10}, ${3:10}]);",
-    "$0"
-  ],
-  "prefix": "cube_basic"
+  "cube_basic": {
+    "prefix": "cube_basic",
+    "body": "// Basic cube template from installation\n// Location: inst/OpenSCAD/templates/\ncube([${1:10}, ${2:10}, ${3:10}]);\n$0",
+    "description": "Simple cube from installation OpenSCAD",
+    "scope": "source.scad"
+  }
 }

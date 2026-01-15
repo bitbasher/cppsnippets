@@ -5,9 +5,9 @@
  * Demonstrates how the ResourcePaths expansion works across platforms including:
  * - Environment variable expansion (${VAR} and %VAR%)
  * - Folder name appending rules (paths ending with "/" get folder name added)
- * - Installation tier suffix handling (e.g., "ScadTemplates (Nightly)")
+ * - Installation tier suffix handling (e.g., "OpenSCAD (Nightly)")
  * 
- * Usage: test_env_expansion [verbose]
+ * Usage: test_env_expansion [OpenSCAD|ScadTemplates] [options]
  */
 
 #include <QCoreApplication>
@@ -97,7 +97,7 @@ void printHeader(const QString& title) {
 
 void printRow(const QString& label, const QString& template_str, const QString& expanded) {
     std::cout << "Template:  " << template_str.toStdString() << "\n";
-    std::cout << "Expanded:  " << expanded.toStdString() << "\n";
+    std::cout << "Expanded:  " << QDir::toNativeSeparators(expanded).toStdString() << "\n";
     std::cout << "\n";
 }
 
@@ -148,10 +148,10 @@ void testPlatformPaths() {
 #endif
 }
 
-void testQualifiedPaths() {
+void testQualifiedPaths(const QString& folderName = QStringLiteral("OpenSCAD")) {
     printHeader("Qualified Paths (Env Vars + Folder Names)");
     
-    const QString folderName = QStringLiteral("ScadTemplates");
+    std::cout << "Using folder name: " << folderName.toStdString() << "\n\n";
     
     std::cout << "Shows how paths become fully qualified for resource discovery:\n";
     std::cout << "  1. Expand environment variables\n";
@@ -167,7 +167,7 @@ void testQualifiedPaths() {
         QStringLiteral("."),
         QStringLiteral("../share/"),
         QStringLiteral(".."),
-        QStringLiteral("${HOME}/../..")
+        QStringLiteral("%USERPROFILE%/../..")
     };
     
     for (const QString& path : installPaths) {
@@ -318,9 +318,12 @@ void printUsage() {
     std::cout << "\n"
               << "Test Environment Variable Expansion Utility\n"
               << "============================================\n\n"
-              << "Usage: test_env_expansion [options]\n\n"
+              << "Usage: test_env_expansion [folder_name] [options]\n\n"
+              << "Arguments:\n"
+              << "  folder_name    Folder name for path qualification (default: OpenSCAD)\n"
+              << "                 Examples: OpenSCAD, ScadTemplates\n\n"
               << "Options:\n"
-              << "  (no args)      Run all tests\n"
+              << "  (no args)      Run all tests with default folder name\n"
               << "  --verbose      Show all details\n"
               << "  --env          Show system environment variables\n"
               << "  --paths        Show platform-specific default paths\n"
@@ -334,6 +337,27 @@ int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
     
     QStringList args = app.arguments();
+    
+    // Extract folder name (first non-option argument)
+    QString folderName = QStringLiteral("OpenSCAD");
+    for (int i = 1; i < args.size(); ++i) {
+        if (!args[i].startsWith("--")) {
+            folderName = args[i];
+            break;
+        }
+    }
+    
+    // On Windows, set HOME if not already set, using Qt's cross-platform home path
+    // This allows ${HOME} expansion to work cross-platform in tests
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    if (!env.contains("HOME")) {
+        qputenv("HOME", QDir::homePath().toUtf8());
+    }
+    
+    // Set APPNAME environment variable for expansion tests
+    // This demonstrates how ${APPNAME} and %APPNAME% would be expanded
+    qputenv("APPNAME", folderName.toUtf8());
+    
     bool verbose = args.contains("--verbose");
     bool showHelp = args.contains("--help");
     
@@ -342,11 +366,16 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     
-    if (args.size() == 1 || verbose) {
-        // Run all tests
+    // Check if any specific test option is provided
+    bool hasSpecificTest = args.contains("--env") || args.contains("--paths") ||
+                           args.contains("--qualified") || args.contains("--styles") ||
+                           args.contains("--mixed");
+    
+    if (args.size() == 1 || verbose || (args.size() == 2 && !hasSpecificTest)) {
+        // Run all tests (no args, or only folder name provided)
         testSystemEnvironment();
         testPlatformPaths();
-        testQualifiedPaths();
+        testQualifiedPaths(folderName);
         testVariableStyles();
         testMixedCases();
     } else {
@@ -358,7 +387,7 @@ int main(int argc, char *argv[]) {
             testPlatformPaths();
         }
         if (args.contains("--qualified")) {
-            testQualifiedPaths();
+            testQualifiedPaths(folderName);
         }
         if (args.contains("--styles")) {
             testVariableStyles();
