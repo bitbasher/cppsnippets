@@ -537,6 +537,20 @@ if(BUILD_APP)
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
+    # Phase 2: End-to-end pipeline tests - Google Test unit test
+    add_executable(test_unit_g_phase2_inventory_pipeline
+        tests/test_unit_g_phase2_inventory_pipeline.cpp
+        src/resourceInventory/ExamplesInventory.cpp
+        src/resourceInventory/TemplatesInventory.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+        src/scadtemplates/legacy_template_converter.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/pathDiscovery/ResourcePaths.cpp
+        src/jsonreader/JsonReader.cpp
+        src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
+    )
+
     # Phase 2: ExamplesInventory class tests - Google Test unit test
     add_executable(test_unit_g_examples_inventory
         tests/test_unit_g_examples_inventory.cpp
@@ -576,6 +590,27 @@ if(BUILD_APP)
     
     # Neutralize DLL export macros for standalone compilation
     target_compile_definitions(test_unit_g_qvariant_phase1 PRIVATE
+        PLATFORMINFO_EXPORTS
+        SCADTEMPLATES_EXPORTS
+        RESOURCESCANNING_EXPORTS
+    )
+
+    target_link_libraries(test_unit_g_phase2_inventory_pipeline PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        nlohmann_json::nlohmann_json
+        nlohmann_json_schema_validator::validator
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    target_include_directories(test_unit_g_phase2_inventory_pipeline PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/jsonwriter/jsonwriter-portable/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+    
+    target_compile_definitions(test_unit_g_phase2_inventory_pipeline PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS
