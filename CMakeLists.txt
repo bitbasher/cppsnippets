@@ -493,7 +493,7 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF
     )
 
-    # Standalone test: Display resource inventory as a tree
+    # Standalone test: Display templates inventory as a tree
     add_executable(test_sa_inventory_tree EXCLUDE_FROM_ALL
         tests/test_sa_inventory_tree.cpp
     )
@@ -512,6 +512,50 @@ if(BUILD_APP)
     )
     set_target_properties(test_sa_inventory_tree PROPERTIES
         OUTPUT_NAME test_sa_inventory_tree
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Standalone test: Display examples inventory as a tree with attachments
+    add_executable(test_sa_examples_tree EXCLUDE_FROM_ALL
+        tests/test_sa_examples_tree.cpp
+    )
+    target_link_libraries(test_sa_examples_tree PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(test_sa_examples_tree PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/platformInfo
+        ${CMAKE_SOURCE_DIR}/src/pathDiscovery
+        ${CMAKE_SOURCE_DIR}/src/resourceScanning
+        ${CMAKE_SOURCE_DIR}/src/resourceInventory
+        ${CMAKE_SOURCE_DIR}/src/resourceMetadata
+    )
+    target_compile_definitions(test_sa_examples_tree PRIVATE 
+        USE_TEST_APP_INFO
+        $<$<CONFIG:Debug>:DEBUG_BUILD>
+    )
+    set_target_properties(test_sa_examples_tree PROPERTIES
+        OUTPUT_NAME test_sa_examples_tree
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Standalone test: Display fonts inventory as a tree
+    add_executable(test_sa_fonts_tree EXCLUDE_FROM_ALL
+        tests/test_sa_fonts_tree.cpp
+    )
+    target_link_libraries(test_sa_fonts_tree PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(test_sa_fonts_tree PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/platformInfo
+        ${CMAKE_SOURCE_DIR}/src/pathDiscovery
+        ${CMAKE_SOURCE_DIR}/src/resourceScanning
+        ${CMAKE_SOURCE_DIR}/src/resourceInventory
+        ${CMAKE_SOURCE_DIR}/src/resourceMetadata
+    )
+    target_compile_definitions(test_sa_fonts_tree PRIVATE 
+        USE_TEST_APP_INFO
+        $<$<CONFIG:Debug>:DEBUG_BUILD>
+    )
+    set_target_properties(test_sa_fonts_tree PROPERTIES
+        OUTPUT_NAME test_sa_fonts_tree
         WIN32_EXECUTABLE OFF
     )
 
