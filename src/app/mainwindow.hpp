@@ -18,19 +18,11 @@ class QVBoxLayout;
 class QStandardItemModel;
 class QTreeView;
 
-namespace scadtemplates {
-class TemplateManager;
-}
-
-using resourceInventory::ResourceTemplate;
-
-namespace platformInfo {
-class ResourceLocationManager;
-}
-
 namespace resourceInventory {
 class ResourceTreeWidget;
 class ResourceItem;
+
+using ResourceTemplate;
 }
 
 /**
@@ -73,14 +65,13 @@ private:
     void setupMenus();
     void updateWindowTitle();
     void updateTemplateButtons();
-    void refreshInventory();
     void populateEditorFromSelection(const resourceInventory::ResourceItem& item);
     QString userTemplatesRoot() const;
     bool saveTemplateToUser(const ResourceTemplate& tmpl);
     void applyFilterToTree(const QString& text);
+    bool loadTemplatesFromFile(const QString& filePath);
+    bool saveTemplatesToFile(const QString& filePath) const;
     
-    std::unique_ptr<scadtemplates::TemplateManager> m_templateManager;
-    std::unique_ptr<platformInfo::ResourceLocationManager> m_resourceManager;
     std::unique_ptr<QSettings> m_settings;
     QStandardItemModel* m_inventory;  // Owned by QApplication
     

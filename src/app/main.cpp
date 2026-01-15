@@ -7,7 +7,7 @@
 #include <QDebug>
 #include <QStandardItemModel>
 #include <QCoreApplication>
-#include "mainwindow.h"
+#include "mainwindow.hpp"
 #include "applicationNameInfo.hpp"
 #include "platformInfo/ResourceLocation.hpp"
 #include "pathDiscovery/ResourcePaths.hpp"
@@ -36,7 +36,7 @@ bool resourceManager(QStandardItemModel* model) {
         qDebug() << "Found" << allLocations.size() << "resource locations";
         
         // Scan and populate model
-        resourceInventory::ResourceScanner scanner;
+        resourceScanning::ResourceScanner scanner;
         scanner.scanToModel(model, allLocations);
         
         qDebug() << "Model populated with" << model->rowCount() << "items";

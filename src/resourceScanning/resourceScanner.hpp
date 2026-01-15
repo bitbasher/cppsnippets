@@ -18,6 +18,7 @@
 #include "../resourceInventory/FontsInventory.hpp"
 #include "../resourceInventory/ShadersInventory.hpp"
 #include "../resourceInventory/TranslationsInventory.hpp"
+#include "../resourceInventory/TestsInventory.hpp"
 
 #include <QStandardItemModel>
 #include <QList>
@@ -111,6 +112,18 @@ public:
      * @return Total number of translations
      */
     int translationsCount() const { return m_translationsInventory.count(); }
+    
+    /**
+     * @brief Get the tests inventory (read-only access)
+     * @return Reference to populated tests inventory
+     */
+    const resourceInventory::TestsInventory& testsInventory() const { return m_testsInventory; }
+    
+    /**
+     * @brief Get count of tests found across all locations
+     * @return Total number of tests
+     */
+    int testsCount() const { return m_testsInventory.count(); }
 
 private:
     /**
@@ -171,6 +184,17 @@ private:
     int scanTranslationsAt(const platformInfo::ResourceLocation& location);
     
     /**
+     * @brief Scan tests folder at a single location
+     * 
+     * Similar to examples but flat (no categories).
+     * Tests are .scad files that may have attachments (.json, .txt, .dat).
+     * 
+     * @param location Resource location to scan
+     * @return Number of tests added, or -1 on error
+     */
+    int scanTestsAt(const platformInfo::ResourceLocation& location);
+    
+    /**
      * @brief Populate QStandardItemModel from inventories
      * 
      * Phase 3-4: Populates from examples and templates
@@ -186,7 +210,8 @@ private:
     resourceInventory::FontsInventory m_fontsInventory;
     resourceInventory::ShadersInventory m_shadersInventory;
     resourceInventory::TranslationsInventory m_translationsInventory;
-    // Future: LibrariesInventory, ColorSchemesInventory, TestsInventory, etc.
+    resourceInventory::TestsInventory m_testsInventory;
+    // Future: LibrariesInventory, ColorSchemesInventory, etc.
 };
 
 } // namespace resourceScanning

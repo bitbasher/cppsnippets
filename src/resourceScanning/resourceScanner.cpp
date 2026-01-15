@@ -27,6 +27,7 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
     m_fontsInventory.clear();
     m_shadersInventory.clear();
     m_translationsInventory.clear();
+    m_testsInventory.clear();
     
     // Scan each location
     for (const auto& location : locations) {
@@ -63,7 +64,13 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
             qDebug() << "  Added" << translationsAdded << "translations";
         }
         
-        // Future phases: scanLibrariesAt(), scanColorSchemesAt(), scanTestsAt(), etc.
+        // Phase 5: Tests
+        int testsAdded = scanTestsAt(location);
+        if (testsAdded > 0) {
+            qDebug() << "  Added" << testsAdded << "tests";
+        }
+        
+        // Future phases: scanLibrariesAt(), scanColorSchemesAt(), etc.
     }
     
     // Populate model from inventories
@@ -73,7 +80,8 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
              << "templates:" << m_templatesInventory.count()
              << "fonts:" << m_fontsInventory.count()
              << "shaders:" << m_shadersInventory.count()
-             << "translations:" << m_translationsInventory.count();
+             << "translations:" << m_translationsInventory.count()
+             << "tests:" << m_testsInventory.count();
     
     return true;
 }
@@ -266,6 +274,31 @@ int ResourceScanner::scanTranslationsAt(const platformInfo::ResourceLocation& lo
             fileName.endsWith(".ts", Qt::CaseInsensitive)) {
             
             if (m_translationsInventory.addTranslation(entry.filePath(), location.tier())) {
+                addedCount++;
+            }
+        }
+    }
+    
+    return addedCount;
+}
+
+int ResourceScanner::scanTestsAt(const platformInfo::ResourceLocation& location)
+{
+    QString testsPath = location.path() + "/tests";
+    
+    // Check if tests folder exists
+    QDir testsDir(testsPath);
+    if (!testsDir.exists()) {
+        return 0; // Not an error - location may not have tests
+    }
+    
+    int addedCount = 0;
+    QString tierStr = resourceMetadata::tierToString(location.tier());
+    
+    // Scan for test files (.scad) - flat structure, no categories
+    for (const auto& entry : QDirListing(testsPath, QDirListing::IteratorFlag::Recursive)) {
+        if (entry.isFile() && entry.fileName().endsWith(".scad")) {
+            if (m_testsInventory.addTest(entry.filePath(), tierStr)) {
                 addedCount++;
             }
         }

@@ -286,7 +286,8 @@ set(LIB_SOURCES
     src/resourceInventory/ExamplesInventory.cpp
     src/resourceInventory/TemplatesInventory.cpp
     src/resourceInventory/FontsInventory.cpp    src/resourceInventory/ShadersInventory.cpp
-    src/resourceInventory/TranslationsInventory.cpp    src/resourceScanning/ResourceScanner.cpp
+    src/resourceInventory/TranslationsInventory.cpp
+    src/resourceInventory/TestsInventory.cpp    src/resourceScanning/ResourceScanner.cpp
 )
 
 set(LIB_HEADERS
@@ -350,7 +351,7 @@ if(BUILD_APP)
     set(APP_SOURCES
         src/app/main.cpp
         src/app/mainwindow.cpp
-        src/app/mainwindow.h
+        src/app/mainwindow.hpppp
         src/gui/preferencesdialog.cpp
         src/gui/preferencesdialog.hpp
         src/gui/resourcelocationwidget.cpp
