@@ -273,6 +273,7 @@ endif()
 # Library source files
 set(LIB_SOURCES
     src/jsonreader/JsonReader.cpp
+    src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
     # src/scadtemplates/template.cpp - DELETED (replaced by ResourceTemplate)
     src/scadtemplates/template_parser.cpp
     src/scadtemplates/template_manager.cpp
@@ -288,11 +289,13 @@ set(LIB_SOURCES
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
     src/resourceInventory/ExamplesInventory.cpp
+    src/resourceInventory/TemplatesInventory.cpp
     src/resourceScanning/ResourceScanner.cpp
 )
 
 set(LIB_HEADERS
     src/jsonreader/JsonReader.hpp
+    src/jsonwriter/jsonwriter-portable/include/JsonWriter/JsonWriter.h
     src/scadtemplates/scadtemplates.hpp
     # src/scadtemplates/template.hpp - DELETED (replaced by ResourceTemplate)
     src/scadtemplates/template_parser.hpp
@@ -309,6 +312,7 @@ set(LIB_HEADERS
     src/pathDiscovery/ResourcePaths.hpp
     src/resourceInventory/resourceItem.hpp
     src/resourceInventory/ExamplesInventory.hpp
+    src/resourceInventory/TemplatesInventory.hpp
     src/resourceScanning/ResourceScanner.hpp
     src/resourceMetadata/ResourceTypeInfo.hpp
 )
@@ -317,12 +321,20 @@ set(LIB_HEADERS
 add_library(scadtemplates_lib ${LIB_SOURCES} ${LIB_HEADERS})
 target_include_directories(scadtemplates_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/jsonwriter/jsonwriter-portable/include>
     $<INSTALL_INTERFACE:include>
 )
 
 # Link Qt6::Core and Qt6::Gui for QString, QVector, QSysInfo, QScreen support in library
 # JsonReader is integrated directly into library, no separate dependency needed
-target_link_libraries(scadtemplates_lib PUBLIC Qt6::Core Qt6::Gui)
+# JsonWriter is integrated directly into library
+# Link nlohmann_json and json-schema-validator for template validation
+target_link_libraries(scadtemplates_lib PUBLIC 
+    Qt6::Core 
+    Qt6::Gui
+    nlohmann_json::nlohmann_json
+    nlohmann_json_schema_validator::validator
+)
 
 # Set library properties for Windows DLL export
 if(BUILD_SHARED_LIBS)
@@ -563,11 +575,23 @@ if(BUILD_APP)
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
+    # Phase 4: TemplatesInventory class tests
+    add_executable(test_templates_inventory
+        tests/test_templates_inventory.cpp
+        src/resourceInventory/TemplatesInventory.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+        src/scadtemplates/legacy_template_converter.cpp
+        src/jsonreader/JsonReader.cpp
+        src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
+    )
+
     # Phase 3: ResourceScanner orchestration tests
     add_executable(test_resource_scanner
         tests/test_resource_scanner.cpp
         src/resourceScanning/ResourceScanner.cpp
         src/resourceInventory/ExamplesInventory.cpp
+        src/resourceInventory/TemplatesInventory.cpp
         src/resourceInventory/resourceItem.cpp
         src/platformInfo/ResourceLocation.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
@@ -607,6 +631,27 @@ if(BUILD_APP)
     )
     
     target_compile_definitions(test_examples_inventory PRIVATE
+        PLATFORMINFO_EXPORTS
+        SCADTEMPLATES_EXPORTS
+        RESOURCESCANNING_EXPORTS
+    )
+
+    target_link_libraries(test_templates_inventory PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        nlohmann_json::nlohmann_json
+        nlohmann_json_schema_validator::validator
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    target_include_directories(test_templates_inventory PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/jsonwriter/jsonwriter-portable/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+    
+    target_compile_definitions(test_templates_inventory PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
         RESOURCESCANNING_EXPORTS

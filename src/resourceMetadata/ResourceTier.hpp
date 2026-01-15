@@ -48,4 +48,17 @@ inline QString tierDisplayName(ResourceTier tier) {
     return QString::fromUtf8(tierToString(tier));
 }
 
+/**
+ * @brief Convert string to ResourceTier enum
+ * 
+ * @param str String representation of tier ("Installation", "Machine", or "User")
+ * @return ResourceTier enum value (defaults to User if not recognized)
+ */
+inline ResourceTier stringToTier(const QString& str) {
+    if (str == QLatin1String("Installation")) return ResourceTier::Installation;
+    if (str == QLatin1String("Machine"))      return ResourceTier::Machine;
+    if (str == QLatin1String("User"))         return ResourceTier::User;
+    return ResourceTier::User; // Default fallback
+}
+
 } // namespace resourceMetadata

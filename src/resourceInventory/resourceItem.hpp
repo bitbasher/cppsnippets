@@ -199,8 +199,7 @@ private:
 PLATFORMINFO_API QString resourceTypeToString(ResourceType type);
 PLATFORMINFO_API ResourceType stringToResourceType(const QString& str);
 
-PLATFORMINFO_API QString resourceTierToString(ResourceTier tier);
-PLATFORMINFO_API ResourceTier stringToResourceTier(const QString& str);
+// Tier conversion - use resourceMetadata::tierDisplayName() and resourceMetadata::stringToTier()
 
 } // namespace resourceInventory
 

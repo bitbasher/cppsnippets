@@ -23,25 +23,33 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
     // Clear existing data
     model->clear();
     m_examplesInventory.clear();
+    m_templatesInventory.clear();
     
     // Scan each location
     for (const auto& location : locations) {
         qDebug() << "Scanning location:" << location.path() 
                  << "tier:" << resourceMetadata::tierToString(location.tier());
         
-        // Phase 3: Examples only
+        // Phase 3: Examples
         int examplesAdded = scanExamplesAt(location);
         if (examplesAdded > 0) {
             qDebug() << "  Added" << examplesAdded << "examples";
         }
         
-        // Future phases: scanTemplatesAt(), scanLibrariesAt(), etc.
+        // Phase 4: Templates
+        int templatesAdded = scanTemplatesAt(location);
+        if (templatesAdded > 0) {
+            qDebug() << "  Added" << templatesAdded << "templates";
+        }
+        
+        // Future phases: scanLibrariesAt(), scanFontsAt(), etc.
     }
     
     // Populate model from inventories
     populateModel(model);
     
-    qDebug() << "ResourceScanner: Total examples:" << m_examplesInventory.count();
+    qDebug() << "ResourceScanner: Total examples:" << m_examplesInventory.count()
+             << "templates:" << m_templatesInventory.count();
     
     return true;
 }
@@ -78,16 +86,40 @@ int ResourceScanner::scanExamplesAt(const platformInfo::ResourceLocation& locati
     return addedCount;
 }
 
+int ResourceScanner::scanTemplatesAt(const platformInfo::ResourceLocation& location)
+{
+    QString templatesPath = location.path() + "/templates";
+    
+    // Check if templates folder exists
+    QDir templatesDir(templatesPath);
+    if (!templatesDir.exists()) {
+        return 0; // Not an error - location may not have templates
+    }
+    
+    int addedCount = 0;
+    QString tierStr = resourceMetadata::tierToString(location.tier());
+    
+    // Scan templates folder for .json files (no categories for templates)
+    for (const auto& entry : QDirListing(templatesPath, {"*.json"})) {
+        if (entry.isFile()) {
+            if (m_templatesInventory.addTemplate(entry, tierStr)) {
+                addedCount++;
+            }
+        }
+    }
+    
+    return addedCount;
+}
+
 void ResourceScanner::populateModel(QStandardItemModel* model)
 {
-    // Phase 3: Simple flat list of examples for debugging
+    // Phase 3-4: Simple flat list for debugging
     // Future: Hierarchical model with Tier → ResourceType → Category → Items
     
-    model->setHorizontalHeaderLabels({"Name", "Category", "Tier", "Path"});
+    model->setHorizontalHeaderLabels({"Name", "Type", "Category", "Tier", "Path"});
     
-    // Get all examples
+    // Add examples
     QList<QVariant> allExamples = m_examplesInventory.getAll();
-    
     for (const QVariant& var : allExamples) {
         if (!var.canConvert<resourceInventory::ResourceScript>()) {
             continue;
@@ -97,9 +129,29 @@ void ResourceScanner::populateModel(QStandardItemModel* model)
         
         QList<QStandardItem*> row;
         row.append(new QStandardItem(script.displayName()));
+        row.append(new QStandardItem("Example"));
         row.append(new QStandardItem(script.category()));
         row.append(new QStandardItem(resourceMetadata::tierToString(script.tier())));
         row.append(new QStandardItem(script.scriptPath()));
+        
+        model->appendRow(row);
+    }
+    
+    // Add templates
+    QList<QVariant> allTemplates = m_templatesInventory.getAll();
+    for (const QVariant& var : allTemplates) {
+        if (!var.canConvert<resourceInventory::ResourceItem>()) {
+            continue;
+        }
+        
+        resourceInventory::ResourceItem tmpl = var.value<resourceInventory::ResourceItem>();
+        
+        QList<QStandardItem*> row;
+        row.append(new QStandardItem(tmpl.displayName()));
+        row.append(new QStandardItem("Template"));
+        row.append(new QStandardItem(""));  // No category for templates
+        row.append(new QStandardItem(resourceMetadata::tierToString(tmpl.tier())));
+        row.append(new QStandardItem(tmpl.path()));
         
         model->appendRow(row);
     }

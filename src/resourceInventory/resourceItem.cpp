@@ -97,23 +97,7 @@ ResourceType stringToResourceType(const QString& str)
     return ResourceType::Unknown;
 }
 
-QString resourceTierToString(ResourceTier tier)
-{
-    switch (tier) {
-        case ResourceTier::Installation: return QStringLiteral("Installation");
-        case ResourceTier::Machine:      return QStringLiteral("Machine");
-        case ResourceTier::User:         return QStringLiteral("User");
-    }
-    return QStringLiteral("User");
-}
-
-ResourceTier stringToResourceTier(const QString& str)
-{
-    if (str == QLatin1String("Installation")) return ResourceTier::Installation;
-    if (str == QLatin1String("Machine"))      return ResourceTier::Machine;
-    if (str == QLatin1String("User"))         return ResourceTier::User;
-    return ResourceTier::User;
-}
+// Tier conversion functions moved to resourceMetadata::stringToTier() and resourceMetadata::tierDisplayName()
 
 // ============================================================================
 // ResourceTemplate

@@ -14,6 +14,7 @@
 #include "../platformInfo/export.hpp"
 #include "../platformInfo/ResourceLocation.hpp"
 #include "../resourceInventory/ExamplesInventory.hpp"
+#include "../resourceInventory/TemplatesInventory.hpp"
 
 #include <QStandardItemModel>
 #include <QList>
@@ -27,8 +28,9 @@ namespace resourceScanning {
  * For each location, checks what resource folders exist (examples/, templates/, etc.)
  * Delegates to specialized inventory classes to populate storage.
  * 
- * Phase 3: Implements Examples scanning only
- * Future phases: Templates, Libraries, Fonts, ColorSchemes, etc.
+ * Phase 3: Examples scanning
+ * Phase 4: Templates scanning
+ * Future phases: Libraries, Fonts, ColorSchemes, etc.
  */
 class PLATFORMINFO_API ResourceScanner {
 public:
@@ -38,7 +40,7 @@ public:
     /**
      * @brief Scan all locations and populate QStandardItemModel
      * 
-     * Phase 3: Scans examples/ folders only
+     * Phase 3-4: Scans examples/ and templates/ folders
      * Future: Will scan all resource types
      * 
      * @param model Qt model to populate with discovered resources
@@ -54,10 +56,22 @@ public:
     const resourceInventory::ExamplesInventory& examplesInventory() const { return m_examplesInventory; }
     
     /**
+     * @brief Get the templates inventory (read-only access)
+     * @return Reference to populated templates inventory
+     */
+    const resourceInventory::TemplatesInventory& templatesInventory() const { return m_templatesInventory; }
+    
+    /**
      * @brief Get count of examples found across all locations
      * @return Total number of examples
      */
     int examplesCount() const { return m_examplesInventory.count(); }
+    
+    /**
+     * @brief Get count of templates found across all locations
+     * @return Total number of templates
+     */
+    int templatesCount() const { return m_templatesInventory.count(); }
 
 private:
     /**
@@ -73,9 +87,21 @@ private:
     int scanExamplesAt(const platformInfo::ResourceLocation& location);
     
     /**
+     * @brief Scan templates folder at a single location
+     * 
+     * Uses QDirListing to traverse templates/ folder.
+     * Calls inventory.addFolder() for directories (categories).
+     * Calls inventory.addTemplate() for loose .scad files.
+     * 
+     * @param location Resource location to scan
+     * @return Number of templates added, or -1 on error
+     */
+    int scanTemplatesAt(const platformInfo::ResourceLocation& location);
+    
+    /**
      * @brief Populate QStandardItemModel from inventories
      * 
-     * Phase 3: Populates from examples only
+     * Phase 3-4: Populates from examples and templates
      * Future: Will populate from all resource inventories
      * 
      * @param model Qt model to populate
@@ -84,7 +110,8 @@ private:
     
     // Inventory storage - one per resource type
     resourceInventory::ExamplesInventory m_examplesInventory;
-    // Future: TemplatesInventory, LibrariesInventory, etc.
+    resourceInventory::TemplatesInventory m_templatesInventory;
+    // Future: LibrariesInventory, FontsInventory, etc.
 };
 
 } // namespace resourceScanning
