@@ -63,6 +63,11 @@ private slots:
 private:
     void setupUi();
     void setupMenus();
+    void buildMenuBar();
+    void buildFileMenu(QMenu* fileMenu);
+    void buildEditMenu(QMenu* editMenu);
+    void buildTemplatesMenu(QMenu* templatesMenu);
+    void buildHelpMenu(QMenu* helpMenu);
     void updateWindowTitle();
     void updateTemplateButtons();
     void populateEditorFromSelection(const resourceInventory::ResourceItem& item);

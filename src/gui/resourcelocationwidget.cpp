@@ -82,34 +82,22 @@ void ResourceLocationWidget::setLocations(const QList<platformInfo::ResourceLoca
         item->setData(Qt::UserRole, loc.path());
         
         // Determine if this item should be checkable
-        // Not checkable if: doesn't exist, or exists but has no resource folders
-        bool canCheck = loc.exists() && loc.hasResourceFolders();
-        // Special case: placeholder items (path starts with '(') are never checkable
-        if (loc.path().startsWith(QLatin1Char('('))) {
-            canCheck = false;
-        }
+        // FIXME : need a correct way to set the checkbox
         
-        if (canCheck) {
-            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            item->setCheckState(loc.isEnabled() ? Qt::Checked : Qt::Unchecked);
-        } else {
-            // Remove checkable flag - item will appear without checkbox
-            item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable);
-        }
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState( Qt::Checked );
         
         // Show status via appearance
-        if (!loc.exists()) {
-            item->setForeground(Qt::gray);
-            if (loc.path().startsWith(QLatin1Char('('))) {
-                item->setToolTip(loc.description());
-            } else {
-                item->setToolTip(tr("Path does not exist"));
-            }
-        } else if (!loc.hasResourceFolders()) {
+        // FIXME : need to fix this carefully
+        item->setForeground(Qt::gray);
+        if (loc.path().startsWith(QLatin1Char('('))) {
+            item->setToolTip(loc.description());
+        } else {
+            item->setToolTip(tr("Path does not exist"));
+        }
+        if (!loc.hasResourceFolders()) {
             item->setForeground(Qt::darkGray);
-            item->setToolTip(tr("Path exists but contains no resource folders"));
-        } else if (!loc.isWritable()) {
-            item->setToolTip(tr("Path is read-only"));
+            item->setToolTip(tr("Path has resource folders"));
         }
     }
 }
@@ -187,20 +175,16 @@ void ResourceLocationWidget::onAddLocation()
     QString path = m_inputWidget->path().trimmed();
     if (path.isEmpty()) return;
     
-    // Check if path already exists in list
+    // Check if path already in list
+    // FIXME : better to use .contains() on the QList?
     for (const auto& loc : m_locations) {
         if (loc.path() == path) {
-            return; // Already exists
+            return; // Already on list
         }
     }
     
     platformInfo::ResourceLocation newLoc;
     newLoc.setPath(path);
-    // Display name auto-generated from path
-    newLoc.setEnabled(true);
-    bool pathExists = QDir(path).exists();
-    newLoc.setExists(pathExists);
-    newLoc.setWritable(pathExists); // Simplified check
     
     m_locations.append(newLoc);
     
@@ -214,7 +198,8 @@ void ResourceLocationWidget::onAddLocation()
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(Qt::Checked);
     
-    if (!pathExists) {
+    // FIXME : make a correct check to gray out a disabled path
+    if ( true) {
         item->setForeground(Qt::gray);
         item->setToolTip(tr("Path does not exist"));
     }

@@ -12,69 +12,47 @@
 
 namespace resourceScanning {
 
-bool ResourceScanner::scanToModel(QStandardItemModel* model, 
-                                   const QList<platformInfo::ResourceLocation>& locations)
+QStandardItemModel* ResourceScanner::scanToModel(const QList<platformInfo::ResourceLocation>& locations)
 {
-    if (!model) {
-        qWarning() << "ResourceScanner::scanToModel: null model provided";
-        return false;
-    }
+    using resourceMetadata::ResourceType;
+    using resourceMetadata::s_topLevelReverse;
     
-    // Clear existing data
-    model->clear();
-    m_examplesInventory.clear();
-    m_templatesInventory.clear();
-    m_fontsInventory.clear();
-    m_shadersInventory.clear();
-    m_translationsInventory.clear();
-    m_testsInventory.clear();
+    // Dispatch map: ResourceType → scanner function
+    using ScannerFunc = int (ResourceScanner::*)(const platformInfo::ResourceLocation&);
+    const QMap<ResourceType, ScannerFunc> scannerDispatch = {
+        {ResourceType::Examples, &ResourceScanner::scanExamplesAt},
+        {ResourceType::Templates, &ResourceScanner::scanTemplatesAt},
+        {ResourceType::Fonts, &ResourceScanner::scanFontsAt},
+        {ResourceType::Shaders, &ResourceScanner::scanShadersAt},
+        {ResourceType::Translations, &ResourceScanner::scanTranslationsAt},
+        {ResourceType::Tests, &ResourceScanner::scanTestsAt}
+        // Future: ResourceType::Libraries, ResourceType::ColorSchemes
+    };
     
-    // Scan each location
+    // Scan each location - discover what resource folders exist
     for (const auto& location : locations) {
-        qDebug() << "Scanning location:" << location.path() 
-                 << "tier:" << resourceMetadata::tierToString(location.tier());
+        qDebug() << "Scanning location:" << location.path();
         
-        // Phase 3: Examples
-        int examplesAdded = scanExamplesAt(location);
-        if (examplesAdded > 0) {
-            qDebug() << "  Added" << examplesAdded << "examples";
+        using ItFlag = QDirListing::IteratorFlag;
+        
+        // Discover resource folders using QDirListing (non-recursive, dirs only)
+        for (const auto& dirEntry : QDirListing(location.path(), ItFlag::DirsOnly)) {
+            QString folderName = dirEntry.fileName();
+            
+            // Check if this is a known resource folder
+            if (s_topLevelReverse.contains(folderName)) {
+                ResourceType resType = s_topLevelReverse[folderName];
+                
+                // Dispatch to scanner if implemented
+                if (scannerDispatch.contains(resType)) {
+                    (this->*(scannerDispatch[resType]))(location);
+                }
+            }
         }
-        
-        // Phase 4: Templates
-        int templatesAdded = scanTemplatesAt(location);
-        if (templatesAdded > 0) {
-            qDebug() << "  Added" << templatesAdded << "templates";
-        }
-        
-        // Phase 5: Fonts
-        int fontsAdded = scanFontsAt(location);
-        if (fontsAdded > 0) {
-            qDebug() << "  Added" << fontsAdded << "fonts";
-        }
-        
-        // Phase 5: Shaders
-        int shadersAdded = scanShadersAt(location);
-        if (shadersAdded > 0) {
-            qDebug() << "  Added" << shadersAdded << "shaders";
-        }
-        
-        // Phase 5: Translations
-        int translationsAdded = scanTranslationsAt(location);
-        if (translationsAdded > 0) {
-            qDebug() << "  Added" << translationsAdded << "translations";
-        }
-        
-        // Phase 5: Tests
-        int testsAdded = scanTestsAt(location);
-        if (testsAdded > 0) {
-            qDebug() << "  Added" << testsAdded << "tests";
-        }
-        
-        // Future phases: scanLibrariesAt(), scanColorSchemesAt(), etc.
     }
     
-    // Populate model from inventories
-    populateModel(model);
+    // Create and populate model for templates only (this app's focus)
+    QStandardItemModel* model = populateModel(ResourceType::Templates);
     
     qDebug() << "ResourceScanner: Total examples:" << m_examplesInventory.count()
              << "templates:" << m_templatesInventory.count()
@@ -83,19 +61,12 @@ bool ResourceScanner::scanToModel(QStandardItemModel* model,
              << "translations:" << m_translationsInventory.count()
              << "tests:" << m_testsInventory.count();
     
-    return true;
+    return model;
 }
 
 int ResourceScanner::scanExamplesAt(const platformInfo::ResourceLocation& location)
 {
     QString examplesPath = location.path() + "/examples";
-    
-    // Check if examples folder exists
-    QDir examplesDir(examplesPath);
-    if (!examplesDir.exists()) {
-        return 0; // Not an error - location may not have examples
-    }
-    
     int addedCount = 0;
     QString tierStr = resourceMetadata::tierToString(location.tier());
     
@@ -121,13 +92,6 @@ int ResourceScanner::scanExamplesAt(const platformInfo::ResourceLocation& locati
 int ResourceScanner::scanTemplatesAt(const platformInfo::ResourceLocation& location)
 {
     QString templatesPath = location.path() + "/templates";
-    
-    // Check if templates folder exists
-    QDir templatesDir(templatesPath);
-    if (!templatesDir.exists()) {
-        return 0; // Not an error - location may not have templates
-    }
-    
     int addedCount = 0;
     QString tierStr = resourceMetadata::tierToString(location.tier());
     
@@ -143,62 +107,74 @@ int ResourceScanner::scanTemplatesAt(const platformInfo::ResourceLocation& locat
     return addedCount;
 }
 
-void ResourceScanner::populateModel(QStandardItemModel* model)
+QStandardItemModel* ResourceScanner::populateModel(resourceMetadata::ResourceType type)
 {
-    // Phase 3-4: Simple flat list for debugging
-    // Future: Hierarchical model with Tier → ResourceType → Category → Items
+    using resourceMetadata::ResourceType;
     
-    model->setHorizontalHeaderLabels({"Name", "Type", "Category", "Tier", "Path"});
-    
-    // Add examples
-    QList<QVariant> allExamples = m_examplesInventory.getAll();
-    for (const QVariant& var : allExamples) {
-        if (!var.canConvert<resourceInventory::ResourceScript>()) {
-            continue;
+    switch (type) {
+        case ResourceType::Examples: {
+            if (m_examplesInventory.count() == 0) {
+                return nullptr;
+            }
+            
+            QStandardItemModel* model = new QStandardItemModel();
+            model->setHorizontalHeaderLabels({"Name", "Category", "Tier", "Path"});
+            
+            QList<QVariant> allExamples = m_examplesInventory.getAll();
+            for (const QVariant& var : allExamples) {
+                if (!var.canConvert<resourceInventory::ResourceScript>()) {
+                    continue;
+                }
+                
+                resourceInventory::ResourceScript script = var.value<resourceInventory::ResourceScript>();
+                
+                QList<QStandardItem*> row;
+                row.append(new QStandardItem(script.displayName()));
+                row.append(new QStandardItem(script.category()));
+                row.append(new QStandardItem(resourceMetadata::tierToString(script.tier())));
+                row.append(new QStandardItem(script.scriptPath()));
+                
+                model->appendRow(row);
+            }
+            return model;
         }
         
-        resourceInventory::ResourceScript script = var.value<resourceInventory::ResourceScript>();
-        
-        QList<QStandardItem*> row;
-        row.append(new QStandardItem(script.displayName()));
-        row.append(new QStandardItem("Example"));
-        row.append(new QStandardItem(script.category()));
-        row.append(new QStandardItem(resourceMetadata::tierToString(script.tier())));
-        row.append(new QStandardItem(script.scriptPath()));
-        
-        model->appendRow(row);
-    }
-    
-    // Add templates
-    QList<QVariant> allTemplates = m_templatesInventory.getAll();
-    for (const QVariant& var : allTemplates) {
-        if (!var.canConvert<resourceInventory::ResourceItem>()) {
-            continue;
+        case ResourceType::Templates: {
+            if (m_templatesInventory.count() == 0) {
+                return nullptr;
+            }
+            
+            QStandardItemModel* model = new QStandardItemModel();
+            model->setHorizontalHeaderLabels({"Name", "Tier", "Path"});
+            
+            QList<QVariant> allTemplates = m_templatesInventory.getAll();
+            for (const QVariant& var : allTemplates) {
+                if (!var.canConvert<resourceInventory::ResourceItem>()) {
+                    continue;
+                }
+                
+                resourceInventory::ResourceItem tmpl = var.value<resourceInventory::ResourceItem>();
+                
+                QList<QStandardItem*> row;
+                row.append(new QStandardItem(tmpl.displayName()));
+                row.append(new QStandardItem(resourceMetadata::tierToString(tmpl.tier())));
+                row.append(new QStandardItem(tmpl.path()));
+                
+                model->appendRow(row);
+            }
+            return model;
         }
         
-        resourceInventory::ResourceItem tmpl = var.value<resourceInventory::ResourceItem>();
-        
-        QList<QStandardItem*> row;
-        row.append(new QStandardItem(tmpl.displayName()));
-        row.append(new QStandardItem("Template"));
-        row.append(new QStandardItem(""));  // No category for templates
-        row.append(new QStandardItem(resourceMetadata::tierToString(tmpl.tier())));
-        row.append(new QStandardItem(tmpl.path()));
-        
-        model->appendRow(row);
+        // Future: Other resource types
+        default:
+            qWarning() << "populateModel: ResourceType not yet implemented";
+            return nullptr;
     }
 }
 
 int ResourceScanner::scanFontsAt(const platformInfo::ResourceLocation& location)
 {
     QString fontsPath = location.path() + "/fonts";
-    
-    // Check if fonts folder exists
-    QDir fontsDir(fontsPath);
-    if (!fontsDir.exists()) {
-        return 0; // Not an error - location may not have fonts
-    }
-    
     int addedCount = 0;
     
     // Scan for font files (.ttf, .otf)
@@ -223,13 +199,6 @@ int ResourceScanner::scanFontsAt(const platformInfo::ResourceLocation& location)
 int ResourceScanner::scanShadersAt(const platformInfo::ResourceLocation& location)
 {
     QString shadersPath = location.path() + "/shaders";
-    
-    // Check if shaders folder exists
-    QDir shadersDir(shadersPath);
-    if (!shadersDir.exists()) {
-        return 0; // Not an error - location may not have shaders
-    }
-    
     int addedCount = 0;
     
     // Scan for shader files (.frag, .vert)
@@ -254,13 +223,6 @@ int ResourceScanner::scanShadersAt(const platformInfo::ResourceLocation& locatio
 int ResourceScanner::scanTranslationsAt(const platformInfo::ResourceLocation& location)
 {
     QString localePath = location.path() + "/locale";
-    
-    // Check if locale folder exists
-    QDir localeDir(localePath);
-    if (!localeDir.exists()) {
-        return 0; // Not an error - location may not have translations
-    }
-    
     int addedCount = 0;
     
     // Scan for translation files (.qm, .ts)
@@ -285,13 +247,6 @@ int ResourceScanner::scanTranslationsAt(const platformInfo::ResourceLocation& lo
 int ResourceScanner::scanTestsAt(const platformInfo::ResourceLocation& location)
 {
     QString testsPath = location.path() + "/tests";
-    
-    // Check if tests folder exists
-    QDir testsDir(testsPath);
-    if (!testsDir.exists()) {
-        return 0; // Not an error - location may not have tests
-    }
-    
     int addedCount = 0;
     QString tierStr = resourceMetadata::tierToString(location.tier());
     
@@ -305,6 +260,84 @@ int ResourceScanner::scanTestsAt(const platformInfo::ResourceLocation& location)
     }
     
     return addedCount;
+}
+
+// ============================================================================
+// Location Index Management (Static Members)
+// ============================================================================
+
+// Initialize static members
+QHash<QString, QString> ResourceScanner::s_pathToLocationIndex;
+QHash<QString, QString> ResourceScanner::s_locationIndexToPath;
+int ResourceScanner::s_nextLocationIndex = 1;
+
+QString ResourceScanner::normalizePath(const QString& path)
+{
+    // Convert backslashes to forward slashes
+    // Windows handles both / and \ so this is safe
+    // Avoids escape character issues in string literals
+    QString normalized = path;
+    normalized.replace('\\', '/');
+    return normalized;
+}
+
+QString ResourceScanner::getOrCreateLocationIndex(const QString& folderPath)
+{
+    // Normalize path before indexing
+    QString normalizedPath = normalizePath(folderPath);
+    
+    // Check if already indexed
+    if (s_pathToLocationIndex.contains(normalizedPath)) {
+        return s_pathToLocationIndex.value(normalizedPath);
+    }
+    
+    // Create new index
+    QString newIndex = numberToLocationIndex(s_nextLocationIndex);
+    s_nextLocationIndex++;
+    
+    // Store bidirectional mapping using normalized path
+    s_pathToLocationIndex.insert(normalizedPath, newIndex);
+    s_locationIndexToPath.insert(newIndex, normalizedPath);
+    
+    qDebug() << "ResourceScanner: Indexed location" << newIndex << "=" << normalizedPath;
+    
+    return newIndex;
+}
+
+QString ResourceScanner::getLocationPath(const QString& index)
+{
+    return s_locationIndexToPath.value(index, QString());
+}
+
+int ResourceScanner::locationIndexCount()
+{
+    return s_pathToLocationIndex.size();
+}
+
+QString ResourceScanner::numberToLocationIndex(int index)
+{
+    // Generate 3-letter indices: aaa, aab, aac, ..., aaz, aba, abb, ..., zzz
+    // Supports 26^3 = 17,576 unique locations
+    
+    if (index < 1) {
+        return "aaa";  // Safety fallback
+    }
+    
+    // Convert to 0-based
+    index--;
+    
+    // Calculate three letter positions (base-26)
+    int third = index % 26;           // Rightmost letter
+    int second = (index / 26) % 26;   // Middle letter
+    int first = (index / 676) % 26;   // Leftmost letter (676 = 26²)
+    
+    // Convert to characters
+    QString result;
+    result += QChar('a' + first);
+    result += QChar('a' + second);
+    result += QChar('a' + third);
+    
+    return result;
 }
 
 } // namespace resourceScanning

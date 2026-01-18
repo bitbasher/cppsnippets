@@ -145,6 +145,30 @@ public:
     int jsonCacheSize() const { return m_jsonCache.size(); }
     
     // ========================================================================
+    // Location Index Access (for debugging/inspection)
+    // ========================================================================
+    
+    /**
+     * @brief Get location index for a template folder path
+     * @param path Absolute path to templates folder
+     * @return Location index (e.g., "one", "two") or empty if not indexed
+     */
+    QString getLocationIndex(const QString& path) const;
+    
+    /**
+     * @brief Get folder path for a location index
+     * @param index Location index (e.g., "one", "two")
+     * @return Absolute path or empty if index not found
+     */
+    QString getLocationPath(const QString& index) const;
+    
+    /**
+     * @brief Get count of indexed locations
+     * @return Number of unique template folder locations
+     */
+    int locationCount() const { return m_pathToLocationIndex.size(); }
+    
+    // ========================================================================
     // JSON Content Writing (for template updates)
     // ========================================================================
     
@@ -163,9 +187,9 @@ public:
 
 private:
     /**
-     * @brief Primary storage - indexed by hierarchical key
+     * @brief Primary storage - indexed by unique key
      * 
-     * Key: "tier-name" (e.g., "installation-cube")
+     * Key: "locationIndex-filename" (e.g., "one-cube", "two-pyramid")
      * Value: QVariant containing ResourceItem
      */
     QHash<QString, QVariant> m_templates;
@@ -173,7 +197,7 @@ private:
     /**
      * @brief JSON content cache for fast editor access
      * 
-     * Key: "tier-name" (same as m_templates)
+     * Key: "locationIndex-filename" (same as m_templates)
      * Value: Parsed QJsonObject with template definition
      * 
      * Loaded lazily on first getJsonContent() call or eagerly in addTemplate().
@@ -182,11 +206,60 @@ private:
     mutable QHash<QString, QJsonObject> m_jsonCache;
     
     /**
+     * @brief Location indexing: path to short index
+     * 
+     * Key: Absolute path to templates folder (e.g., "C:/ProgramData/OpenSCAD")
+     * Value: Short location index ("one", "two", "thr", etc.)
+     * 
+     * Built dynamically as templates are discovered. Enables unique keys
+     * for templates with same filename in different locations.
+     */
+    QHash<QString, QString> m_pathToLocationIndex;
+    
+    /**
+     * @brief Reverse lookup: location index to path
+     * 
+     * Key: Short location index ("one", "two", "thr", etc.)
+     * Value: Absolute path to templates folder
+     */
+    QHash<QString, QString> m_locationIndexToPath;
+    
+    /**
+     * @brief Next location index counter
+     * 
+     * Incremented each time a new location is indexed.
+     * Generates: "one", "two", "thr", "for", "fiv", etc.
+     */
+    int m_nextLocationIndex = 1;
+    
+    /**
      * @brief Parse JSON file from disk
      * @param filePath Absolute path to .json file
      * @return Parsed QJsonObject (empty on error)
      */
     QJsonObject parseJsonFile(const QString& filePath) const;
+    
+    /**
+     * @brief Get or create location index for a templates folder
+     * 
+     * If path already indexed, returns existing index.
+     * Otherwise, assigns next available index and stores bidirectional mapping.
+     * 
+     * @param folderPath Absolute path to templates folder
+     * @return Location index (e.g., "one", "two", "thr")
+     */
+    QString getOrCreateLocationIndex(const QString& folderPath);
+    
+    /**
+     * @brief Generate location index string from counter
+     * 
+     * Converts number to short string:
+     * 1 → "one", 2 → "two", 3 → "thr", 4 → "for", etc.
+     * 
+     * @param index Numeric index (1-based)
+     * @return Three-letter location index
+     */
+    static QString numberToLocationIndex(int index);
 };
 
 } // namespace resourceInventory

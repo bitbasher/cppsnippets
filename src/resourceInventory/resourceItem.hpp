@@ -87,7 +87,7 @@ protected:
     
     ResourceType m_type = ResourceType::Unknown;
     ResourceTier m_tier = ResourceTier::User;
-    ResourceAccess m_access = ResourceAccess::ReadOnly;;
+    ResourceAccess m_access = ResourceAccess::ReadOnly;
 };
 
 /**

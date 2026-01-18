@@ -28,7 +28,8 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry, const QSt
     QString baseName = fi.baseName();
     QString key = QString("%1-%2-%3").arg(tier, category, baseName);
     
-    // Check if already exists
+    // Check if already the script is already in inventory
+    // FIXME : this will probably fail when more than one example as the same name
     if (m_scripts.contains(key)) {
         return false;
     }
@@ -47,9 +48,6 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry, const QSt
         script.setAttachments(attachments);
     }
     
-    // Mark as exists
-    script.setExists(true);
-    
     // Store in hash with hierarchical key
     m_scripts.insert(key, QVariant::fromValue(script));
     
@@ -60,7 +58,7 @@ bool ExamplesInventory::addFolder(const QDirListing::DirEntry& entry, const QStr
 {
     QString folderPath = entry.filePath();
     
-    // Check if folder exists and is actually a directory
+    // Check if folder is there and is actually a directory
     QFileInfo fi(folderPath);
     if (!fi.exists() || !fi.isDir()) {
         return false;

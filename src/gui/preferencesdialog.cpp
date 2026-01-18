@@ -102,9 +102,6 @@ void PreferencesDialog::loadSettings() {
                 QString(),  // rawPath (same as resolved for installation)
                 tr("Application Resources"), 
                 tr("Built-in resources from this installation"));
-            loc.setEnabled(true);
-            loc.setExists(true);
-            loc.setWritable(false);
             installLocations.append(loc);
         }
         
@@ -125,9 +122,6 @@ void PreferencesDialog::loadSettings() {
         placeholder.setPath(m_manager->defaultInstallationSearchPath());
         // Display name auto-generated from path
         placeholder.setDescription(tr("Use Browse to locate an OpenSCAD installation folder"));
-        placeholder.setEnabled(false);
-        placeholder.setExists(false);
-        placeholder.setWritable(false);
         installLocations.append(placeholder);
         
         // Show input widget in fallback mode so user can specify installation
@@ -141,10 +135,8 @@ void PreferencesDialog::loadSettings() {
     QList<platformInfo::ResourceLocation> machineLocations = m_manager->availableMachineLocations();
     // Disable and uncheck locations that don't exist or exist but have no resource folders
     for (auto& loc : machineLocations) {
-        if (!loc.exists() || !loc.hasResourceFolders()) {
-            loc.setEnabled(false);
+        loc.setEnabled(false);
         }
-    }
     
     // Add OPENSCAD_PATH environment variable entry
     // Shows as disabled placeholder if not set, otherwise allows toggle
@@ -161,9 +153,7 @@ void PreferencesDialog::loadSettings() {
     // Disable and uncheck locations that don't exist or exist but have no resource folders
     // Exception: OPENSCADPATH placeholder should remain disabled but visible
     for (auto& loc : userLocations) {
-        if (!loc.exists() || (!loc.hasResourceFolders() && !loc.path().startsWith(QLatin1Char('(')))) {
-            loc.setEnabled(false);
-        }
+        loc.setEnabled(false);
     }
     
     // Add OPENSCAD_PATH environment variable entry for User tier too
@@ -199,13 +189,11 @@ void PreferencesDialog::saveSettings() {
     QStringList enabledSiblings;
     QString currentInstallDir = m_manager->findInstallationResourceDir();
     for (const auto& loc : installLocs) {
+        // FIXME : is this logic correct ?
         // Skip the current installation (always enabled, not a sibling)
         if (loc.path() == currentInstallDir) continue;
         // Skip if this is the user-specified path (not a sibling)
         if (loc.path() == m_manager->userSpecifiedInstallationPath()) continue;
-        // This is a sibling - check if enabled
-        if (loc.isEnabled()) {
-            enabledSiblings.append(loc.path());
         }
     }
     m_manager->setEnabledSiblingPaths(enabledSiblings);

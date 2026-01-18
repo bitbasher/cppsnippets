@@ -50,6 +50,10 @@ public:
     QList<PathElement> qualifiedSearchPaths() const;
     
     // User-designated paths loaded from QSettings
+    // FIXME : rename to userDesignatedLocations and add these paths to the
+    //  QList<PathElement> qualifiedSearchPaths() as place to look for resources.
+    //  In fact they must have had resources .. but if the folder was removed 
+    //  then the location shold be flagged to the user for Delete / Ignore ?
     static QStringList userDesignatedPaths();
 
 private:
