@@ -34,6 +34,7 @@ QString UserTab::xdgDataHomeEnv()
     return QString::fromLocal8Bit(qgetenv("XDG_DATA_HOME"));
 }
 
+// FIXME : check that this works correctly
 QList<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
 {
     QList<platformInfo::ResourceLocation> locations;
@@ -52,9 +53,6 @@ QList<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
         loc.setPath(QString());
         // Display name auto-generated from path
         loc.setDescription(QObject::tr("Set the XDG_DATA_HOME environment variable to add user data paths"));
-        loc.setEnabled(false);
-        loc.setExists(false);
-        loc.setWritable(false);
         loc.setHasResourceFolders(false);
         locations.append(loc);
     } else {
@@ -63,7 +61,7 @@ QList<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
 #ifdef Q_OS_WIN
         QChar separator = QLatin1Char(';');
 #else
-        QChar separator = QLatin1Char(':');
+        QChar separator = QLatin1Char(':'); // FIXME : use correct Qt method to get separator and get rid of #IFDEF block
 #endif
         QStringList paths = envValue.split(separator, Qt::SkipEmptyParts);
         
@@ -75,22 +73,8 @@ QList<platformInfo::ResourceLocation> UserTab::xdgDataHomeLocations()
             loc.setPath(fullPath);
             // Display name auto-generated from path
             loc.setDescription(QObject::tr("From environment variable XDG_DATA_HOME"));
-            loc.setEnabled(true);  // User can toggle
-            bool pathExists = QDir(fullPath).exists();
-            loc.setExists(pathExists);
-            loc.setWritable(pathExists);  // User paths typically writable
             
-            // Check if it has resource folders
-            if (pathExists) {
-                QDir dir(fullPath);
-                loc.setHasResourceFolders(dir.exists(QStringLiteral("examples")) ||
-                                          dir.exists(QStringLiteral("fonts")) ||
-                                          dir.exists(QStringLiteral("libraries")) ||
-                                          dir.exists(QStringLiteral("color-schemes")));
-            } else {
-                loc.setHasResourceFolders(false);
-            }
-            
+            // FIXME : nned a correct way to check for resource folders
             locations.append(loc);
         }
     }

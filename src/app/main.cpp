@@ -16,10 +16,9 @@
 
 /**
  * @brief Discover and scan all resource locations
- * @param model The model to populate with discovered resources
- * @return true on success, false on failure
+ * @return Populated model with discovered resources, or nullptr on failure
  */
-bool resourceManager(QStandardItemModel* model) {
+QStandardItemModel* resourceManager() {
     try {
         qDebug() << "Discovering resource locations...";
         
@@ -27,7 +26,7 @@ bool resourceManager(QStandardItemModel* model) {
         pathDiscovery::ResourcePaths pathDiscovery;
         QList<pathDiscovery::PathElement> discoveredPaths = pathDiscovery.qualifiedSearchPaths();
         
-        // Convert to ResourceLocation (adds status: exists, writable, hasResourceFolders)
+        // Convert to ResourceLocation (adds display name, tier, status)
         QList<platformInfo::ResourceLocation> allLocations;
         for (const auto& pathElem : discoveredPaths) {
             allLocations.append(platformInfo::ResourceLocation(pathElem.path(), pathElem.tier()));
@@ -35,19 +34,19 @@ bool resourceManager(QStandardItemModel* model) {
         
         qDebug() << "Found" << allLocations.size() << "resource locations";
         
-        // Scan and populate model
+        // Scan locations and create populated model
         resourceScanning::ResourceScanner scanner;
-        scanner.scanToModel(model, allLocations);
+        QStandardItemModel* model = scanner.scanToModel(allLocations);
         
         qDebug() << "Model populated with" << model->rowCount() << "items";
         
-        return true;
+        return model;
     } catch (const std::exception& e) {
         qCritical() << "Resource discovery failed:" << e.what();
-        return false;
+        return nullptr;
     } catch (...) {
         qCritical() << "Resource discovery failed with unknown error";
-        return false;
+        return nullptr;
     }
 }
 
@@ -61,8 +60,8 @@ int main(int argc, char *argv[]) {
     app.setOrganizationName(appInfo::organization);
     
     qDebug() << "Building resource inventory...";
-    QStandardItemModel* inventory = new QStandardItemModel();
-    if (!resourceManager(inventory)) {
+    QStandardItemModel* inventory = resourceManager();
+    if (!inventory) {
         qCritical() << "Failed to build resource inventory - exiting";
         return 1;
     }

@@ -10,11 +10,7 @@
 
 namespace scadtemplates {
 
-bool TemplateManager::addTemplate(const ResourceTemplate& tmpl) {
-    if (!tmpl.isValid()) {
-        return false;
-    }
-    
+bool TemplateManager::addTemplate(const ResourceTemplate& tmpl) {  
     // Check for duplicate prefix
     auto it = std::find_if(m_templates.begin(), m_templates.end(),
         [&tmpl](const ResourceTemplate& t) {

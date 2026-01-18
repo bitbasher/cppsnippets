@@ -112,6 +112,7 @@ QModelIndex TemplateTreeModel::index(int row, int column, const QModelIndex& par
     }
     
     TemplateTreeNode* parentNode;
+    // FIXME : is this correct??
     if (!parent.isValid()) {
         parentNode = m_rootNode.get();
     } else {
@@ -127,6 +128,7 @@ QModelIndex TemplateTreeModel::index(int row, int column, const QModelIndex& par
 
 QModelIndex TemplateTreeModel::parent(const QModelIndex& child) const
 {
+    // FIXME : is this correct??
     if (!child.isValid()) {
         return QModelIndex();
     }
@@ -148,6 +150,7 @@ int TemplateTreeModel::rowCount(const QModelIndex& parent) const
     }
     
     TemplateTreeNode* parentNode;
+    // FIXME : is this correct??
     if (!parent.isValid()) {
         parentNode = m_rootNode.get();
     } else {
@@ -165,6 +168,7 @@ int TemplateTreeModel::columnCount(const QModelIndex& parent) const
 
 QVariant TemplateTreeModel::data(const QModelIndex& index, int role) const
 {
+    // FIXME : is this correct??
     if (!index.isValid()) {
         return QVariant();
     }

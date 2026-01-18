@@ -7,6 +7,7 @@
 #include "gui/preferencesdialog.hpp"
 #include "gui/aboutDialog.hpp"
 #include "applicationNameInfo.hpp"
+#include <resourceInventory/inventoryOperations.hpp>
 #include <scadtemplates/template_manager.hpp>
 #include <platformInfo/ResourceLocation.hpp>
 #include <resourceScanning/ResourceScanner.hpp>
@@ -194,9 +195,24 @@ void MainWindow::setupUi() {
 }
 
 void MainWindow::setupMenus() {
-    // File menu
+    buildMenuBar();
+}
+
+void MainWindow::buildMenuBar() {
     QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
+    buildFileMenu(fileMenu);
     
+    QMenu* editMenu = menuBar()->addMenu(tr("&Edit"));
+    buildEditMenu(editMenu);
+    
+    QMenu* templatesMenu = menuBar()->addMenu(tr("&Templates"));
+    buildTemplatesMenu(templatesMenu);
+    
+    QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
+    buildHelpMenu(helpMenu);
+}
+
+void MainWindow::buildFileMenu(QMenu* fileMenu) {
     QAction* newAction = fileMenu->addAction(tr("&New"));
     newAction->setShortcut(QKeySequence::New);
     connect(newAction, &QAction::triggered, this, &MainWindow::onNewFile);
@@ -218,10 +234,9 @@ void MainWindow::setupMenus() {
     QAction* exitAction = fileMenu->addAction(tr("E&xit"));
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, this, &QMainWindow::close);
-    
-    // Edit menu
-    QMenu* editMenu = menuBar()->addMenu(tr("&Edit"));
-    
+}
+
+void MainWindow::buildEditMenu(QMenu* editMenu) {
     QAction* undoAction = editMenu->addAction(tr("&Undo"));
     undoAction->setShortcut(QKeySequence::Undo);
     connect(undoAction, &QAction::triggered, m_editor, &QPlainTextEdit::undo);
@@ -255,10 +270,9 @@ void MainWindow::setupMenus() {
     QAction* preferencesAction = editMenu->addAction(tr("&Preferences..."));
     preferencesAction->setShortcut(QKeySequence::Preferences);
     connect(preferencesAction, &QAction::triggered, this, &MainWindow::onPreferences);
-    
-    // Templates menu
-    QMenu* templatesMenu = menuBar()->addMenu(tr("&Templates"));
-    
+}
+
+void MainWindow::buildTemplatesMenu(QMenu* templatesMenu) {
     QAction* loadTemplatesAction = templatesMenu->addAction(tr("&Load Templates..."));
     connect(loadTemplatesAction, &QAction::triggered, this, [this]() {
         QString fileName = QFileDialog::getOpenFileName(this,
@@ -289,10 +303,9 @@ void MainWindow::setupMenus() {
             }
         }
     });
-    
-    // Help menu
-    QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
-    
+}
+
+void MainWindow::buildHelpMenu(QMenu* helpMenu) {
     QAction* aboutAction = helpMenu->addAction(tr("&About"));
     connect(aboutAction, &QAction::triggered, this, [this]() {
         QString resourceDir = userTemplatesRoot();
@@ -441,7 +454,6 @@ void MainWindow::onInventorySelectionChanged() {
     
     // Retrieve full ResourceItem from Qt::UserRole
     QVariant itemData = item->data(Qt::UserRole);
-    if (!itemData.isValid()) return;
     
     resourceInventory::ResourceItem resItem = itemData.value<resourceInventory::ResourceItem>();
     if (resItem.sourcePath().isEmpty()) {
@@ -656,35 +668,19 @@ void MainWindow::onSaveFileAs() {
 }
 
 bool MainWindow::loadTemplatesFromFile(const QString& filePath) {
-    // Use TemplateParser to load templates from JSON file
-    scadtemplates::TemplateParser parser;
-    auto result = parser.parseFile(filePath);
-    
-    if (!result.success) {
+    QString errorMsg;
+    if (!resourceInventory::loadTemplatesFromFile(m_inventory, filePath, &errorMsg)) {
+        // Error message will be shown by caller
         return false;
     }
-    
-    // TODO: Add loaded templates to the inventory model
-    // For now, just indicate success
-    // This will need proper integration with the new inventory system
-    
     return true;
 }
 
 bool MainWindow::saveTemplatesToFile(const QString& filePath) const {
-    // TODO: Extract templates from inventory model and save to JSON
-    // For now, create an empty templates list
-    QList<resourceInventory::ResourceTemplate> templates;
-    
-    // Use TemplateParser to convert to JSON
-    scadtemplates::TemplateParser parser;
-    QString json = parser.toJson(templates);
-    
-    QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    QString errorMsg;
+    if (!resourceInventory::saveTemplatesToFile(m_inventory, filePath, &errorMsg)) {
+        // Error message will be shown by caller
         return false;
     }
-    
-    file.write(json.toUtf8());
-    return file.error() == QFile::NoError;
+    return true;
 }

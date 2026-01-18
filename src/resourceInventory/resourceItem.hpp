@@ -12,6 +12,7 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QVariant>
+#include <QFileInfo>
 
 namespace resourceInventory {
 
@@ -67,21 +68,9 @@ public:
     QString sourceLocationKey() const { return m_sourceLocationKey; }
     void setSourceLocationKey(const QString& key) { m_sourceLocationKey = key; }
     
-    // State
-    bool exists() const { return m_exists; }
-    void setExists(bool exists) { m_exists = exists; }
-    
-    bool isEnabled() const { return m_isEnabled; }
-    void setEnabled(bool enabled) { m_isEnabled = enabled; }
-    
-    bool isModified() const { return m_isModified; }
-    void setModified(bool modified) { m_isModified = modified; }
-    
-    QDateTime lastModified() const { return m_lastModified; }
-    void setLastModified(const QDateTime& dt) { m_lastModified = dt; }
-    
-    // Validation
-    virtual bool isValid() const;
+    // Unique identifier (location-based key for inventory storage)
+    QString uniqueID() const { return m_uniqueID; }
+    void setUniqueID(const QString& id) { m_uniqueID = id; }
     
     // For QVariant storage
     static int metaTypeId();
@@ -94,15 +83,11 @@ protected:
     QString m_category;
     QString m_sourcePath;           // Original path where found
     QString m_sourceLocationKey;    // Key in ResLocMap for updates
+    QString m_uniqueID;             // Unique identifier (locationIndex-filename)
     
     ResourceType m_type = ResourceType::Unknown;
     ResourceTier m_tier = ResourceTier::User;
     ResourceAccess m_access = ResourceAccess::ReadOnly;
-    
-    bool m_exists = false;
-    bool m_isEnabled = true;
-    bool m_isModified = false;
-    QDateTime m_lastModified;
 };
 
 /**
@@ -125,8 +110,6 @@ public:
     void setAttachments(const QStringList& files) { m_attachments = files; }
     void addAttachment(const QString& file) { m_attachments.append(file); }
     bool hasAttachments() const { return !m_attachments.isEmpty(); }
-    
-    bool isValid() const override;
     
 private:
     QString m_scriptPath;
@@ -179,7 +162,10 @@ public:
     scadtemplates::EditSubtype editSubtype() const { return m_editSubtype; }
     void setEditSubtype(scadtemplates::EditSubtype subtype);  // Also updates EditType
     
-    bool isValid() const override;
+    // JSON loading
+    bool loadFromJson(const QFileInfo& fileInfo);
+    bool loadFromJson(const QString& filePath);
+    QString lastError() const { return m_lastError; }
     
 private:
     QString m_format;       // MIME type, e.g., "text/scad.template"
@@ -191,6 +177,7 @@ private:
     QStringList m_scopes;   // Language scopes for filtering
     scadtemplates::EditType m_editType = scadtemplates::EditType::Text;
     scadtemplates::EditSubtype m_editSubtype = scadtemplates::EditSubtype::Txt;
+    QString m_lastError;    // Error message from last operation
 };
 
 /**

@@ -351,7 +351,7 @@ if(BUILD_APP)
     set(APP_SOURCES
         src/app/main.cpp
         src/app/mainwindow.cpp
-        src/app/mainwindow.hpppp
+        src/app/mainwindow.hpp
         src/gui/preferencesdialog.cpp
         src/gui/preferencesdialog.hpp
         src/gui/resourcelocationwidget.cpp
@@ -558,6 +558,50 @@ if(BUILD_APP)
     )
     set_target_properties(test_sa_fonts_tree PROPERTIES
         OUTPUT_NAME test_sa_fonts_tree
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Standalone test: Scanner output verification
+    add_executable(test_sa_scanner_output EXCLUDE_FROM_ALL
+        tests/test_sa_scanner_output.cpp
+        src/pathDiscovery/ResourcePaths.cpp
+        src/platformInfo/platformInfo.cpp
+        src/platformInfo/ResourceLocation.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+        src/resourceScanning/ResourceScanner.cpp
+        src/resourceInventory/ExamplesInventory.cpp
+        src/resourceInventory/TemplatesInventory.cpp
+        src/resourceInventory/FontsInventory.cpp
+        src/resourceInventory/ShadersInventory.cpp
+        src/resourceInventory/TranslationsInventory.cpp
+        src/resourceInventory/TestsInventory.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/scadtemplates/template_parser.cpp
+        src/scadtemplates/legacy_template_converter.cpp
+        src/jsonreader/JsonReader.cpp
+        src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
+    )
+    target_link_libraries(test_sa_scanner_output PRIVATE 
+        ${QT_LIBRARIES}
+        nlohmann_json::nlohmann_json
+        nlohmann_json_schema_validator::validator
+    )
+    target_include_directories(test_sa_scanner_output PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/jsonwriter/jsonwriter-portable/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+    target_compile_definitions(test_sa_scanner_output PRIVATE 
+        USE_TEST_APP_INFO
+        PLATFORMINFO_STATIC_DEFINE
+        RESOURCEMETADATA_STATIC_DEFINE
+        PLATFORMINFO_EXPORTS
+        SCADTEMPLATES_EXPORTS
+        RESOURCESCANNING_EXPORTS
+        $<$<CONFIG:Debug>:DEBUG_BUILD>
+    )
+    set_target_properties(test_sa_scanner_output PROPERTIES
+        OUTPUT_NAME test_sa_scanner_output
         WIN32_EXECUTABLE OFF
     )
 

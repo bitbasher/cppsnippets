@@ -42,16 +42,15 @@ public:
     ~ResourceScanner() = default;
     
     /**
-     * @brief Scan all locations and populate QStandardItemModel
+     * @brief Scan all locations and create populated QStandardItemModel
      * 
      * Phase 3-4: Scans examples/ and templates/ folders
      * Future: Will scan all resource types
      * 
-     * @param model Qt model to populate with discovered resources
      * @param locations List of discovered resource locations
-     * @return true on success, false on error
+     * @return Populated model with discovered resources (caller owns)
      */
-    bool scanToModel(QStandardItemModel* model, const QList<platformInfo::ResourceLocation>& locations);
+    QStandardItemModel* scanToModel(const QList<platformInfo::ResourceLocation>& locations);
     
     /**
      * @brief Get the examples inventory (read-only access)
@@ -195,14 +194,79 @@ private:
     int scanTestsAt(const platformInfo::ResourceLocation& location);
     
     /**
-     * @brief Populate QStandardItemModel from inventories
+     * @brief Populate QStandardItemModel for a specific resource type
      * 
-     * Phase 3-4: Populates from examples and templates
-     * Future: Will populate from all resource inventories
+     * Creates and populates model from the specified inventory.
+     * Returns nullptr if that inventory is empty.
      * 
-     * @param model Qt model to populate
+     * @param type Resource type to create model for
+     * @return Populated model, or nullptr if inventory empty
      */
-    void populateModel(QStandardItemModel* model);
+    QStandardItemModel* populateModel(resourceMetadata::ResourceType type);
+    
+public:
+    // ========================================================================
+    // Location Index Management (Shared across all inventories)
+    // ========================================================================
+    
+    /**
+     * @brief Normalize path to safe format (forward slashes, no escape issues)
+     * 
+     * Converts backslashes to forward slashes for storage.
+     * Windows handles both / and \ in paths, so this is safe.
+     * Avoids escape character problems in C++ string literals.
+     * 
+     * @param path Path to normalize
+     * @return Normalized path with forward slashes
+     */
+    static QString normalizePath(const QString& path);
+    
+    /**
+     * @brief Get or create location index for a template folder path
+     * 
+     * Maintains bidirectional mapping between folder paths and short indices.
+     * Generates indices like "aaa", "aab", "aac", ... "aaz", "aba", etc.
+     * Path is automatically normalized before indexing.
+     * Thread-safe for concurrent access during scanning.
+     * 
+     * @param folderPath Absolute path to templates folder (will be normalized)
+     * @return Location index (e.g., "aaa", "aab")
+     */
+    static QString getOrCreateLocationIndex(const QString& folderPath);
+    
+    /**
+     * @brief Get folder path for a location index
+     * @param index Location index (e.g., "aaa", "aab")
+     * @return Absolute path or empty if index not found
+     */
+    static QString getLocationPath(const QString& index);
+    
+    /**
+     * @brief Get count of indexed locations
+     * @return Number of unique template folder locations
+     */
+    static int locationIndexCount();
+    
+private:
+    // Location index storage (shared across all ResourceScanner instances)
+    static QHash<QString, QString> s_pathToLocationIndex;   // path -> "aaa"
+    static QHash<QString, QString> s_locationIndexToPath;   // "aaa" -> path
+    static int s_nextLocationIndex;                         // Counter for next index
+    
+    /**
+     * @brief Generate location index from counter
+     * 
+     * Converts number to 3-letter index:
+     * 1 → "aaa", 2 → "aab", 3 → "aac", ..., 26 → "aaz",
+     * 27 → "aba", 28 → "abb", ..., 702 → "azz",
+     * 703 → "baa", etc.
+     * 
+     * Supports up to 17,576 unique locations (26³).
+     * 
+     * @param index Numeric index (1-based)
+     * @return Three-letter location index
+     */
+    static QString numberToLocationIndex(int index);
     
     // Inventory storage - one per resource type
     resourceInventory::ExamplesInventory m_examplesInventory;
