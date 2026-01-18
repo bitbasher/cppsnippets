@@ -351,7 +351,7 @@ if(BUILD_APP)
     set(APP_SOURCES
         src/app/main.cpp
         src/app/mainwindow.cpp
-        src/app/mainwindow.hpppp
+        src/app/mainwindow.hpp
         src/gui/preferencesdialog.cpp
         src/gui/preferencesdialog.hpp
         src/gui/resourcelocationwidget.cpp
