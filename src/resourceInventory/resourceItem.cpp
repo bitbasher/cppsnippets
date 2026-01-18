@@ -1,4 +1,6 @@
 #include "resourceItem.hpp"
+#include "ResourceIndexer.hpp"
+#include "../platformInfo/ResourceLocation.hpp"
 #include "../scadtemplates/template_parser.hpp"
 #include <QFileInfo>
 #include <QMetaType>
@@ -52,18 +54,35 @@ ResourceTemplate::ResourceTemplate(const QString& path)
 {
 }
 
+ResourceTemplate::ResourceTemplate(const QString& filePath, 
+                                   const platformInfo::ResourceLocation& location)
+    : ResourceItem(filePath, ResourceType::Templates, location.tier())
+    , m_format(QStringLiteral("text/scad.template"))
+    , m_version(QStringLiteral("1"))
+{
+    QFileInfo fi(filePath);
+    QString baseName = fi.baseName();
+    
+    // Generate unique ID using unified ResourceIndexer
+    // Ensures uniqueness across ALL resource types and locations
+    QString indexString = ResourceIndexer::getOrCreateIndex(
+        location, 
+        ResourceType::Templates, 
+        baseName
+    );
+    m_uniqueID = QString("%1-%2").arg(indexString, baseName);
+    
+    // Set display name (will be overridden by JSON prefix if present)
+    m_displayName = baseName;
+}
+
 void ResourceTemplate::setEditSubtype(scadtemplates::EditSubtype subtype)
 {
     m_editType = scadtemplates::typeFromSubtype(subtype);
     m_editSubtype = subtype;
 }
 
-bool ResourceTemplate::loadFromJson(const QString& filePath)
-{
-    return loadFromJson(QFileInfo(filePath));
-}
-
-bool ResourceTemplate::loadFromJson(const QFileInfo& fileInfo)
+bool ResourceTemplate::readJson(const QFileInfo& fileInfo)
 {
     m_lastError.clear();
 

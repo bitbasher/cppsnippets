@@ -283,11 +283,14 @@ set(LIB_SOURCES
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
+    src/resourceInventory/ResourceIndexer.cpp
     src/resourceInventory/ExamplesInventory.cpp
     src/resourceInventory/TemplatesInventory.cpp
-    src/resourceInventory/FontsInventory.cpp    src/resourceInventory/ShadersInventory.cpp
+    src/resourceInventory/FontsInventory.cpp
+    src/resourceInventory/ShadersInventory.cpp
     src/resourceInventory/TranslationsInventory.cpp
-    src/resourceInventory/TestsInventory.cpp    src/resourceScanning/ResourceScanner.cpp
+    src/resourceInventory/TestsInventory.cpp
+    src/resourceScanning/ResourceScanner.cpp
 )
 
 set(LIB_HEADERS
@@ -305,6 +308,7 @@ set(LIB_HEADERS
     src/platformInfo/ResourceLocation.hpp
     src/pathDiscovery/ResourcePaths.hpp
     src/resourceInventory/resourceItem.hpp
+    src/resourceInventory/ResourceIndexer.hpp
     src/resourceInventory/ExamplesInventory.hpp
     src/resourceInventory/TemplatesInventory.hpp
     src/resourceScanning/ResourceScanner.hpp
@@ -624,6 +628,7 @@ if(BUILD_APP)
     add_executable(test_unit_g_qvariant_phase1
         tests/test_unit_g_qvariant_phase1.cpp
         src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/ResourceIndexer.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
@@ -633,6 +638,7 @@ if(BUILD_APP)
         src/resourceInventory/ExamplesInventory.cpp
         src/resourceInventory/TemplatesInventory.cpp
         src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/ResourceIndexer.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
         src/scadtemplates/legacy_template_converter.cpp
         src/platformInfo/ResourceLocation.cpp
@@ -646,6 +652,7 @@ if(BUILD_APP)
         tests/test_unit_g_examples_inventory.cpp
         src/resourceInventory/ExamplesInventory.cpp
         src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/ResourceIndexer.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
@@ -654,6 +661,7 @@ if(BUILD_APP)
         tests/test_unit_g_templates_inventory.cpp
         src/resourceInventory/TemplatesInventory.cpp
         src/resourceInventory/resourceItem.cpp
+        src/resourceInventory/ResourceIndexer.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
         src/scadtemplates/legacy_template_converter.cpp
         src/jsonreader/JsonReader.cpp
@@ -668,6 +676,7 @@ if(BUILD_APP)
     target_link_libraries(test_unit_g_qvariant_phase1 PRIVATE
         Qt6::Core
         Qt6::Gui
+        scadtemplates_lib  # Link to scadtemplates library for TemplateParser
         GTest::gtest
         GTest::gtest_main
     )
@@ -688,6 +697,7 @@ if(BUILD_APP)
     target_link_libraries(test_unit_g_phase2_inventory_pipeline PRIVATE
         Qt6::Core
         Qt6::Gui
+        scadtemplates_lib  # Link to scadtemplates library for TemplateParser
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator::validator
         GTest::gtest
@@ -709,6 +719,7 @@ if(BUILD_APP)
     target_link_libraries(test_unit_g_examples_inventory PRIVATE
         Qt6::Core
         Qt6::Gui
+        scadtemplates_lib  # Link to scadtemplates library for TemplateParser
         GTest::gtest
         GTest::gtest_main
     )
@@ -728,6 +739,7 @@ if(BUILD_APP)
     target_link_libraries(test_unit_g_templates_inventory PRIVATE
         Qt6::Core
         Qt6::Gui
+        scadtemplates_lib  # Link to scadtemplates library for TemplateParser
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator::validator
         GTest::gtest

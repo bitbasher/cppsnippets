@@ -14,7 +14,15 @@
 #include <QVariant>
 #include <QFileInfo>
 
+// Forward declarations
+namespace platformInfo {
+    class ResourceLocation;
+}
+
 namespace resourceInventory {
+
+// Forward declaration for friend access
+class TemplatesInventory;
 
 // Use Gold Standard enums from resourceMetadata
 using ResourceTier = resourceMetadata::ResourceTier;
@@ -123,6 +131,9 @@ private:
  * including format, source tag, and version.
  */
 class PLATFORMINFO_API ResourceTemplate : public ResourceItem {
+    // Grant TemplatesInventory exclusive access to location-based constructor
+    friend class TemplatesInventory;
+    
 public:
     ResourceTemplate() = default;
     explicit ResourceTemplate(const QString& path);
@@ -162,12 +173,23 @@ public:
     scadtemplates::EditSubtype editSubtype() const { return m_editSubtype; }
     void setEditSubtype(scadtemplates::EditSubtype subtype);  // Also updates EditType
     
-    // JSON loading
-    bool loadFromJson(const QFileInfo& fileInfo);
-    bool loadFromJson(const QString& filePath);
+    // JSON reading
+    bool readJson(const QFileInfo& fileInfo);
     QString lastError() const { return m_lastError; }
     
 private:
+    /**
+     * @brief Construct template from file and location (inventory use only)
+     * 
+     * This constructor automatically generates the uniqueID from location index
+     * and file basename. Only TemplatesInventory should use this constructor.
+     * 
+     * @param filePath Absolute path to template .json file
+     * @param location ResourceLocation containing this template
+     */
+    ResourceTemplate(const QString& filePath, 
+                    const platformInfo::ResourceLocation& location);
+    
     QString m_format;       // MIME type, e.g., "text/scad.template"
     QString m_source;       // Source tag: "legacy-converted", "cppsnippet-made", "openscad-made"
     QString m_version;      // Version string

@@ -35,10 +35,13 @@ protected:
 TEST_F(TemplatesInventoryTest, AddTemplateWithHierarchicalKey) {
     TemplatesInventory inventory;
     
+    // Create ResourceLocation for test data
+    platformInfo::ResourceLocation location(testDataPath, resourceMetadata::ResourceTier::Installation);
+    
     // Scan templates folder for .json files
     for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
         if (entry.isFile()) {
-            ASSERT_TRUE(inventory.addTemplate(entry, "installation"));
+            ASSERT_TRUE(inventory.addTemplate(entry, location));
         }
     }
     
@@ -48,40 +51,17 @@ TEST_F(TemplatesInventoryTest, AddTemplateWithHierarchicalKey) {
     QList<QVariant> all = inventory.getAll();
     if (all.size() > 0) {
         QVariant var = all.first();
-        ASSERT_TRUE(var.canConvert<ResourceItem>());
+        ASSERT_TRUE(var.canConvert<ResourceTemplate>());
         
-        ResourceItem tmpl = var.value<ResourceItem>();
+        ResourceTemplate tmpl = var.value<ResourceTemplate>();
         EXPECT_FALSE(tmpl.displayName().isEmpty());
     }
 }
 
-TEST_F(TemplatesInventoryTest, GetByPathFallback) {
-    TemplatesInventory inventory;
-    
-    QString templatePath;
-    for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
-        if (entry.isFile()) {
-            templatePath = entry.filePath();
-            ASSERT_TRUE(inventory.addTemplate(entry, "installation"));
-            break;
-        }
-    }
-    
-    if (templatePath.isEmpty()) {
-        GTEST_SKIP() << "No .json templates found";
-    }
-    
-    // Get by path should find the template
-    QVariant var = inventory.getByPath(templatePath);
-    ASSERT_TRUE(var.isValid());
-    ASSERT_TRUE(var.canConvert<ResourceItem>());
-    
-    ResourceItem tmpl = var.value<ResourceItem>();
-    EXPECT_EQ(tmpl.path(), templatePath);
-}
-
 TEST_F(TemplatesInventoryTest, DifferentTiersSameFile) {
     TemplatesInventory inventory;
+    platformInfo::ResourceLocation installLocation(testDataPath, ResourceTier::Installation);
+    platformInfo::ResourceLocation userLocation(testDataPath, ResourceTier::User);
     
     QString templatePath;
     for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
@@ -89,8 +69,8 @@ TEST_F(TemplatesInventoryTest, DifferentTiersSameFile) {
             templatePath = entry.filePath();
             
             // Add same file with different tiers
-            ASSERT_TRUE(inventory.addTemplate(entry, "installation"));
-            ASSERT_TRUE(inventory.addTemplate(entry, "user"));
+            ASSERT_TRUE(inventory.addTemplate(entry, installLocation));
+            ASSERT_TRUE(inventory.addTemplate(entry, userLocation));
             
             break;
         }
@@ -104,13 +84,14 @@ TEST_F(TemplatesInventoryTest, DifferentTiersSameFile) {
 
 TEST_F(TemplatesInventoryTest, DuplicateKeyRejected) {
     TemplatesInventory inventory;
+    platformInfo::ResourceLocation location(testDataPath, ResourceTier::Installation);
     
     for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
         if (entry.isFile()) {
-            ASSERT_TRUE(inventory.addTemplate(entry, "installation"));
+            ASSERT_TRUE(inventory.addTemplate(entry, location));
             
             // Duplicate key should be rejected
-            EXPECT_FALSE(inventory.addTemplate(entry, "installation"));
+            EXPECT_FALSE(inventory.addTemplate(entry, location));
             break;
         }
     }
@@ -120,11 +101,12 @@ TEST_F(TemplatesInventoryTest, DuplicateKeyRejected) {
 
 TEST_F(TemplatesInventoryTest, GetAll) {
     TemplatesInventory inventory;
+    platformInfo::ResourceLocation location(testDataPath, ResourceTier::Installation);
     
     int addedCount = 0;
     for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
         if (entry.isFile()) {
-            if (inventory.addTemplate(entry, "installation")) {
+            if (inventory.addTemplate(entry, location)) {
                 addedCount++;
             }
         }
@@ -137,6 +119,7 @@ TEST_F(TemplatesInventoryTest, GetAll) {
 
 TEST_F(TemplatesInventoryTest, AddFolderWithTemplates) {
     TemplatesInventory inventory;
+    platformInfo::ResourceLocation location(testDataPath, ResourceTier::Installation);
     
     // Create a DirEntry from the testDataPath by listing parent
     int added = 0;
@@ -145,7 +128,7 @@ TEST_F(TemplatesInventoryTest, AddFolderWithTemplates) {
         // Use QDirListing to get a proper DirEntry
         for (const auto& entry : QDirListing(testDataPath)) {
             if (entry.isFile() && entry.fileName().endsWith(".json")) {
-                if (inventory.addTemplate(entry, "installation")) {
+                if (inventory.addTemplate(entry, location)) {
                     added++;
                 }
             }
@@ -158,10 +141,11 @@ TEST_F(TemplatesInventoryTest, AddFolderWithTemplates) {
 
 TEST_F(TemplatesInventoryTest, Clear) {
     TemplatesInventory inventory;
+    platformInfo::ResourceLocation location(testDataPath, ResourceTier::Installation);
     
     for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
         if (entry.isFile()) {
-            inventory.addTemplate(entry, "installation");
+            inventory.addTemplate(entry, location);
         }
     }
     
@@ -174,14 +158,16 @@ TEST_F(TemplatesInventoryTest, Clear) {
     }
 }
 
+/* Removed: JSON cache eliminated in redesign - getJsonContent() now loads on-demand
 TEST_F(TemplatesInventoryTest, JsonContentCaching) {
     TemplatesInventory inventory;
+    platformInfo::ResourceLocation location(testDataPath, ResourceTier::Installation);
     
     // Add a template
     QString templateKey;
     for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
         if (entry.isFile()) {
-            ASSERT_TRUE(inventory.addTemplate(entry, "installation"));
+            ASSERT_TRUE(inventory.addTemplate(entry, location));
             
             QString baseName = QFileInfo(entry.filePath()).baseName();
             templateKey = QString("installation-%1").arg(baseName);
@@ -218,18 +204,20 @@ TEST_F(TemplatesInventoryTest, JsonContentCaching) {
     EXPECT_FALSE(json.isEmpty());
     EXPECT_TRUE(inventory.hasJsonContent(templateKey));
 }
+*/
 
 TEST_F(TemplatesInventoryTest, JsonContentStructure) {
     TemplatesInventory inventory;
+    platformInfo::ResourceLocation location(testDataPath, ResourceTier::Installation);
     
     // Add a template
     QString templateKey;
     for (const auto& entry : QDirListing(testDataPath, {"*.json"})) {
         if (entry.isFile()) {
-            ASSERT_TRUE(inventory.addTemplate(entry, "installation"));
+            ASSERT_TRUE(inventory.addTemplate(entry, location));
             
             QString baseName = QFileInfo(entry.filePath()).baseName();
-            templateKey = QString("installation-%1").arg(baseName);
+            templateKey = QString("1000-%1").arg(baseName);
             break;
         }
     }

@@ -7,6 +7,25 @@
 
 namespace resourceMetadata {
 
+// Convert ResourceType enum to string
+QString ResourceTypeInfo::getResTypeString(ResourceType type)
+{
+    switch (type) {
+        case ResourceType::Templates: return QStringLiteral("Templates");
+        case ResourceType::Examples: return QStringLiteral("Examples");
+        case ResourceType::Fonts: return QStringLiteral("Fonts");
+        case ResourceType::Tests: return QStringLiteral("Tests");
+        case ResourceType::Libraries: return QStringLiteral("Libraries");
+        case ResourceType::Shaders: return QStringLiteral("Shaders");
+        case ResourceType::Translations: return QStringLiteral("Translations");
+        case ResourceType::ColorSchemes: return QStringLiteral("ColorSchemes");
+        case ResourceType::EditorColors: return QStringLiteral("EditorColors");
+        case ResourceType::RenderColors: return QStringLiteral("RenderColors");
+        case ResourceType::Group: return QStringLiteral("Group");
+        default: return QStringLiteral("Unknown");
+    }
+}
+
 // Static resource type definitions with file extensions
 const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
     {ResourceType::Unknown,

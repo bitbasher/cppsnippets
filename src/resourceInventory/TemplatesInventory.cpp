@@ -6,7 +6,6 @@
 #include "TemplatesInventory.hpp"
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 #include "../scadtemplates/legacy_template_converter.hpp"
-#include "../resourceScanning/ResourceScanner.hpp"
 #include "JsonWriter/JsonWriter.h"
 
 #include <QDir>
@@ -27,152 +26,60 @@ using nlohmann::json_schema::json_validator;
 namespace resourceInventory {
 
 bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry, 
-                                      const QString& tier)
+                                      const platformInfo::ResourceLocation& location)
 {
-    if (!entry.isFile() || !entry.fileName().endsWith(".json")) {
+    // Create ResourceTemplate with location-based constructor
+    // This automatically sets type, tier, name, displayName, and uniqueID
+    ResourceTemplate tmpl(entry.filePath(), location);
+    
+    // Read JSON to populate template body, prefix, scopes, etc.
+    if (!tmpl.readJson(entry.fileInfo())) {
+        qWarning() << "TemplatesInventory: Failed to read template JSON:" << entry.filePath()
+                   << "-" << tmpl.lastError();
         return false;
     }
     
-    QString path = entry.filePath();
-    QFileInfo fi(path);
-    QString baseName = fi.baseName();
-    QString folderPath = fi.absolutePath();  // Parent folder containing the template
+    // Try to insert - fails if uniqueID already exists (atomic duplicate detection)
+    QString uniqueID = tmpl.uniqueID();
+    auto result = m_templates.tryInsert(uniqueID, QVariant::fromValue(tmpl));
     
-    // Get or create location index for this templates folder
-    QString locationIndex = resourceScanning::ResourceScanner::getOrCreateLocationIndex(folderPath);
-    
-    // Generate unique key: locationIndex-filename (e.g., "aaa-cube", "aab-pyramid")
-    QString uniqueID = QString("%1-%2").arg(locationIndex, baseName);
-    
-    // Check for duplicates (should be impossible with location-based keys)
-    if (m_templates.contains(uniqueID)) {
+    if (!result.inserted) {
         qWarning() << "TemplatesInventory: Duplicate template ID:" << uniqueID
-                   << "at" << path;
+                   << "at" << entry.filePath();
         return false;
-    }
-    
-    // Create ResourceTemplate and populate from JSON
-    ResourceTemplate tmpl(path);
-    tmpl.setType(ResourceType::Templates);
-    tmpl.setTier(resourceMetadata::stringToTier(tier));
-    tmpl.setName(baseName);
-    tmpl.setDisplayName(baseName);  // Override with prefix if JSON has one
-    tmpl.setUniqueID(uniqueID);     // Store the unique identifier
-    
-    // Store in hash using uniqueID as key
-    m_templates.insert(uniqueID, QVariant::fromValue(tmpl));
-    
-    // Parse and cache JSON content for fast editor access
-    QJsonObject jsonContent = parseJsonFile(path);
-    if (!jsonContent.isEmpty()) {
-        m_jsonCache.insert(uniqueID, jsonContent);
     }
     
     return true;
 }
 
-int TemplatesInventory::addFolder(const QDirListing::DirEntry& entry, 
-                                   const QString& tier)
+int TemplatesInventory::addFolder(const QString& folderPath, 
+                                   const platformInfo::ResourceLocation& location)
 {
-    if (!entry.isDir()) {
-        return 0;
+    int sizeBefore = m_templates.size();
+    
+    // Scan folder for .json files (FilesOnly flag eliminates need for isFile() check)
+    QDirListing listing(folderPath, {"*.json"}, QDirListing::IteratorFlag::FilesOnly);
+    
+    for (const auto& fileEntry : listing) {
+        addTemplate(fileEntry, location);  // Failures logged internally
     }
     
-    QString folderPath = entry.filePath();
-    int addedCount = 0;
-    
-    // Scan folder for .json files
-    for (const auto& fileEntry : QDirListing(folderPath, {"*.json"})) {
-        if (fileEntry.isFile()) {
-            if (addTemplate(fileEntry, tier)) {
-                addedCount++;
-            }
-        }
-    }
-    
-    return addedCount;
+    return m_templates.size() - sizeBefore;
 }
-
-QVariant TemplatesInventory::get(const QString& key) const
-{
-    return m_templates.value(key, QVariant());
-}
-
-QVariant TemplatesInventory::getByPath(const QString& path) const
-{
-    // Slower O(n) search by path
-    for (const QVariant& var : m_templates) {
-        if (var.canConvert<ResourceItem>()) {
-            ResourceItem tmpl = var.value<ResourceItem>();
-            if (tmpl.path() == path) {
-                return var;
-            }
-        }
-    }
-    return QVariant();
-}
-
-bool TemplatesInventory::contains(const QString& key) const
-{
-    return m_templates.contains(key);
-}
-
-QList<QVariant> TemplatesInventory::getAll() const
-{
-    return m_templates.values();
-}
-
-// ============================================================================
-// JSON Content Access
-// ============================================================================
 
 QJsonObject TemplatesInventory::getJsonContent(const QString& key) const
 {
-    // Check cache first
-    if (m_jsonCache.contains(key)) {
-        return m_jsonCache.value(key);
-    }
-    
-    // Not cached - load from disk
+    // Get template metadata
     QVariant var = m_templates.value(key);
-    if ( !var.canConvert<ResourceItem>()) {
+    if (!var.canConvert<ResourceTemplate>()) {
         qWarning() << "TemplatesInventory::getJsonContent: Template not found:" << key;
         return QJsonObject();
     }
     
-    ResourceItem item = var.value<ResourceItem>();
-    QJsonObject json = parseJsonFile(item.path());
+    ResourceTemplate tmpl = var.value<ResourceTemplate>();
     
-    // Cache for next access
-    if (!json.isEmpty()) {
-        m_jsonCache.insert(key, json);
-    }
-    
-    return json;
-}
-
-bool TemplatesInventory::loadJsonContent(const QString& key)
-{
-    // Already cached?
-    if (m_jsonCache.contains(key)) {
-        return true;
-    }
-    
-    // Get metadata
-    QVariant var = m_templates.value(key);
-    if (!var.canConvert<ResourceItem>()) {
-        return false;
-    }
-    
-    ResourceItem item = var.value<ResourceItem>();
-    QJsonObject json = parseJsonFile(item.path());
-    
-    if (json.isEmpty()) {
-        return false;
-    }
-    
-    m_jsonCache.insert(key, json);
-    return true;
+    // Load JSON from disk (no caching)
+    return parseJsonFile(tmpl.path());
 }
 
 QJsonObject TemplatesInventory::parseJsonFile(const QString& filePath) const
@@ -201,6 +108,16 @@ QJsonObject TemplatesInventory::parseJsonFile(const QString& filePath) const
     }
     
     QJsonObject jsonObj = doc.object();
+    
+    // Unwrap snippet: Modern format has wrapper key (e.g., {"cube_basic": {...}})
+    // Extract the first (and only) snippet's content
+    if (!jsonObj.isEmpty()) {
+        QString firstKey = jsonObj.keys().first();
+        QJsonValue snippetValue = jsonObj.value(firstKey);
+        if (snippetValue.isObject()) {
+            jsonObj = snippetValue.toObject();  // Use the snippet content, not wrapper
+        }
+    }
     
     // Validate against schema
     static json schemaJson;
@@ -298,15 +215,15 @@ bool TemplatesInventory::writeJsonContent(const QString& key, const QJsonObject&
 {
     errorMsg.clear();
     
-    // Get metadata for file path
+    // Get template metadata for file path
     QVariant var = m_templates.value(key);
-    if (!var.canConvert<ResourceItem>()) {
+    if (!var.canConvert<ResourceTemplate>()) {
         errorMsg = QString("Template not found: %1").arg(key);
         return false;
     }
     
-    ResourceItem item = var.value<ResourceItem>();
-    QString filePath = item.path();
+    ResourceTemplate tmpl = var.value<ResourceTemplate>();
+    QString filePath = tmpl.path();
     
     // Use JsonWriter for atomic write
     JsonWriteErrorInfo writeError;
@@ -316,9 +233,6 @@ bool TemplatesInventory::writeJsonContent(const QString& key, const QJsonObject&
         errorMsg = QString::fromStdString(writeError.formatError());
         return false;
     }
-    
-    // Update cache with new content
-    m_jsonCache.insert(key, json);
     
     return true;
 }

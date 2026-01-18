@@ -161,6 +161,13 @@ public:
     return resTypeInfos;
   }
 
+  /**
+   * @brief Convert ResourceType enum to string name
+   * @param type Resource type enum value
+   * @return String name ("Templates", "Examples", etc.) or "Unknown"
+   */
+  RESOURCEMETADATA_API static QString getResTypeString(ResourceType type);
+
   // Static resource type registry
   RESOURCEMETADATA_API static const QMap<ResourceType, ResourceTypeInfo> s_resourceTypes;
 };
