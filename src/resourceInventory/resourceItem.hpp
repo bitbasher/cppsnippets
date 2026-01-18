@@ -105,6 +105,9 @@ protected:
  * images, JSON data, or text files.
  */
 class PLATFORMINFO_API ResourceScript : public ResourceItem {
+    // Grant ExamplesInventory exclusive access to location-based constructor
+    friend class ExamplesInventory;
+    
 public:
     ResourceScript() = default;
     explicit ResourceScript(const QString& path);
@@ -120,6 +123,10 @@ public:
     bool hasAttachments() const { return !m_attachments.isEmpty(); }
     
 private:
+    // Location-aware constructor (only for ExamplesInventory)
+    ResourceScript(const QString& filePath, 
+                  const platformInfo::ResourceLocation& location);
+    
     QString m_scriptPath;
     QStringList m_attachments;
 };

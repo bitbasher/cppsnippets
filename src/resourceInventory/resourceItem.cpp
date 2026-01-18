@@ -43,6 +43,27 @@ ResourceScript::ResourceScript(const QString& path)
     m_scriptPath = path;
 }
 
+ResourceScript::ResourceScript(const QString& filePath, 
+                               const platformInfo::ResourceLocation& location)
+    : ResourceItem(filePath, ResourceType::Examples, location.tier())
+{
+    m_scriptPath = filePath;
+    
+    QFileInfo fi(filePath);
+    QString baseName = fi.baseName();
+    
+    // Use ResourceIndexer for unique index generation
+    QString indexString = ResourceIndexer::getOrCreateIndex(
+        location, 
+        ResourceType::Examples, 
+        baseName
+    );
+    m_uniqueID = QString("%1-%2").arg(indexString, baseName);
+    
+    // Set display name
+    m_displayName = baseName;
+}
+
 // ============================================================================
 // ResourceTemplate
 // ============================================================================

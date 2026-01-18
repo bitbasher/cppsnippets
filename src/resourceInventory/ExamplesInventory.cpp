@@ -4,6 +4,7 @@
  */
 
 #include "ExamplesInventory.hpp"
+#include "../platformInfo/ResourceLocation.hpp"
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 
 #include <QFileInfo>
@@ -13,8 +14,11 @@
 namespace resourceInventory {
 
 using namespace resourceMetadata;
+using namespace platformInfo;
 
-bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry, const QString& tier, const QString& category)
+bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry, 
+                                    const platformInfo::ResourceLocation& location,
+                                    const QString& category)
 {
     QString scriptPath = entry.filePath();
     
@@ -23,24 +27,9 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry, const QSt
         return false;
     }
     
-    // Generate hierarchical key: "tier-category-name"
-    QFileInfo fi(scriptPath);
-    QString baseName = fi.baseName();
-    QString key = QString("%1-%2-%3").arg(tier, category, baseName);
-    
-    // Check if already the script is already in inventory
-    // FIXME : this will probably fail when more than one example as the same name
-    if (m_scripts.contains(key)) {
-        return false;
-    }
-    
-    // Create ResourceScript
-    ResourceScript script(scriptPath);
-    script.setType(ResourceType::Examples);
-    script.setName(entry.fileName());
+    // Create ResourceScript using location-based constructor
+    ResourceScript script(scriptPath, location);
     script.setCategory(category);
-    script.setDisplayName(baseName);
-    script.setScriptPath(scriptPath);
     
     // Scan for attachments
     QStringList attachments = scanAttachments(scriptPath);
@@ -48,53 +37,38 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry, const QSt
         script.setAttachments(attachments);
     }
     
-    // Store in hash with hierarchical key
-    m_scripts.insert(key, QVariant::fromValue(script));
+    // Try to insert - fails if uniqueID already exists (atomic duplicate detection)
+    QString uniqueID = script.uniqueID();
+    auto result = m_scripts.tryInsert(uniqueID, QVariant::fromValue(script));
+    
+    if (!result.inserted) {
+        qWarning() << "ExamplesInventory: Duplicate example ID:" << uniqueID
+                   << "at" << entry.filePath();
+        return false;
+    }
     
     return true;
 }
 
-bool ExamplesInventory::addFolder(const QDirListing::DirEntry& entry, const QString& tier, const QString& category)
+int ExamplesInventory::addFolder(const QString& folderPath, 
+                                  const platformInfo::ResourceLocation& location,
+                                  const QString& category)
 {
-    QString folderPath = entry.filePath();
+    int sizeBefore = m_scripts.size();
     
-    // Check if folder is there and is actually a directory
-    QFileInfo fi(folderPath);
-    if (!fi.exists() || !fi.isDir()) {
-        return false;
+    // Scan folder for .scad files (FilesOnly flag eliminates need for isFile() check)
+    QDirListing listing(folderPath, {"*.scad"}, QDirListing::IteratorFlag::FilesOnly);
+    
+    for (const auto& fileEntry : listing) {
+        addExample(fileEntry, location, category);  // Failures logged internally
     }
     
-    // Scan folder for .scad files using QDirListing
-    bool foundAny = false;
-    for (const auto& scriptEntry : QDirListing(folderPath, {"*.scad"})) {
-        if (scriptEntry.isFile()) {
-            if (addExample(scriptEntry, tier, category)) {
-                foundAny = true;
-            }
-        }
-    }
-    
-    return foundAny;
+    return m_scripts.size() - sizeBefore;
 }
 
 QVariant ExamplesInventory::get(const QString& key) const
 {
     return m_scripts.value(key);
-}
-
-QVariant ExamplesInventory::getByPath(const QString& path) const
-{
-    // Search all entries for matching path (slower but necessary for path-based lookups)
-    for (auto it = m_scripts.constBegin(); it != m_scripts.constEnd(); ++it) {
-        const QVariant& var = it.value();
-        if (var.canConvert<ResourceScript>()) {
-            ResourceScript script = var.value<ResourceScript>();
-            if (script.scriptPath() == path) {
-                return var;
-            }
-        }
-    }
-    return QVariant(); // Not found
 }
 
 bool ExamplesInventory::contains(const QString& path) const

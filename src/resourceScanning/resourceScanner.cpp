@@ -63,42 +63,28 @@ QStandardItemModel* ResourceScanner::scanToModel(const QList<platformInfo::Resou
     
     return model;
 }
+    
+int ResourceScanner::scanTemplatesAt(const platformInfo::ResourceLocation& location)
+{
+    QString templatesPath = location.path() + "/templates";
+    return m_templatesInventory.addFolder(templatesPath, location);
+}
+
 
 int ResourceScanner::scanExamplesAt(const platformInfo::ResourceLocation& location)
 {
     QString examplesPath = location.path() + "/examples";
     int addedCount = 0;
-    QString tierStr = resourceMetadata::tierToString(location.tier());
     
     // Traverse examples folder - one level only (category folders)
     for (const auto& entry : QDirListing(examplesPath, QDirListing::IteratorFlag::Recursive)) {
         if (entry.isDir()) {
             // Category folder (e.g., "BasicShapes", "Functions")
             QString categoryName = entry.baseName();
-            if (m_examplesInventory.addFolder(entry, tierStr, categoryName)) {
-                addedCount++;
-            }
+            addedCount += m_examplesInventory.addFolder(entry.filePath(), location, categoryName);
         } else if (entry.isFile() && entry.fileName().endsWith(".scad")) {
             // Loose .scad file in examples root (uncategorized)
-            if (m_examplesInventory.addExample(entry, tierStr, "uncategorized")) {
-                addedCount++;
-            }
-        }
-    }
-    
-    return addedCount;
-}
-
-int ResourceScanner::scanTemplatesAt(const platformInfo::ResourceLocation& location)
-{
-    QString templatesPath = location.path() + "/templates";
-    int addedCount = 0;
-    QString tierStr = resourceMetadata::tierToString(location.tier());
-    
-    // Scan templates folder for .json files (no categories for templates)
-    for (const auto& entry : QDirListing(templatesPath, {"*.json"})) {
-        if (entry.isFile()) {
-            if (m_templatesInventory.addTemplate(entry, tierStr)) {
+            if (m_examplesInventory.addExample(entry, location, "uncategorized")) {
                 addedCount++;
             }
         }

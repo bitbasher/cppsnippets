@@ -34,16 +34,17 @@ public:
     /**
      * @brief Add an example script to inventory
      * 
+     * The ResourceLocation provides the location index and tier.
      * Scans for attachments (same baseName, different extensions).
-     * Creates ResourceScript with all attachments linked.
-     * Key format: "tier-category-name" (e.g., "installation-recursion-customizer")
      * 
      * @param entry QDirEntry for the .scad file
-     * @param tier Resource tier (installation/machine/user)
+     * @param location ResourceLocation containing the example
      * @param category Category/group name (or "uncategorized")
-     * @return true if added successfully, false if already exists or invalid
+     * @return true if added successfully, false if duplicate or invalid
      */
-    bool addExample(const QDirListing::DirEntry& entry, const QString& tier, const QString& category = QStringLiteral("uncategorized"));
+    bool addExample(const QDirListing::DirEntry& entry, 
+                   const platformInfo::ResourceLocation& location,
+                   const QString& category = QStringLiteral("uncategorized"));
     
     /**
      * @brief Add a category folder (auto-detect if contains .scad files)
@@ -51,12 +52,14 @@ public:
      * Scans folder for .scad files. If found, treats as category.
      * If no .scad files, ignores (empty group folder).
      * 
-     * @param entry QDirEntry for the folder
-     * @param tier Resource tier (installation/machine/user)
+     * @param folderPath Absolute path to category folder
+     * @param location ResourceLocation containing the examples folder
      * @param category Category/group name
-     * @return true if category detected and processed, false if empty/invalid
+     * @return Number of examples added
      */
-    bool addFolder(const QDirListing::DirEntry& entry, const QString& tier, const QString& category);
+    int addFolder(const QString& folderPath, 
+                  const platformInfo::ResourceLocation& location,
+                  const QString& category);
     
     /**
      * @brief Get example by hierarchical key
@@ -64,13 +67,6 @@ public:
      * @return QVariant containing ResourceScript, or invalid QVariant if not found
      */
     QVariant get(const QString& key) const;
-    
-    /**
-     * @brief Get example by file path (slower, searches all entries)
-     * @param path Absolute file path
-     * @return QVariant containing ResourceScript, or invalid QVariant if not found
-     */
-    QVariant getByPath(const QString& path) const;
     
     /**
      * @brief Check if example exists by key
