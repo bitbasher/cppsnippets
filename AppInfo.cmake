@@ -5,7 +5,7 @@
 #   and to appFileName by " " and in parens, e.g. "MyApp (Nightly)"
 #   and to appDisplayName by " ", e.g. "MyApp Nightly"
 
-set(APP_NAME "ScadTemplates" CACHE STRING "Application name")
+set(APP_NAME "OpenSCAD" CACHE STRING "Application name")
 set(APP_SUFFIX "" CACHE STRING "Suffix to mark special versions (e.g., 'Nightly', 'Beta')")
 set(APP_AUTHOR "Jeff Hayes" CACHE STRING "Application author")
 set(APP_ORGANIZATION "jartisan" CACHE STRING "Organization name")

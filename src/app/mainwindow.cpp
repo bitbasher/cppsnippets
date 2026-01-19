@@ -7,10 +7,10 @@
 #include "gui/preferencesdialog.hpp"
 #include "gui/aboutDialog.hpp"
 #include "applicationNameInfo.hpp"
+#include <resourceInventory/TemplatesInventory.hpp>
 #include <resourceInventory/inventoryOperations.hpp>
 #include <scadtemplates/template_manager.hpp>
 #include <platformInfo/ResourceLocation.hpp>
-#include <resourceScanning/ResourceScanner.hpp>
 #include <resourceInventory/resourceItem.hpp>
 
 #include <QMenuBar>
@@ -39,11 +39,13 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonValue>
-#include <QStandardItemModel>
 #include <QTreeView>
 #include <QSortFilterProxyModel>
+#include <QRegularExpression>
+#include <QDir>
+#include <QHeaderView>
 
-MainWindow::MainWindow(QStandardItemModel* inventory, QWidget *parent)
+MainWindow::MainWindow(resourceInventory::TemplatesInventory* inventory, QWidget *parent)
     : QMainWindow(parent)
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
     , m_inventory(inventory)
@@ -95,8 +97,15 @@ void MainWindow::setupUi() {
     m_templateTree->setModel(m_inventory);
     m_templateTree->setSelectionMode(QAbstractItemView::SingleSelection);
     m_templateTree->setAlternatingRowColors(true);
-    m_templateTree->setRootIsDecorated(false);
+    m_templateTree->setRootIsDecorated(true);
     m_templateTree->setSortingEnabled(true);
+    m_templateTree->setUniformRowHeights(true);
+    // Configure columns: Name stretches, ID fits content
+    m_templateTree->header()->setStretchLastSection(false);
+    m_templateTree->header()->setSectionResizeMode(0, QHeaderView::Interactive); // Name - user resizable
+    m_templateTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents); // ID - auto size
+    m_templateTree->setColumnWidth(0, 300); // Initial width for Name
+    m_templateTree->expandAll(); // Expand all tier nodes by default
     connect(m_templateTree->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &MainWindow::onInventorySelectionChanged);
     listLayout->addWidget(m_templateTree);
@@ -429,7 +438,7 @@ void MainWindow::onCancelEdit() {
     updateTemplateButtons();
 }
 
-void MainWindow::onInventoryItemSelected(const resourceInventory::ResourceItem& item) {
+void MainWindow::onInventoryItemSelected(const resourceInventory::ResourceTemplate& item) {
     m_selectedItem = item;
     // Show tier name in source field
     QString tierName;
@@ -449,21 +458,17 @@ void MainWindow::onInventorySelectionChanged() {
     }
     
     QModelIndex index = selected.first();
-    QStandardItem* item = m_inventory->itemFromIndex(index);
-    if (!item) return;
+    QVariant itemData = m_inventory->data(index, Qt::UserRole);
     
-    // Retrieve full ResourceItem from Qt::UserRole
-    QVariant itemData = item->data(Qt::UserRole);
-    
-    resourceInventory::ResourceItem resItem = itemData.value<resourceInventory::ResourceItem>();
-    if (resItem.sourcePath().isEmpty()) {
+    resourceInventory::ResourceTemplate tmpl = itemData.value<resourceInventory::ResourceTemplate>();
+    if (tmpl.sourcePath().isEmpty()) {
         return;
     }
     
-    onInventoryItemSelected(resItem);
+    onInventoryItemSelected(tmpl);
 }
 
-void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceItem& item) {
+void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceTemplate& item) {
     m_prefixEdit->setText(item.name());
 
     // Prefer structured parse via TemplateParser/JSON to extract body/description/source
@@ -549,17 +554,77 @@ void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceIt
 }
 
 QString MainWindow::userTemplatesRoot() const {
-    return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + 
-           QStringLiteral("/ScadTemplates");
+    // Use QStandardPaths to get Documents folder, append folder name
+    // This matches what ResourcePaths discovers for User tier
+    QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    return documentsPath + QStringLiteral("/ScadTemplates");
 }
 
 bool MainWindow::saveTemplateToUser(const ResourceTemplate& tmpl) {
-    // TODO: Implement save to user templates
+    // Ensure user templates directory exists
+    QString userRoot = userTemplatesRoot() + "/templates";
+    QDir dir;
+    if (!dir.mkpath(userRoot)) {
+        QMessageBox::warning(this, tr("Save Failed"),
+            tr("Could not create user templates directory: %1").arg(userRoot));
+        return false;
+    }
+    
+    // Build filename from prefix (sanitize it)
+    QString fileName = m_prefixEdit->text().trimmed();
+    if (fileName.isEmpty()) {
+        QMessageBox::warning(this, tr("Save Failed"),
+            tr("Template name (prefix) cannot be empty"));
+        return false;
+    }
+    
+    // Sanitize filename - remove invalid characters
+    fileName.replace(QRegularExpression("[<>:\"/\\\\|?*]"), "_");
+    QString filePath = userRoot + "/" + fileName + ".code-snippets";
+    
+    // Build JSON in VS Code snippet format
+    QJsonObject snippetContent;
+    
+    // Body as array of lines
+    QStringList bodyLines = m_bodyEdit->toPlainText().split('\n');
+    QJsonArray bodyArray;
+    for (const QString& line : bodyLines) {
+        bodyArray.append(line);
+    }
+    snippetContent["body"] = bodyArray;
+    snippetContent["prefix"] = m_prefixEdit->text();
+    snippetContent["description"] = m_descriptionEdit->toPlainText();
+    snippetContent["_source"] = QStringLiteral("user");
+    
+    // Wrap in outer object with name as key
+    QJsonObject root;
+    root[fileName] = snippetContent;
+    
+    // Write to file
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, tr("Save Failed"),
+            tr("Could not write to file: %1").arg(filePath));
+        return false;
+    }
+    
+    QJsonDocument doc(root);
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    
+    statusBar()->showMessage(tr("Template saved to: %1").arg(filePath), 3000);
     return true;
 }
 
 void MainWindow::applyFilterToTree(const QString& text) {
     // TODO: Filter tree based on search text
+    Q_UNUSED(text);
+}
+
+void MainWindow::refreshInventory() {
+    // For MVP, just inform user to restart to see changes
+    // TODO: Implement live refresh by rescanning and rebuilding model
+    statusBar()->showMessage(tr("Template saved. Restart app to see updates in list."), 5000);
 }
 
 void MainWindow::updateTemplateButtons() {
@@ -579,11 +644,8 @@ void MainWindow::updateTemplateButtons() {
 }
 
 void MainWindow::onPreferences() {
-    // TODO: Re-implement preferences dialog for new resource discovery system
-    // PreferencesDialog dialog(m_resourceManager.get(), this);
-    // dialog.exec();
-    QMessageBox::information(this, tr("Preferences"), 
-        tr("Preferences dialog temporarily disabled during refactoring."));
+    PreferencesDialog dialog(this);
+    dialog.exec();
 }
 
 void MainWindow::onNewFile() {

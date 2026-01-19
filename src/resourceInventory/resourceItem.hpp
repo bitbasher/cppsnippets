@@ -37,9 +37,11 @@ using ResourceAccess = resourceMetadata::Access;
  */
 class PLATFORMINFO_API ResourceItem {
 public:
-    ResourceItem() = default;
+    explicit ResourceItem() = default;
     explicit ResourceItem(const QString& path);
     ResourceItem(const QString& path, ResourceType type, ResourceTier tier);
+    ResourceItem(const ResourceItem& other) = default;
+    ResourceItem& operator=(const ResourceItem& other) = default;
     virtual ~ResourceItem() = default;
     
     // Identity
@@ -109,8 +111,10 @@ class PLATFORMINFO_API ResourceScript : public ResourceItem {
     friend class ExamplesInventory;
     
 public:
-    ResourceScript() = default;
+    explicit ResourceScript() = default;
     explicit ResourceScript(const QString& path);
+    ResourceScript(const ResourceScript& other) = default;
+    ResourceScript& operator=(const ResourceScript& other) = default;
     
     // Main script file
     QString scriptPath() const { return m_scriptPath; }
@@ -142,8 +146,10 @@ class PLATFORMINFO_API ResourceTemplate : public ResourceItem {
     friend class TemplatesInventory;
     
 public:
-    ResourceTemplate() = default;
+    explicit ResourceTemplate() = default;
     explicit ResourceTemplate(const QString& path);
+    ResourceTemplate(const ResourceTemplate& other) = default;
+    ResourceTemplate& operator=(const ResourceTemplate& other) = default;
     
     // Template metadata
     QString format() const { return m_format; }

@@ -13,12 +13,13 @@
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 #include "resourceItem.hpp"
 
+#include <QAbstractItemModel>
+#include <QDirListing>
 #include <QHash>
+#include <QJsonObject>
+#include <QList>
 #include <QString>
 #include <QVariant>
-#include <QList>
-#include <QDirListing>
-#include <QJsonObject>
 
 namespace resourceInventory {
 
@@ -28,10 +29,11 @@ namespace resourceInventory {
  * Templates are .json files defining editor snippets.
  * Key format: "locationIndex-filename" for O(1) lookup (e.g., "1000-cube").
  */
-class PLATFORMINFO_API TemplatesInventory {
+class PLATFORMINFO_API TemplatesInventory : public QAbstractItemModel {
+    Q_OBJECT
 public:
-    TemplatesInventory() = default;
-    ~TemplatesInventory() = default;
+    explicit TemplatesInventory(QObject* parent = nullptr);
+    ~TemplatesInventory() override = default;
     
     /**
      * @brief Add a template to inventory
@@ -57,13 +59,27 @@ public:
      */
     int addFolder(const QString& folderPath, 
                   const platformInfo::ResourceLocation& location);
+
+    /**
+     * @brief Scan templates at a single resource location
+     * @param location Resource location containing potential templates folder
+     * @return Number of templates added
+     */
+    int scanLocation(const platformInfo::ResourceLocation& location);
+
+    /**
+     * @brief Scan templates across multiple locations
+     * @param locations List of discovered resource locations
+     * @return Total number of templates added
+     */
+    int scanLocations(const QList<platformInfo::ResourceLocation>& locations);
     
     /**
      * @brief Get template by unique key
      * @param key Unique key "locationIndex-filename" (e.g., "1000-cube")
      * @return QVariant containing ResourceTemplate, or invalid if not found
      */
-    QVariant get(const QString& key) const { return m_templates.value(key, QVariant()); }
+    ResourceTemplate get(const QString& key) const { return m_templates.value(key, ResourceTemplate()); }
     
     /**
      * @brief Check if template exists by key
@@ -76,7 +92,7 @@ public:
      * @brief Get all templates (for GUI list building)
      * @return List of all ResourceTemplate QVariants
      */
-    QList<QVariant> getAll() const { return m_templates.values(); }
+    QList<QVariant> getAll() const;
     
     /**
      * @brief Get count of templates
@@ -87,7 +103,15 @@ public:
     /**
      * @brief Clear all templates
      */
-    void clear() { m_templates.clear(); }
+    void clear();
+
+    // QAbstractItemModel overrides
+    QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
+    QModelIndex parent(const QModelIndex& index) const override;
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     
     /**
      * @brief Get parsed JSON content for a template
@@ -119,7 +143,8 @@ private:
      * Key: "locationIndex-filename" (e.g., "1000-cube", "1001-pyramid")
      * Value: QVariant containing ResourceTemplate
      */
-    QHash<QString, QVariant> m_templates;
+    QHash<QString, ResourceTemplate> m_templates;
+    QList<QString> m_keys; // stable ordering for model rows
     
     /**
      * @brief Parse JSON file from disk

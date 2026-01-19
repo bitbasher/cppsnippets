@@ -21,10 +21,9 @@ protected:
     
     void SetUp() override {
         // Use testFileStructure for repeatable tests
-        QDir current = QDir::current();
-        current.cdUp(); // Go to workspace root
-        testDataPath = current.absolutePath() + "/testFileStructure/inst/OpenSCAD/templates";
-        ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure templates not found";
+        // Test runs from workspace root (d:\repositories\cppsnippets\cppsnippets)
+        testDataPath = QDir::current().absolutePath() + "/testFileStructure/inst/OpenSCAD/templates";
+        ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure templates not found at: " << qPrintable(testDataPath);
     }
 };
 

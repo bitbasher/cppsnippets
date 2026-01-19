@@ -9,13 +9,14 @@
 #include "JsonWriter/JsonWriter.h"
 
 #include <QDir>
-#include <QFileInfo>
 #include <QDirListing>
+#include <QFileInfo>
 #include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QCoreApplication>
+#include <QVariant>
 
 #include <nlohmann/json.hpp>
 #include <nlohmann/json-schema.hpp>
@@ -24,6 +25,11 @@ using nlohmann::json;
 using nlohmann::json_schema::json_validator;
 
 namespace resourceInventory {
+
+TemplatesInventory::TemplatesInventory(QObject* parent)
+    : QAbstractItemModel(parent)
+{
+}
 
 bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry, 
                                       const platformInfo::ResourceLocation& location)
@@ -41,13 +47,16 @@ bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry,
     
     // Try to insert - fails if uniqueID already exists (atomic duplicate detection)
     QString uniqueID = tmpl.uniqueID();
-    auto result = m_templates.tryInsert(uniqueID, QVariant::fromValue(tmpl));
-    
-    if (!result.inserted) {
+    if (m_templates.contains(uniqueID)) {
         qWarning() << "TemplatesInventory: Duplicate template ID:" << uniqueID
                    << "at" << entry.filePath();
         return false;
     }
+    int row = m_keys.size();
+    beginInsertRows(QModelIndex(), row, row);
+    m_templates.insert(uniqueID, tmpl);
+    m_keys.append(uniqueID);
+    endInsertRows();
     
     return true;
 }
@@ -67,16 +76,29 @@ int TemplatesInventory::addFolder(const QString& folderPath,
     return m_templates.size() - sizeBefore;
 }
 
+int TemplatesInventory::scanLocation(const platformInfo::ResourceLocation& location)
+{
+    const QString& folder = resourceMetadata::ResourceTypeInfo::s_resourceTypes[resourceMetadata::ResourceType::Templates].getSubDir();
+    QString templatesPath = location.path() + "/" + folder;
+    return addFolder(templatesPath, location);
+}
+
+int TemplatesInventory::scanLocations(const QList<platformInfo::ResourceLocation>& locations)
+{
+    int total = 0;
+    for (const auto& location : locations) {
+        total += scanLocation(location);
+    }
+    return total;
+}
+
 QJsonObject TemplatesInventory::getJsonContent(const QString& key) const
 {
-    // Get template metadata
-    QVariant var = m_templates.value(key);
-    if (!var.canConvert<ResourceTemplate>()) {
+    ResourceTemplate tmpl = m_templates.value(key, ResourceTemplate());
+    if (tmpl.path().isEmpty()) {
         qWarning() << "TemplatesInventory::getJsonContent: Template not found:" << key;
         return QJsonObject();
     }
-    
-    ResourceTemplate tmpl = var.value<ResourceTemplate>();
     
     // Load JSON from disk (no caching)
     return parseJsonFile(tmpl.path());
@@ -216,13 +238,11 @@ bool TemplatesInventory::writeJsonContent(const QString& key, const QJsonObject&
     errorMsg.clear();
     
     // Get template metadata for file path
-    QVariant var = m_templates.value(key);
-    if (!var.canConvert<ResourceTemplate>()) {
+    ResourceTemplate tmpl = m_templates.value(key, ResourceTemplate());
+    if (tmpl.path().isEmpty()) {
         errorMsg = QString("Template not found: %1").arg(key);
         return false;
     }
-    
-    ResourceTemplate tmpl = var.value<ResourceTemplate>();
     QString filePath = tmpl.path();
     
     // Use JsonWriter for atomic write
@@ -235,6 +255,93 @@ bool TemplatesInventory::writeJsonContent(const QString& key, const QJsonObject&
     }
     
     return true;
+}
+
+QList<QVariant> TemplatesInventory::getAll() const
+{
+    QList<QVariant> result;
+    result.reserve(m_templates.size());
+    for (const auto& key : m_keys) {
+        result.append(QVariant::fromValue(m_templates.value(key)));
+    }
+    return result;
+}
+
+void TemplatesInventory::clear()
+{
+    beginResetModel();
+    m_templates.clear();
+    m_keys.clear();
+    endResetModel();
+}
+
+QModelIndex TemplatesInventory::index(int row, int column, const QModelIndex& parent) const
+{
+    if (parent.isValid()) {
+        return QModelIndex();
+    }
+    if (row < 0 || column < 0 || row >= m_keys.size() || column >= 2) {
+        return QModelIndex();
+    }
+    return createIndex(row, column);
+}
+
+QModelIndex TemplatesInventory::parent(const QModelIndex& index) const
+{
+    Q_UNUSED(index);
+    return QModelIndex();
+}
+
+int TemplatesInventory::rowCount(const QModelIndex& parent) const
+{
+    if (parent.isValid()) {
+        return 0;
+    }
+    return m_keys.size();
+}
+
+int TemplatesInventory::columnCount(const QModelIndex& parent) const
+{
+    Q_UNUSED(parent);
+    return 2; // Name, ID
+}
+
+QVariant TemplatesInventory::data(const QModelIndex& index, int role) const
+{
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_keys.size()) {
+        return QVariant();
+    }
+    const QString& key = m_keys.at(index.row());
+    const ResourceTemplate tmpl = m_templates.value(key, ResourceTemplate());
+    if (role == Qt::DisplayRole) {
+        switch (index.column()) {
+            case 0: return tmpl.displayName();
+            case 1: return tmpl.uniqueID();
+            default: return QVariant();
+        }
+    }
+    if (role == Qt::UserRole) {
+        return QVariant::fromValue(tmpl);
+    }
+    if (role == Qt::ToolTipRole && index.column() == 0) {
+        return QString("Path: %1\nTier: %2\nID: %3")
+            .arg(tmpl.path())
+            .arg(resourceMetadata::tierToString(tmpl.tier()))
+            .arg(tmpl.uniqueID());
+    }
+    return QVariant();
+}
+
+QVariant TemplatesInventory::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+        switch (section) {
+            case 0: return QStringLiteral("Name");
+            case 1: return QStringLiteral("ID");
+            default: return QVariant();
+        }
+    }
+    return QVariant();
 }
 
 } // namespace resourceInventory

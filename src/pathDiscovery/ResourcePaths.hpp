@@ -46,7 +46,7 @@ public:
     // - Applies folder name suffix rules per tier
     // - Includes sibling installations (LTS ↔ Nightly)
     // - Includes user-designated paths from QSettings
-    // This is the input list for ResourceScanner discovery
+    // This is the input list for resource discovery
     QList<PathElement> qualifiedSearchPaths() const;
     
     // User-designated paths loaded from QSettings

@@ -5,10 +5,6 @@
 
 class QLabel;
 
-namespace platformInfo {
-class ResourceLocationManager;
-}
-
 /**
  * @brief Widget displaying platform information
  * 
@@ -21,9 +17,9 @@ public:
     explicit PlatformInfoWidget(QWidget* parent = nullptr);
     
     /**
-     * @brief Update the display with information from the manager
+     * @brief Update the display with platform information
      */
-    void updateFromManager(platformInfo::ResourceLocationManager* manager);
+    void updateFromManager();
 
 private:
     QLabel* m_platformLabel;

@@ -1,5 +1,4 @@
 #include "gui/platformInfoWidget.hpp"
-#include "platformInfo/resourceLocationManager.hpp"
 #include "platformInfo/platformInfo.hpp"
 
 #include <QGroupBox>
@@ -24,10 +23,8 @@ PlatformInfoWidget::PlatformInfoWidget(QWidget* parent)
     setLayout(mainLayout);
 }
 
-void PlatformInfoWidget::updateFromManager(platformInfo::ResourceLocationManager* manager)
+void PlatformInfoWidget::updateFromManager()
 {
-    if (!manager) return;
-    
     // Platform name - use prettyProductName() which includes OS name and version
     QString platformName = platformInfo::PlatformInfo::prettyProductName();
  

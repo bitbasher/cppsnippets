@@ -243,7 +243,7 @@ endif(CLANG_TIDY)
 # Include directories
 # Note: src/include is removed - headers are now co-located with .cpp files
 # Add src/ to include path so headers in all subdirectories can be found
-# New structure: platformInfo, resourceMetadata, pathDiscovery, resourceDiscovery, resourceScanning, resourceInventory
+# New structure: platformInfo, resourceMetadata, pathDiscovery, resourceInventory
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_BINARY_DIR}/generated)
 
@@ -284,13 +284,13 @@ set(LIB_SOURCES
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
     src/resourceInventory/ResourceIndexer.cpp
+    src/resourceInventory/inventoryOperations.cpp
     src/resourceInventory/ExamplesInventory.cpp
     src/resourceInventory/TemplatesInventory.cpp
     src/resourceInventory/FontsInventory.cpp
     src/resourceInventory/ShadersInventory.cpp
     src/resourceInventory/TranslationsInventory.cpp
     src/resourceInventory/TestsInventory.cpp
-    src/resourceScanning/ResourceScanner.cpp
 )
 
 set(LIB_HEADERS
@@ -311,7 +311,6 @@ set(LIB_HEADERS
     src/resourceInventory/ResourceIndexer.hpp
     src/resourceInventory/ExamplesInventory.hpp
     src/resourceInventory/TemplatesInventory.hpp
-    src/resourceScanning/ResourceScanner.hpp
     src/resourceMetadata/ResourceTypeInfo.hpp
 )
 
@@ -339,7 +338,6 @@ if(BUILD_SHARED_LIBS)
     target_compile_definitions(scadtemplates_lib PRIVATE 
         SCADTEMPLATES_EXPORTS 
         PLATFORMINFO_EXPORTS
-        RESOURCESCANNING_EXPORTS
     )
 endif()
 
@@ -358,28 +356,31 @@ if(BUILD_APP)
         src/app/mainwindow.hpp
         src/gui/preferencesdialog.cpp
         src/gui/preferencesdialog.hpp
-        src/gui/resourcelocationwidget.cpp
-        src/gui/resourceLocationWidget.hpp
-        src/gui/locationInputWidget.cpp
-        src/gui/locationInputWidget.hpp
+        # DISABLED: Part of old preferences system - needs reimplementation
+        #src/gui/resourcelocationwidget.cpp
+        #src/gui/resourceLocationWidget.hpp
+        #src/gui/locationInputWidget.cpp
+        #src/gui/locationInputWidget.hpp
         src/gui/platformInfoWidget.cpp
         src/gui/platformInfoWidget.hpp
         src/gui/dialogButtonBar.cpp
         src/gui/dialogButtonBar.hpp
-        src/gui/installationTab.cpp
-        src/gui/installationTab.hpp
-        src/gui/machineTab.cpp
-        src/gui/machineTab.hpp
-        src/gui/userTab.cpp
-        src/gui/userTab.hpp
+        # DISABLED: Part of old preferences system - needs reimplementation
+        #src/gui/installationTab.cpp
+        #src/gui/installationTab.hpp
+        #src/gui/machineTab.cpp
+        #src/gui/machineTab.hpp
+        #src/gui/userTab.cpp
+        #src/gui/userTab.hpp
         src/gui/aboutDialog.cpp
         src/gui/aboutDialog.hpp
         src/gui/sysInfoDialog.cpp
         src/gui/sysInfoDialog.hpp
 
         # Resource inventory GUI components (require Qt Widgets)
-        src/resourceInventory/resourceTreeWidget.cpp
-        src/resourceInventory/resourceTreeWidget.hpp
+        # DISABLED: Uses old API - needs reimplementation
+        #src/resourceInventory/resourceTreeWidget.cpp
+        #src/resourceInventory/resourceTreeWidget.hpp
     )
 
     # Add Windows version resource to executable
@@ -499,115 +500,7 @@ if(BUILD_APP)
         WIN32_EXECUTABLE OFF
     )
 
-    # Standalone test: Display templates inventory as a tree
-    add_executable(test_sa_inventory_tree EXCLUDE_FROM_ALL
-        tests/test_sa_inventory_tree.cpp
-    )
-    target_link_libraries(test_sa_inventory_tree PRIVATE scadtemplates_lib ${QT_LIBRARIES})
-    target_include_directories(test_sa_inventory_tree PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/platformInfo
-        ${CMAKE_SOURCE_DIR}/src/pathDiscovery
-        ${CMAKE_SOURCE_DIR}/src/resourceScanning
-        ${CMAKE_SOURCE_DIR}/src/resourceInventory
-        ${CMAKE_SOURCE_DIR}/src/resourceMetadata
-    )
-    target_compile_definitions(test_sa_inventory_tree PRIVATE 
-        USE_TEST_APP_INFO
-        $<$<CONFIG:Debug>:DEBUG_BUILD>
-    )
-    set_target_properties(test_sa_inventory_tree PROPERTIES
-        OUTPUT_NAME test_sa_inventory_tree
-        WIN32_EXECUTABLE OFF
-    )
-
     # Standalone test: Display examples inventory as a tree with attachments
-    add_executable(test_sa_examples_tree EXCLUDE_FROM_ALL
-        tests/test_sa_examples_tree.cpp
-    )
-    target_link_libraries(test_sa_examples_tree PRIVATE scadtemplates_lib ${QT_LIBRARIES})
-    target_include_directories(test_sa_examples_tree PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/platformInfo
-        ${CMAKE_SOURCE_DIR}/src/pathDiscovery
-        ${CMAKE_SOURCE_DIR}/src/resourceScanning
-        ${CMAKE_SOURCE_DIR}/src/resourceInventory
-        ${CMAKE_SOURCE_DIR}/src/resourceMetadata
-    )
-    target_compile_definitions(test_sa_examples_tree PRIVATE 
-        USE_TEST_APP_INFO
-        $<$<CONFIG:Debug>:DEBUG_BUILD>
-    )
-    set_target_properties(test_sa_examples_tree PROPERTIES
-        OUTPUT_NAME test_sa_examples_tree
-        WIN32_EXECUTABLE OFF
-    )
-
-    # Standalone test: Display fonts inventory as a tree
-    add_executable(test_sa_fonts_tree EXCLUDE_FROM_ALL
-        tests/test_sa_fonts_tree.cpp
-    )
-    target_link_libraries(test_sa_fonts_tree PRIVATE scadtemplates_lib ${QT_LIBRARIES})
-    target_include_directories(test_sa_fonts_tree PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/platformInfo
-        ${CMAKE_SOURCE_DIR}/src/pathDiscovery
-        ${CMAKE_SOURCE_DIR}/src/resourceScanning
-        ${CMAKE_SOURCE_DIR}/src/resourceInventory
-        ${CMAKE_SOURCE_DIR}/src/resourceMetadata
-    )
-    target_compile_definitions(test_sa_fonts_tree PRIVATE 
-        USE_TEST_APP_INFO
-        $<$<CONFIG:Debug>:DEBUG_BUILD>
-    )
-    set_target_properties(test_sa_fonts_tree PROPERTIES
-        OUTPUT_NAME test_sa_fonts_tree
-        WIN32_EXECUTABLE OFF
-    )
-
-    # Standalone test: Scanner output verification
-    add_executable(test_sa_scanner_output EXCLUDE_FROM_ALL
-        tests/test_sa_scanner_output.cpp
-        src/pathDiscovery/ResourcePaths.cpp
-        src/platformInfo/platformInfo.cpp
-        src/platformInfo/ResourceLocation.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
-        src/resourceScanning/ResourceScanner.cpp
-        src/resourceInventory/ExamplesInventory.cpp
-        src/resourceInventory/TemplatesInventory.cpp
-        src/resourceInventory/FontsInventory.cpp
-        src/resourceInventory/ShadersInventory.cpp
-        src/resourceInventory/TranslationsInventory.cpp
-        src/resourceInventory/TestsInventory.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/scadtemplates/template_parser.cpp
-        src/scadtemplates/legacy_template_converter.cpp
-        src/jsonreader/JsonReader.cpp
-        src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
-    )
-    target_link_libraries(test_sa_scanner_output PRIVATE 
-        ${QT_LIBRARIES}
-        nlohmann_json::nlohmann_json
-        nlohmann_json_schema_validator::validator
-    )
-    target_include_directories(test_sa_scanner_output PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/jsonwriter/jsonwriter-portable/include>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-    target_compile_definitions(test_sa_scanner_output PRIVATE 
-        USE_TEST_APP_INFO
-        PLATFORMINFO_STATIC_DEFINE
-        RESOURCEMETADATA_STATIC_DEFINE
-        PLATFORMINFO_EXPORTS
-        SCADTEMPLATES_EXPORTS
-        RESOURCESCANNING_EXPORTS
-        $<$<CONFIG:Debug>:DEBUG_BUILD>
-    )
-    set_target_properties(test_sa_scanner_output PROPERTIES
-        OUTPUT_NAME test_sa_scanner_output
-        WIN32_EXECUTABLE OFF
-    )
 
     # Model indexing example (console test) - Google Test unit test
     add_executable(test_unit_g_model_indexing
@@ -622,14 +515,6 @@ if(BUILD_APP)
     set_target_properties(test_unit_g_model_indexing PROPERTIES
         OUTPUT_NAME test_unit_g_model_indexing
         WIN32_EXECUTABLE OFF
-    )
-
-    # Phase 1: QVariant registration and storage tests - Google Test unit test
-    add_executable(test_unit_g_qvariant_phase1
-        tests/test_unit_g_qvariant_phase1.cpp
-        src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/ResourceIndexer.cpp
-        src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
     # Phase 2: End-to-end pipeline tests - Google Test unit test
@@ -668,32 +553,6 @@ if(BUILD_APP)
         src/jsonwriter/jsonwriter-portable/src/JsonWriter.cc
     )
 
-    # Phase 3: ResourceScanner orchestration tests - Google Test unit test
-    add_executable(test_unit_g_resource_scanner EXCLUDE_FROM_ALL
-        tests/test_unit_g_resource_scanner.cpp
-    )
-
-    target_link_libraries(test_unit_g_qvariant_phase1 PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        scadtemplates_lib  # Link to scadtemplates library for TemplateParser
-        GTest::gtest
-        GTest::gtest_main
-    )
-
-    # Standalone test - compile sources directly, not using DLL
-    target_include_directories(test_unit_g_qvariant_phase1 PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
-    )
-    
-    # Neutralize DLL export macros for standalone compilation
-    target_compile_definitions(test_unit_g_qvariant_phase1 PRIVATE
-        PLATFORMINFO_EXPORTS
-        SCADTEMPLATES_EXPORTS
-        RESOURCESCANNING_EXPORTS
-    )
-
     target_link_libraries(test_unit_g_phase2_inventory_pipeline PRIVATE
         Qt6::Core
         Qt6::Gui
@@ -713,7 +572,6 @@ if(BUILD_APP)
     target_compile_definitions(test_unit_g_phase2_inventory_pipeline PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
-        RESOURCESCANNING_EXPORTS
     )
 
     target_link_libraries(test_unit_g_examples_inventory PRIVATE
@@ -733,7 +591,6 @@ if(BUILD_APP)
     target_compile_definitions(test_unit_g_examples_inventory PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
-        RESOURCESCANNING_EXPORTS
     )
 
     target_link_libraries(test_unit_g_templates_inventory PRIVATE
@@ -755,21 +612,6 @@ if(BUILD_APP)
     target_compile_definitions(test_unit_g_templates_inventory PRIVATE
         PLATFORMINFO_EXPORTS
         SCADTEMPLATES_EXPORTS
-        RESOURCESCANNING_EXPORTS
-    )
-
-    target_link_libraries(test_unit_g_resource_scanner PRIVATE
-        scadtemplates_lib
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Widgets
-        GTest::gtest
-        GTest::gtest_main
-    )
-
-    target_include_directories(test_unit_g_resource_scanner PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
     )
 
     # Copy Qt platform plugins to app output directory
@@ -794,6 +636,23 @@ endif()
 # GoogleTest integration
 if(BUILD_TESTS)
     enable_testing()
+
+    if(Qt6Test_FOUND)
+        add_executable(test_unit_templates_inventory_model
+            tests/test_unit_templates_inventory_model.cpp
+        )
+
+        target_link_libraries(test_unit_templates_inventory_model PRIVATE
+            scadtemplates_lib
+            Qt6::Core
+            Qt6::Test
+        )
+
+        set_target_properties(test_unit_templates_inventory_model PROPERTIES
+            OUTPUT_NAME test_unit_templates_inventory_model
+            WIN32_EXECUTABLE OFF
+        )
+    endif()
 
     # Fetch GoogleTest
     include(FetchContent)

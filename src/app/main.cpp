@@ -12,13 +12,13 @@
 #include "platformInfo/ResourceLocation.hpp"
 #include "pathDiscovery/ResourcePaths.hpp"
 #include "pathDiscovery/PathElement.hpp"
-#include "resourceScanning/resourceScanner.hpp"
+#include "resourceInventory/TemplatesInventory.hpp"
 
 /**
  * @brief Discover and scan all resource locations
- * @return Populated model with discovered resources, or nullptr on failure
+ * @return Populated TemplatesInventory model with discovered resources, or nullptr on failure
  */
-QStandardItemModel* resourceManager() {
+resourceInventory::TemplatesInventory* resourceManager() {
     try {
         qDebug() << "Discovering resource locations...";
         
@@ -34,13 +34,13 @@ QStandardItemModel* resourceManager() {
         
         qDebug() << "Found" << allLocations.size() << "resource locations";
         
-        // Scan locations and create populated model
-        resourceScanning::ResourceScanner scanner;
-        QStandardItemModel* model = scanner.scanToModel(allLocations);
+        // Create inventory and scan locations
+        auto* inventory = new resourceInventory::TemplatesInventory();
+        int totalAdded = inventory->scanLocations(allLocations);
         
-        qDebug() << "Model populated with" << model->rowCount() << "items";
+        qDebug() << "Inventory populated with" << totalAdded << "templates";
         
-        return model;
+        return inventory;
     } catch (const std::exception& e) {
         qCritical() << "Resource discovery failed:" << e.what();
         return nullptr;
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     app.setOrganizationName(appInfo::organization);
     
     qDebug() << "Building resource inventory...";
-    QStandardItemModel* inventory = resourceManager();
+    resourceInventory::TemplatesInventory* inventory = resourceManager();
     if (!inventory) {
         qCritical() << "Failed to build resource inventory - exiting";
         return 1;

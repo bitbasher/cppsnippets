@@ -46,15 +46,19 @@ ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QS
     // Normalize path for consistent indexing (forward slashes)
     QString normalizedPath = QString(p).replace('\\', '/');
     
-    // Check if this path already has an index assigned
-    if (s_pathToIndex.contains(normalizedPath)) {
-        m_indexString = s_pathToIndex.value(normalizedPath);
+    // Create compound key: path + tier (allows same path in different tiers)
+    QString tierName = resourceMetadata::tierToString(tier);
+    QString compoundKey = QString("%1|%2").arg(normalizedPath, tierName);
+    
+    // Check if this (path,tier) combination already has an index assigned
+    if (s_pathToIndex.contains(compoundKey)) {
+        m_indexString = s_pathToIndex.value(compoundKey);
         m_index = m_indexString.toInt();
     } else {
         m_index = s_nextIndex++;
         m_indexString = QString::number(m_index).rightJustified(4, '0');
-        s_pathToIndex.insert(normalizedPath, m_indexString);
-        s_indexToPath.insert(m_indexString, normalizedPath);
+        s_pathToIndex.insert(compoundKey, m_indexString);
+        s_indexToPath.insert(m_indexString, normalizedPath);  // Still map index -> path for reverse lookup
     }
     
     m_uniqueID = QString("loc-%1").arg(m_indexString);

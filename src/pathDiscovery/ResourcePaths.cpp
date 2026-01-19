@@ -207,7 +207,7 @@ QString ResourcePaths::applyFolderNameRules(const QString& path, bool applyInsta
 // ============================================================================
 //
 // Returns candidate sibling installation name (delegated to appInfo)
-// ResourceScanner will check if this path actually exists
+// Caller should validate if this path actually exists
 
 QString ResourcePaths::getSiblingFolderName() const {
     return appInfo::getSiblingName();
@@ -223,7 +223,7 @@ QString ResourcePaths::getSiblingFolderName() const {
 // These are added to the Installation tier search paths.
 
 QStringList ResourcePaths::userDesignatedPaths() {
-    QSettings settings(QStringLiteral("ScadTemplates"), QStringLiteral("ResourcePaths"));
+    QSettings settings(appInfo::getBaseName(), QStringLiteral("ResourcePaths"));
     return settings.value(QStringLiteral("user_designated_paths"), QStringList()).toStringList();
 }
 
@@ -298,11 +298,28 @@ QList<PathElement> ResourcePaths::qualifiedSearchPaths() const {
         addIfUnique(resourceMetadata::ResourceTier::User, docPath);
     }
     
-    // Add user-designated paths (User tier, no suffix - these are per-user read-write locations)
+    // Add user-designated paths with tier classification
+    // These can be Installation, Machine, or User tier depending on the path
     QStringList userDesignated = userDesignatedPaths();
     for (const QString& path : userDesignated) {
         QString qualified_path = applyFolderNameRules(path, false);
-        addIfUnique(resourceMetadata::ResourceTier::User, qualified_path);
+        
+        // Determine tier from path characteristics
+        resourceMetadata::ResourceTier tier = resourceMetadata::ResourceTier::User; // default
+        
+        QString lowerPath = path.toLower();
+        if (lowerPath.contains("programfiles") || lowerPath.contains("/inst/") || 
+            lowerPath.contains("\\inst\\") || lowerPath.contains("program files")) {
+            tier = resourceMetadata::ResourceTier::Installation;
+        } else if (lowerPath.contains("programdata") || lowerPath.contains("appdata\\local") || 
+                   lowerPath.contains("/local/") || lowerPath.contains("\\local\\")) {
+            tier = resourceMetadata::ResourceTier::Machine;
+        } else if (lowerPath.contains("documents") || lowerPath.contains("appdata\\roaming") || 
+                   lowerPath.contains("/appdata/") || lowerPath.contains("\\appdata\\")) {
+            tier = resourceMetadata::ResourceTier::User;
+        }
+        
+        addIfUnique(tier, qualified_path);
     }
     
     return qualified;

@@ -15,14 +15,13 @@ class QPlainTextEdit;
 class QSettings;
 class QPushButton;
 class QVBoxLayout;
-class QStandardItemModel;
 class QTreeView;
 
 namespace resourceInventory {
 class ResourceTreeWidget;
 class ResourceItem;
-
-using ResourceTemplate;
+class ResourceTemplate;
+class TemplatesInventory;
 }
 
 /**
@@ -34,10 +33,10 @@ class MainWindow : public QMainWindow {
 public:
     /**
      * @brief Constructor
-     * @param inventory Pre-built resource inventory model
+    * @param inventory Pre-built resource inventory model
      * @param parent Parent widget
      */
-    explicit MainWindow(QStandardItemModel* inventory, QWidget *parent = nullptr);
+    explicit MainWindow(resourceInventory::TemplatesInventory* inventory, QWidget *parent = nullptr);
     
     /**
      * @brief Destructor
@@ -57,7 +56,7 @@ private slots:
     void onOpenFile();
     void onSaveFile();
     void onSaveFileAs();
-    void onInventoryItemSelected(const resourceInventory::ResourceItem& item);
+    void onInventoryItemSelected(const resourceInventory::ResourceTemplate& item);
     void onInventorySelectionChanged();
 
 private:
@@ -70,15 +69,16 @@ private:
     void buildHelpMenu(QMenu* helpMenu);
     void updateWindowTitle();
     void updateTemplateButtons();
-    void populateEditorFromSelection(const resourceInventory::ResourceItem& item);
+    void populateEditorFromSelection(const resourceInventory::ResourceTemplate& item);
     QString userTemplatesRoot() const;
-    bool saveTemplateToUser(const ResourceTemplate& tmpl);
     void applyFilterToTree(const QString& text);
     bool loadTemplatesFromFile(const QString& filePath);
     bool saveTemplatesToFile(const QString& filePath) const;
+    bool saveTemplateToUser(const resourceInventory::ResourceTemplate& tmpl);
+    void refreshInventory();  // TODO: Implement after save/delete work
     
     std::unique_ptr<QSettings> m_settings;
-    QStandardItemModel* m_inventory;  // Owned by QApplication
+    resourceInventory::TemplatesInventory* m_inventory;  // Owned by QApplication
     
     // Template panel
     QVBoxLayout* m_inventoryLayout;
@@ -100,5 +100,5 @@ private:
     QString m_currentFile;
     bool m_modified = false;
     bool m_editMode = false;
-    resourceInventory::ResourceItem m_selectedItem;
+    resourceInventory::ResourceTemplate m_selectedItem;
 };

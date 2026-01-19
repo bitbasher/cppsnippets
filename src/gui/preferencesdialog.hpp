@@ -9,51 +9,27 @@
 
 #include <QDialog>
 
-class QTabWidget;
-
 class PlatformInfoWidget;
 class DialogButtonBar;
-class InstallationTab;
-class MachineTab;
-class UserTab;
-
-namespace platformInfo {
-class ResourceLocationManager;
-}
 
 /**
- * @brief Preferences dialog with resource location management
+ * @brief Preferences dialog - STUBBED
  * 
- * Assembles tab widgets for Installation, Machine, and User resource
- * locations following the Qt TabDialog pattern.
+ * ResourceLocationManager was removed. This is a minimal stub until
+ * the dialog is reimplemented with the new architecture.
  */
 class PreferencesDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit PreferencesDialog(platformInfo::ResourceLocationManager* manager,
-                               QWidget* parent = nullptr);
+    explicit PreferencesDialog(QWidget* parent = nullptr);
     ~PreferencesDialog() override;
 
 public slots:
     void accept() override;
     void reject() override;
 
-private slots:
-    void onRestoreDefaults();
-    void onLocationsChanged();
-
 private:
-    void loadSettings();
-    void saveSettings();
-    
-    platformInfo::ResourceLocationManager* m_manager;
-    
-    // Widgets
     PlatformInfoWidget* m_platformInfoWidget;
-    QTabWidget* m_tabWidget;
-    InstallationTab* m_installationTab;
-    MachineTab* m_machineTab;
-    UserTab* m_userTab;
     DialogButtonBar* m_buttonBar;
 };

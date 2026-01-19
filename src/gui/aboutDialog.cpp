@@ -5,7 +5,6 @@
 #include <QPushButton>
 #include <QDialogButtonBox>
 #include "applicationNameInfo.hpp"
-#include <platformInfo/resourceLocationManager.hpp>
 
 AboutDialog::AboutDialog(QWidget* parent, const QString& version, const QString& platform, const QString& resourceDir)
     : QDialog(parent)

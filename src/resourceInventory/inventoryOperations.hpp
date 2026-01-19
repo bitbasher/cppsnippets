@@ -8,11 +8,15 @@
 
 #pragma once
 
-#include "export.hpp"
+#include "../platformInfo/export.hpp"
 #include <QString>
 
 class QStandardItemModel;
 class QFileInfo;
+
+namespace resourceInventory {
+class TemplatesInventory;
+}
 
 namespace resourceInventory {
 
@@ -41,6 +45,14 @@ PLATFORMINFO_API bool addTemplateFromFile(QStandardItemModel* inventory,
                                           const QString& filePath,
                                           QString* errorMessage = nullptr);
 
+PLATFORMINFO_API bool addTemplateFromFile(resourceInventory::TemplatesInventory* inventory,
+                                          const QFileInfo& fileInfo,
+                                          QString* errorMessage = nullptr);
+
+PLATFORMINFO_API bool addTemplateFromFile(resourceInventory::TemplatesInventory* inventory,
+                                          const QString& filePath,
+                                          QString* errorMessage = nullptr);
+
 /**
  * @brief Load multiple templates from a JSON file into the inventory
  * @param inventory The model to add the templates to
@@ -63,6 +75,14 @@ PLATFORMINFO_API bool loadTemplatesFromFile(QStandardItemModel* inventory,
                                             const QString& filePath,
                                             QString* errorMessage = nullptr);
 
+PLATFORMINFO_API bool loadTemplatesFromFile(resourceInventory::TemplatesInventory* inventory,
+                                            const QFileInfo& fileInfo,
+                                            QString* errorMessage = nullptr);
+
+PLATFORMINFO_API bool loadTemplatesFromFile(resourceInventory::TemplatesInventory* inventory,
+                                            const QString& filePath,
+                                            QString* errorMessage = nullptr);
+
 /**
  * @brief Save all templates from the inventory to a JSON file
  * @param inventory The model containing templates to save
@@ -82,6 +102,14 @@ PLATFORMINFO_API bool saveTemplatesToFile(const QStandardItemModel* inventory,
  * @return True if successful, false otherwise
  */
 PLATFORMINFO_API bool saveTemplatesToFile(const QStandardItemModel* inventory, 
+                                          const QString& filePath,
+                                          QString* errorMessage = nullptr);
+
+PLATFORMINFO_API bool saveTemplatesToFile(const resourceInventory::TemplatesInventory* inventory,
+                                          const QFileInfo& fileInfo,
+                                          QString* errorMessage = nullptr);
+
+PLATFORMINFO_API bool saveTemplatesToFile(const resourceInventory::TemplatesInventory* inventory,
                                           const QString& filePath,
                                           QString* errorMessage = nullptr);
 
