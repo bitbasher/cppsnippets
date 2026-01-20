@@ -18,7 +18,6 @@ class QVBoxLayout;
 class QTreeView;
 
 namespace resourceInventory {
-class ResourceTreeWidget;
 class ResourceItem;
 class ResourceTemplate;
 class TemplatesInventory;

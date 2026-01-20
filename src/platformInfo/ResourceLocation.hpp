@@ -36,9 +36,6 @@ public:
     QString getDisplayName() const;
     QString description() const { return m_description; }
     ResourceTier tier() const { return m_tier; }
-    int getIndex() const { return m_index; }
-    QString getIndexString() const { return m_indexString; }
-    QString uniqueID() const { return m_uniqueID; }
 
     // Setters
     void setPath(const QString& p) { m_path = p; }
@@ -51,15 +48,6 @@ private:
     QString m_rawPath;                  ///< Original path with env vars (e.g., "$OPENSCAD_LIBRARIES")
     QString m_description;              ///< User-friendly description
     ResourceTier m_tier;                ///< Tier: Installation, Machine, or User
-    
-    // Location indexing (immutable after construction)
-    int m_index;                        ///< Unique numeric index (1000, 1001, 1002, ...)
-    QString m_indexString;              ///< String representation ("1000", "1001", "1002", ...)
-    QString m_uniqueID;                 ///< Unique identifier ("loc-1000")
-    
-    static int s_nextIndex;             ///< Counter for next location index (starts at 1000)
-    static QHash<QString, QString> s_pathToIndex;  ///< Map normalized path -> index string ("1000")
-    static QHash<QString, QString> s_indexToPath;  ///< Map index string ("1000") -> normalized path
 
     /**
      * @brief Get configured maximum display name length

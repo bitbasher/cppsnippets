@@ -5,7 +5,6 @@
 
 #include <QApplication>
 #include <QDebug>
-#include <QStandardItemModel>
 #include <QCoreApplication>
 #include "mainwindow.hpp"
 #include "applicationNameInfo.hpp"

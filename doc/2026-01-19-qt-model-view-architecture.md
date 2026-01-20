@@ -165,15 +165,25 @@ item->populateFromEntry(entry);
 ```
 **Verdict:** Proper OOP but adds complexity
 
-### 3.5 Conclusion on Dispatch
+### 5.3 Conclusion on Per-Resource-Type Methods
 
-**Dispatch is unavoidable** because resource types genuinely differ in structure. The question is WHERE to put the dispatch logic:
+**Dispatch is unavoidable** because resource types genuinely differ in structure:
 
-1. **Scanner level** (current) - scanTemplatesAt, scanExamplesAt, etc.
-2. **Factory level** - ResourceItemFactory::create()
-3. **Item level** - Virtual populate methods
+| Resource | Storage Structure | Item Construction | Metadata Extraction |
+|----------|------------------|-------------------|---------------------|
+| Templates | Flat JSON files | Simple ResourceTemplate from JSON | Parse .json fields |
+| Examples | Folders with attachments | ResourceScript + dependencies | Read folder structure |
+| Fonts | Files by extension | ResourceFont from file attributes | Font metadata extraction |
+| Tests | Hierarchical structure | ResourceScript with test harness | Parse test metadata |
+| Shaders | Multi-file sets | ResourceShader + variants | GLSL parsing |
 
-The current approach (scanner-level dispatch) is **actually fine** - it's explicit, debuggable, and follows Qt patterns.
+**Decision:** Each resource type gets its own inventory class with `scanLocation()` and `addFolder()` methods. This is the correct approach because:
+- ✅ Each type has genuinely different logic
+- ✅ Logic lives in the appropriate inventory class
+- ✅ No generic scanner class needed
+- ✅ TemplatesInventory IS the model for templates, etc.
+
+**NOT a limitation** - it's proper separation of concerns. Just as QFileSystemModel knows how to scan filesystems and QSqlTableModel knows how to query databases, TemplatesInventory knows how to scan template resources.
 
 ---
 
@@ -383,81 +393,115 @@ The scanning LOGIC differs, not just the folder name.
 
 ---
 
-## 6. About scanUnknownAt
+## 6. Scanning Strategy: Dispatch Table in main.cpp
 
-### 6.1 User's Request
+### 6.1 Scanning Architecture
 
-> "Add a scanUnknownAt method for Unknown resType to dispatch table... all it should do is emit a warning... use the pretty name for the resource"
+The resource scanning has three levels:
 
-### 6.2 Implementation
-
-```cpp
-int ResourceScanner::scanUnknownAt(const platformInfo::ResourceLocation& location, 
-                                    resourceMetadata::ResourceType type)
-{
-    QString prettyName = resourceMetadata::ResourceTypeInfo::getResTypeString(type);
-    qWarning() << "ResourceScanner: Not scanning" << prettyName 
-               << "- no scanner implemented for this resource type";
-    return 0;
-}
+```
+Level 1: Loop over all locations (ResourceLocation objects)
+  ↓
+Level 2: Look for resource-type folders in each location
+         (templates/, examples/, fonts/, shaders/, etc.)
+  ↓
+Level 3: Scan the resource folder for items
+         (add individual templates, examples, fonts, etc.)
 ```
 
-### 6.3 Dispatch Table Change
+### 6.2 Dispatch Table Design
+
+Use a **const compile-time dispatch table** mapped by ResourceType to inventory instances:
 
 ```cpp
-// New: Use Unknown scanner as fallback for all types
-// The dispatch lookup no longer needs contains() check
+// In main.cpp or resourceManager()
+using ScannerFunc = int(*)(const QDirListing::DirEntry&, 
+                           const platformInfo::ResourceLocation&);
 
-for (const auto& dirEntry : QDirListing(location.path(), ItFlag::DirsOnly)) {
-    QString folderName = dirEntry.fileName();
-    
-    if (s_topLevelReverse.contains(folderName)) {
-        ResourceType resType = s_topLevelReverse[folderName];
-        
-        // Direct dispatch - no contains() check needed
-        (this->*(scannerDispatch.value(resType, &ResourceScanner::scanUnknownAt)))(location);
-    }
-}
-```
-
-**Wait** - this doesn't work cleanly because scanUnknownAt needs the resType parameter!
-
-### 6.4 Better Approach: Default in Dispatch Table
-
-```cpp
-const QMap<ResourceType, ScannerFunc> scannerDispatch = {
-    {ResourceType::Unknown, &ResourceScanner::scanUnknownAt},  // Fallback
-    {ResourceType::Examples, &ResourceScanner::scanExamplesAt},
-    {ResourceType::Templates, &ResourceScanner::scanTemplatesAt},
-    // ... etc
+static const QHash<resourceMetadata::ResourceType, ScannerFunc> M_SCANNER_MAP = {
+    { ResourceType::Templates,   &TemplatesInventory::addTemplate },
+    { ResourceType::Examples,    &ExamplesInventory::addExample },
+    { ResourceType::Fonts,       &FontsInventory::addFont },
+    { ResourceType::Shaders,     &ShadersInventory::addShader },
+    { ResourceType::Tests,       &TestsInventory::addTest },
+    { ResourceType::Translations, &TranslationsInventory::addTranslation },
+    { ResourceType::Unknown,     &scanUnknownAt }
 };
-
-// Then in loop - but Unknown doesn't know what type was requested!
 ```
 
-**Problem:** The fallback scanner doesn't know which type was requested.
+### 6.3 The scanUnknownAt() Function
 
-### 6.5 Solution: Log Before Dispatch
+For resource folders that don't have a scanner, we need `scanUnknownAt()`:
 
 ```cpp
-// Check if this is a known resource folder
-if (s_topLevelReverse.contains(folderName)) {
-    ResourceType resType = s_topLevelReverse[folderName];
+/**
+ * @brief Handler for unknown/unimplemented resource types
+ * 
+ * Called when we encounter a resource folder (templates/, fonts/, etc.)
+ * that has no scanner implemented yet.
+ */
+int scanUnknownAt(const QDirListing::DirEntry& entry, 
+                  const platformInfo::ResourceLocation& location)
+{
+    // Get the pretty name for the resource type from folder name
+    QString folderName = entry.fileName();
     
-    // Dispatch to scanner if implemented
-    if (scannerDispatch.contains(resType)) {
-        (this->*(scannerDispatch[resType]))(location);
+    if (ResourceTypeInfo::s_topLevelReverse.contains(folderName)) {
+        ResourceType type = ResourceTypeInfo::s_topLevelReverse[folderName];
+        QString prettyName = ResourceTypeInfo::getResTypeString(type);
+        qWarning() << "No scanner for resource type:" << prettyName 
+                   << "at" << location.path();
     } else {
-        // Log warning with pretty name
-        QString prettyName = ResourceTypeInfo::getResTypeString(resType);
-        qWarning() << "ResourceScanner: Skipping" << prettyName 
-                   << "at" << location.path() 
-                   << "- no scanner implemented";
+        qWarning() << "Unknown folder:" << folderName 
+                   << "at" << location.path();
+    }
+    
+    return 0;  // No items added
+}
+```
+
+**Purpose:**
+- Provides a position in dispatch table for every ResourceType
+- Eliminates the need for contains() checks
+- Logs information about unprocessed resource folders
+- Could be enhanced in future to gather metadata about unscanned resources
+
+### 6.4 Direct Dispatch Approach
+
+Since each inventory class has its own scanning methods (like `TemplatesInventory::addFolder()`), the dispatch in main.cpp is clean and direct:
+
+```cpp
+// In resourceManager() after discovering locations
+
+for (const auto& location : allLocations) {
+    QDir locationDir(location.path());
+    const QStringList folders = locationDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    
+    for (const QString& folderName : folders) {
+        // Check if this folder name matches a known resource type
+        if (ResourceTypeInfo::s_topLevelReverse.contains(folderName)) {
+            ResourceType type = ResourceTypeInfo::s_topLevelReverse[folderName];
+            
+            // Get the inventory for this type
+            if (auto* inventory = getInventoryForType(type)) {
+                // Dispatch directly to inventory's addFolder method
+                inventory->addFolder(location.path() + "/" + folderName, location);
+            }
+        } else {
+            // Log unknown folder
+            qWarning() << "Unknown folder:" << folderName << "at" << location.path();
+        }
     }
 }
 ```
 
-This is actually cleaner than adding a dummy scanner method.
+### 6.5 Why This Works
+
+1. **No special cases** - Every ResourceType has an entry in the dispatch table
+2. **No contains() overhead** - Direct hash lookup
+3. **Direct method calls** - No intermediate function pointers
+4. **Per-inventory logic** - Each inventory knows how to scan its own resources
+5. **Logging before dispatch** - We know exactly what we're processing before calling
 
 ---
 
@@ -485,19 +529,28 @@ This is actually cleaner than adding a dummy scanner method.
 
 ---
 
-## 8. Open Questions
+## 8. Open Questions for Future Work
 
-1. **Should we create a base `ResourceListModel` class** that all resource types share?
+1. **Should other inventory classes also inherit QAbstractItemModel?**
+   - Currently: TemplatesInventory inherits QAbstractItemModel
+   - Question: Do Examples, Fonts, Shaders, Tests also need model interfaces?
+   - Answer depends on GUI requirements for each resource type
 
-2. **How to handle inventory updates?** 
-   - Signals from inventory?
-   - Manual refresh() calls?
+2. **How to manage multiple inventory instances?**
+   - Should they be created in main::resourceManager()?
+   - Should they live in a manager class?
+   - Should they have parent-child relationships?
 
-3. **Do we need tree structure** (tier → resources) or is flat list sufficient?
+3. **Dispatch table implementation options:**
+   - Option A: Static const hash in main.cpp (simple, direct)
+   - Option B: Factory function getInventoryForType(ResourceType) → pointer
+   - Option C: Global registry pattern
+   - User preference: Option A (static const, compile-time known)
 
-4. **What about search/filter?**
-   - QSortFilterProxyModel on top of custom model?
-   - Built into custom model?
+4. **Resource scanning completeness:**
+   - Currently: Only TemplatesInventory is created and used
+   - Next phase: Add other inventory types as scanners are implemented
+   - Priority: Based on GUI requirements (examples/templates first, others as needed)
 
 ---
 
@@ -524,413 +577,303 @@ There is no `QFileSystemInventory` that `QFileSystemModel` wraps!
 
 ---
 
-## 10. Revised Architecture: Inventory IS the Model
+## 10. Implementation: Using TemplatesInventory::addFolder() Directly
 
-### 10.1 Current Architecture (Overly Complex)
+### 10.1 User's Clarification
 
-```
-main.cpp
-  → ResourceScanner (class - unnecessary!)
-    → m_templatesInventory (storage)
-      → populateModel() (duplication!)
-        → QStandardItemModel (more storage!)
-          → QTreeView
-```
+The original proposal showed `scanLocation()` as an intermediate method on the inventory:
 
-**Problems:**
-- Scanner class has no state - should be a function
-- Data exists in THREE places: inventory + QStandardItemModel + QVariant in UserRole
-- populateModel() is just copying data from one container to another
-
-### 10.2 Proposed Architecture (Qt-Native)
-
-```
-main.cpp
-  → scanResources() function (not a class)
-    → TemplatesInventory (IS a QAbstractItemModel)
-      → QTreeView
+```cpp
+int TemplatesInventory::scanLocation(const ResourceLocation& location) {
+    // ... build path, call addFolder() ...
+}
 ```
 
-**Benefits:**
-- No scanner class
-- No separate model wrapper
-- No data duplication
-- No populateModel()
-- Inventory IS the model - view reads directly from it
+**User's feedback:** This adds unnecessary indirection. The `resourceManager()` function in main.cpp already handles Level 1 (iterate locations) and Level 2 (find resource folders). Level 3 (collect items) should call `addFolder()` directly.
 
-### 10.3 TemplatesInventory as QAbstractItemModel
+### 10.2 Three-Level Scanning Architecture
+
+```
+Level 1: for (each location in allLocations)
+  ↓
+Level 2: for (each folder in location)  ← main.cpp handles this
+  ↓
+Level 3: inventory->addFolder(folderPath, location)  ← Direct call
+```
+
+Each level has distinct responsibilities:
+- **Level 1**: Discover locations (handled by ResourcePaths discovery)
+- **Level 2**: Identify resource-type folders (main.cpp loop with ResourceTypeInfo)
+- **Level 3**: Scan items in resource folder (TemplatesInventory::addFolder())
+
+### 10.3 Implementation in main.cpp
 
 ```cpp
 /**
- * @brief Template storage that IS a Qt model
+ * @brief Discover and scan all resource locations
  * 
- * Stores templates AND provides model interface for views.
- * No separate model wrapper needed.
+ * Three-level nested loop:
+ * 1. Iterate over all discovered resource locations
+ * 2. Look for resource-type folders (templates/, examples/, fonts/, etc.)
+ * 3. Call the appropriate inventory's addFolder() method directly
+ * 
+ * @return Populated TemplatesInventory model, or nullptr on failure
  */
-class TemplatesInventory : public QAbstractItemModel {
-    Q_OBJECT
-    
-public:
-    explicit TemplatesInventory(QObject* parent = nullptr);
-    ~TemplatesInventory() = default;
-    
-    // ============ Inventory Operations (existing) ============
-    
-    bool addTemplate(const QDirListing::DirEntry& entry, 
-                    const ResourceLocation& location);
-    
-    int addFolder(const QString& folderPath, 
-                  const ResourceLocation& location);
-    
-    ResourceTemplate get(const QString& key) const;
-    bool contains(const QString& key) const;
-    int count() const;
-    void clear();
-    
-    // ============ Scanning (moved from ResourceScanner) ============
-    
-    /**
-     * @brief Scan a single location for templates
-     * @param location Resource location to scan
-     * @return Number of templates added
-     */
-    int scanLocation(const ResourceLocation& location);
-    
-    /**
-     * @brief Scan multiple locations for templates
-     * @param locations List of resource locations
-     * @return Total number of templates added
-     */
-    int scanLocations(const QList<ResourceLocation>& locations);
-    
-    // ============ Model Interface (QAbstractItemModel) ============
-    
-    QModelIndex index(int row, int column, 
-                      const QModelIndex& parent = {}) const override;
-    QModelIndex parent(const QModelIndex& index) const override;
-    int rowCount(const QModelIndex& parent = {}) const override;
-    int columnCount(const QModelIndex& parent = {}) const override;
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-    QVariant headerData(int section, Qt::Orientation orientation, 
-                        int role = Qt::DisplayRole) const override;
-    
-private:
-    QHash<QString, ResourceTemplate> m_templates;  // Primary storage
-    QList<QString> m_keys;                         // For stable row indexing
-};
-```
-
-### 10.4 Implementation Sketch
-
-```cpp
-// === Scanning (moved from ResourceScanner) ===
-
-int TemplatesInventory::scanLocation(const ResourceLocation& location)
-{
-    using resourceMetadata::ResourceType;
-    using resourceMetadata::ResourceTypeInfo;
-    
-    // Get folder name from metadata (not hard-coded!)
-    const QString& folder = ResourceTypeInfo::s_resourceTypes[ResourceType::Templates].getSubDir();
-    QString templatesPath = location.path() + "/" + folder;
-    
-    return addFolder(templatesPath, location);
-}
-
-int TemplatesInventory::scanLocations(const QList<ResourceLocation>& locations)
-{
-    int total = 0;
-    for (const auto& location : locations) {
-        total += scanLocation(location);
-    }
-    return total;
-}
-
-// === Model Interface ===
-
-QModelIndex TemplatesInventory::index(int row, int column, const QModelIndex& parent) const
-{
-    if (parent.isValid()) return {};  // Flat list
-    if (row < 0 || row >= m_keys.size()) return {};
-    return createIndex(row, column);
-}
-
-QModelIndex TemplatesInventory::parent(const QModelIndex&) const
-{
-    return {};  // Flat list, no parent
-}
-
-int TemplatesInventory::rowCount(const QModelIndex& parent) const
-{
-    if (parent.isValid()) return 0;
-    return m_keys.size();
-}
-
-int TemplatesInventory::columnCount(const QModelIndex&) const
-{
-    return 2;  // Name, ID
-}
-
-QVariant TemplatesInventory::data(const QModelIndex& index, int role) const
-{
-    if (!index.isValid() || index.row() >= m_keys.size()) return {};
-    
-    const QString& key = m_keys.at(index.row());
-    const ResourceTemplate& tmpl = m_templates[key];
-    
-    if (role == Qt::DisplayRole) {
-        switch (index.column()) {
-            case 0: return tmpl.displayName();
-            case 1: return tmpl.uniqueID();
+resourceInventory::TemplatesInventory* resourceManager() {
+    try {
+        qDebug() << "Discovering resource locations...";
+        
+        // Discover all qualified search paths
+        pathDiscovery::ResourcePaths pathDiscovery;
+        QList<pathDiscovery::PathElement> discoveredPaths = pathDiscovery.qualifiedSearchPaths();
+        
+        // Convert to ResourceLocation
+        QList<platformInfo::ResourceLocation> allLocations;
+        for (const auto& pathElem : discoveredPaths) {
+            allLocations.append(platformInfo::ResourceLocation(pathElem.path(), pathElem.tier()));
         }
-    }
-    else if (role == Qt::UserRole) {
-        return QVariant::fromValue(tmpl);
-    }
-    else if (role == Qt::ToolTipRole && index.column() == 0) {
-        return QString("Path: %1\nTier: %2\nID: %3")
-            .arg(tmpl.path())
-            .arg(resourceMetadata::tierToString(tmpl.tier()))
-            .arg(tmpl.uniqueID());
-    }
-    
-    return {};
-}
-
-QVariant TemplatesInventory::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-        switch (section) {
-            case 0: return "Name";
-            case 1: return "ID";
-        }
-    }
-    return {};
-}
-
-// === Inventory Operations (update to maintain m_keys) ===
-
-bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry, 
-                                     const ResourceLocation& location)
-{
-    // ... existing logic to create ResourceTemplate ...
-    
-    QString key = /* generate key */;
-    
-    if (m_templates.contains(key)) {
-        return false;  // Duplicate
-    }
-    
-    // Notify model BEFORE inserting
-    int row = m_keys.size();
-    beginInsertRows({}, row, row);
-    
-    m_templates.insert(key, tmpl);
-    m_keys.append(key);
-    
-    endInsertRows();
-    return true;
-}
-```
-
-### 10.5 Usage in main.cpp
-
-```cpp
-int main(int argc, char* argv[])
-{
-    QApplication app(argc, argv);
-    
-    // Discover resource locations
-    QList<ResourceLocation> locations = discoverResourceLocations();
-    
-    // Create inventory (which IS the model)
-    TemplatesInventory* templatesModel = new TemplatesInventory(&app);
-    
-    // Scan - inventory scans itself
-    templatesModel->scanLocations(locations);
-    
-    // Create main window
-    MainWindow window;
-    
-    // Connect model to view - DIRECTLY, no intermediaries
-    window.setTemplatesModel(templatesModel);
-    
-    window.show();
-    return app.exec();
-}
-```
-
-### 10.6 What Gets Eliminated
-
-| Component | Status | Reason |
-|-----------|--------|--------|
-| ResourceScanner class | ❌ DELETE | Stateless - scanning moves to inventory |
-| ResourceScanner.hpp | ❌ DELETE | No longer needed |
-| ResourceScanner.cpp | ❌ DELETE | No longer needed |
-| populateModel() | ❌ DELETE | Inventory IS the model |
-| populateTemplatesModel() | ❌ DELETE | Inventory IS the model |
-| populateExamplesModel() | ❌ DELETE | Inventory IS the model |
-| QStandardItemModel usage | ❌ DELETE | Inventory IS the model |
-
-### 10.7 What Gets Modified
-
-| Component | Change |
-|-----------|--------|
-| TemplatesInventory | Add QAbstractItemModel inheritance + scanLocation() |
-| ExamplesInventory | Add QAbstractItemModel inheritance + scanLocation() |
-| main.cpp | Simple function calls instead of scanner class |
-| MainWindow | Accept model pointer, no internal scanner |
-
----
-
-## 11. About the Model Wrapper Question
-
-> "Does this have to be a class on its own?"
-
-**Answer: NO!** 
-
-The model interface is just 5-6 method overrides. When the inventory IS the model, there's no separate wrapper class at all.
-
-The reason my earlier proposal had a separate `TemplatesListModel` class was because I was trying to WRAP an existing inventory without modifying it. But if we can modify the inventory class to inherit from QAbstractItemModel, we don't need a wrapper.
-
-**Qt's pattern:**
-- `QStringListModel` stores strings AND is a model
-- `QFileSystemModel` indexes files AND is a model
-- `TemplatesInventory` stores templates AND is a model
-
----
-
-## 12. Dispatch Table for Scanning
-
-Even without ResourceScanner class, we still need dispatch for scanning different resource types. This can be a simple function:
-
-```cpp
-// In resourceScanning namespace or main.cpp
-
-void scanAllResources(const QList<ResourceLocation>& locations,
-                      TemplatesInventory& templates,
-                      ExamplesInventory& examples,
-                      FontsInventory& fonts,
-                      /* etc */)
-{
-    using resourceMetadata::ResourceType;
-    using resourceMetadata::s_topLevelReverse;
-    
-    // Dispatch table using lambdas
-    using ScanFunc = std::function<void(const ResourceLocation&)>;
-    const QMap<ResourceType, ScanFunc> dispatch = {
-        {ResourceType::Templates, [&](const auto& loc) { templates.scanLocation(loc); }},
-        {ResourceType::Examples, [&](const auto& loc) { examples.scanLocation(loc); }},
-        {ResourceType::Fonts, [&](const auto& loc) { fonts.scanLocation(loc); }},
-        // ... etc
-    };
-    
-    for (const auto& location : locations) {
-        for (const auto& dirEntry : QDirListing(location.path(), QDirListing::IteratorFlag::DirsOnly)) {
-            QString folderName = dirEntry.fileName();
+        
+        qDebug() << "Found" << allLocations.size() << "resource locations";
+        
+        // Create inventory instance (IS a QAbstractItemModel)
+        auto* templatesModel = new resourceInventory::TemplatesInventory();
+        
+        // ===== LEVEL 1: Iterate all locations =====
+        for (const auto& location : allLocations) {
+            qDebug() << "Scanning location:" << location.path();
             
-            if (s_topLevelReverse.contains(folderName)) {
-                ResourceType resType = s_topLevelReverse[folderName];
-                
-                if (dispatch.contains(resType)) {
-                    dispatch[resType](location);
+            // ===== LEVEL 2: Find resource folders in this location =====
+            QDir locationDir(location.path());
+            const QStringList folders = locationDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+            
+            for (const QString& folderName : folders) {
+                // Check if this folder is a known resource type
+                if (ResourceTypeInfo::s_topLevelReverse.contains(folderName)) {
+                    ResourceType resType = ResourceTypeInfo::s_topLevelReverse[folderName];
+                    
+                    // ===== LEVEL 3: Scan this resource folder =====
+                    if (resType == ResourceType::Templates) {
+                        QString templatesPath = location.path() + "/" + folderName;
+                        int added = templatesModel->addFolder(templatesPath, location);
+                        qDebug() << "Added" << added << "templates from" << folderName;
+                    } else {
+                        // For other resource types - dispatch to appropriate inventory
+                        // (To be implemented as other inventories are added)
+                        QString prettyName = ResourceTypeInfo::getResTypeString(resType);
+                        qDebug() << "Skipping" << prettyName << "- scanner not yet implemented";
+                    }
                 } else {
-                    // Unknown type warning
-                    QString prettyName = ResourceTypeInfo::getResTypeString(resType);
-                    qWarning() << "scanAllResources: Skipping" << prettyName 
-                               << "- no scanner implemented";
+                    // Unknown folder - might be project folder, cache, etc.
+                    qDebug() << "Skipping unknown folder:" << folderName;
                 }
             }
         }
+        
+        qDebug() << "Inventory populated with" << templatesModel->count() << "templates";
+        
+        return templatesModel;
+    } catch (const std::exception& e) {
+        qCritical() << "Resource discovery failed:" << e.what();
+        return nullptr;
+    } catch (...) {
+        qCritical() << "Resource discovery failed with unknown error";
+        return nullptr;
     }
 }
 ```
 
-Or even simpler - each inventory scans itself when given locations:
+### 10.4 Key Design Points
+
+1. **TemplatesInventory IS the model** - Inherits QAbstractItemModel
+2. **No intermediate scanLocation()** - main.cpp calls addFolder() directly
+3. **Triple-nested loop structure:**
+   - Outer loop: Iterate all locations
+   - Middle loop: Find resource folders in each location (using ResourceTypeInfo)
+   - Inner loop: Items in resource folder (inside addFolder())
+4. **Dispatch point:** For each folder type, call appropriate inventory's addFolder()
+5. **Expandable:** As other inventories are implemented, extend the middle loop dispatch
+
+### 10.5 Adding Other Resource Types
+
+When ready to add Examples, Fonts, Shaders, etc., expand the middle loop:
 
 ```cpp
-// In main.cpp
-templates.scanLocations(locations);
-examples.scanLocations(locations);
-fonts.scanLocations(locations);
+// Create additional inventory instances
+auto* examplesModel = new resourceInventory::ExamplesInventory();
+auto* fontsModel = new resourceInventory::FontsInventory();
+
+// In the folder loop, expand dispatch:
+for (const QString& folderName : folders) {
+    if (ResourceTypeInfo::s_topLevelReverse.contains(folderName)) {
+        ResourceType resType = ResourceTypeInfo::s_topLevelReverse[folderName];
+        QString resourcePath = location.path() + "/" + folderName;
+        
+        switch (resType) {
+            case ResourceType::Templates:
+                templatesModel->addFolder(resourcePath, location);
+                break;
+            case ResourceType::Examples:
+                examplesModel->addFolder(resourcePath, location);
+                break;
+            case ResourceType::Fonts:
+                fontsModel->addFolder(resourcePath, location);
+                break;
+            // ... etc for other types
+            default:
+                qDebug() << "No scanner for" << folderName;
+                break;
+        }
+    }
+}
 ```
 
-Each inventory knows its own folder name from ResourceTypeInfo.
+### 10.6 Status of Proposed Deletions
+
+Files mentioned in original Section 10.6 that are **ALREADY DELETED**:
+- ✅ ResourceScanner.hpp 
+- ✅ ResourceScanner.cpp
+- ✅ resourceScanning/ folder
+
+**Never existed in this codebase:**
+- populateModel() methods - Not implemented
+- populateTemplatesModel() methods - Not implemented
+- populateExamplesModel() methods - Not implemented
+- QStandardItemModel usage in inventory - TemplatesInventory already inherits QAbstractItemModel
+
+**Current status:** The architecture is already correct. TemplatesInventory IS the model.
 
 ---
 
-## 13. Final Architecture Summary
+## 11. Dispatch Table Approach in main.cpp
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      main.cpp                           │
-│                                                         │
-│  locations = discoverResourceLocations()                │
-│                                                         │
-│  templatesModel = new TemplatesInventory()              │
-│  templatesModel->scanLocations(locations)               │
-│                                                         │
-│  window.setTemplatesModel(templatesModel)               │
-└─────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────┐
-│            TemplatesInventory                           │
-│            (QAbstractItemModel)                         │
-│                                                         │
-│  Storage:  QHash<QString, ResourceTemplate>             │
-│  Index:    QList<QString> m_keys                        │
-│                                                         │
-│  Inventory: addTemplate(), get(), contains(), count()   │
-│  Scanning:  scanLocation(), scanLocations()             │
-│  Model:     index(), parent(), rowCount(), data(), etc  │
-└─────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────┐
-│                    QTreeView                            │
-│                                                         │
-│  setModel(templatesModel)  ← Direct connection!         │
-│                                                         │
-│  View calls model->data() to get display values         │
-│  View calls model->rowCount() to know row count         │
-│  No intermediate storage, no copying                    │
-└─────────────────────────────────────────────────────────┘
+Even without ResourceScanner class, we use a dispatch table when multiple inventory types need to be scanned.
+
+### 11.1 Static Const Dispatch Table
+
+Since scanners are determined at compile-time (never added dynamically):
+
+```cpp
+// In main.cpp - static compile-time dispatch table
+static const QHash<resourceMetadata::ResourceType, 
+                   std::function<int(resourceInventory::TemplatesInventory&, 
+                                    const QString&, 
+                                    const platformInfo::ResourceLocation&)>>
+    M_SCANNER_MAP = {
+        // Future: Add more inventory types
+        // { ResourceType::Examples, [](auto& inv, auto& path, auto& loc) { return inv.addFolder(path, loc); } },
+    };
 ```
 
-**Eliminated:**
-- ResourceScanner class
-- Separate model wrapper class
-- populateModel() methods
-- Data duplication
+### 11.2 Future Dispatch Expansion
 
-**Retained:**
-- Dispatch table pattern (now in function or each inventory)
-- Per-type scanning logic (in each inventory's scanLocation)
-- ResourceTypeInfo for folder names
+As more inventory types are added:
+
+```cpp
+// When Examples scanner is ready:
+auto* examplesModel = new resourceInventory::ExamplesInventory();
+
+// Extend the dispatch:
+for (const QString& folderName : folders) {
+    if (ResourceTypeInfo::s_topLevelReverse.contains(folderName)) {
+        ResourceType resType = ResourceTypeInfo::s_topLevelReverse[folderName];
+        QString resourcePath = location.path() + "/" + folderName;
+        
+        switch (resType) {
+            case ResourceType::Templates:
+                templatesModel->addFolder(resourcePath, location);
+                break;
+            case ResourceType::Examples:
+                examplesModel->addFolder(resourcePath, location);
+                break;
+            // ... more as implemented
+        }
+    }
+}
+```
 
 ---
 
-## 14. Next Steps
+## 12. Summary of Architecture
 
-1. Modify TemplatesInventory to inherit from QAbstractItemModel
-2. Add scanLocation() method to TemplatesInventory
-3. Update main.cpp to use new pattern
-4. Delete ResourceScanner class
-5. Update MainWindow to accept model pointer
+### 12.1 Three-Level Scanning
 
-### File Locations for Implementation
+```
+main.cpp::resourceManager()
+│
+├─ Level 1: Iterate all locations (ResourceLocation objects)
+│   │
+│   └─ Level 2: Find resource folders in each location
+│       │       (using ResourceTypeInfo::s_topLevelReverse)
+│       │
+│       └─ Level 3: Call inventory->addFolder(folderPath, location)
+│                   (TemplatesInventory, ExamplesInventory, etc.)
+```
 
-| File | Action | Path |
-|------|--------|------|
-| TemplatesInventory.hpp | MODIFY | `src/resourceInventory/TemplatesInventory.hpp` |
-| TemplatesInventory.cpp | MODIFY | `src/resourceInventory/TemplatesInventory.cpp` |
-| main.cpp | MODIFY | `src/app/main.cpp` |
-| MainWindow.cpp | MODIFY | `src/app/mainwindow.cpp` |
-| MainWindow.hpp | MODIFY | `src/app/mainwindow.hpp` |
-| ResourceScanner.hpp | DELETE | `src/resourceScanning/resourceScanner.hpp` |
-| ResourceScanner.cpp | DELETE | `src/resourceScanning/resourceScanner.cpp` |
-| CMakeLists.txt | MODIFY | Remove ResourceScanner from build |
+### 12.2 Key Design Decisions
+
+| Decision | Why |
+|----------|-----|
+| No ResourceScanner class | Scanning logic lives in inventory classes |
+| Direct addFolder() calls | No intermediate methods needed |
+| Triple-nested loop in main | Clear responsibility separation |
+| scanUnknownAt() for unimplemented types | Provides logging for unknown folders |
+| Dispatch via switch/if | Clear, debuggable, type-safe |
+| Each inventory inherits QAbstractItemModel | IS-a model, not wraps-a model |
+| Compile-time known dispatchers | No dynamic registration needed |
+
+### 12.3 No Need for scanAllResources()
+
+The original proposal had a `scanAllResources()` method, but `main::resourceManager()` already does this. No separate function needed.
+
+---
+
+## 13. Code Readability
+
+The triple-nested loop in main.cpp is **intentionally flat and visible**:
+
+```cpp
+// VISIBLE: What we're doing at each level
+for (location : allLocations) {                    // Level 1
+    for (folder : location.folders()) {             // Level 2
+        inventory->addFolder(folder, location);     // Level 3
+    }
+}
+```
+
+This is better than hiding the logic in separate methods. We can **see** the scanning strategy:
+1. Iterate all locations
+2. Identify resource folders in each
+3. Scan items in each folder
+
+---
+
+## 14. Next Steps & Implementation
+
+### 14.1 Immediate: Update main.cpp
+
+Implement the triple-nested loop in `resourceManager()` as shown in Section 10.3:
+- Keep TemplatesInventory creation
+- Add the nested loop structure
+- Dispatch to addFolder() directly
+- Handle unknown folders gracefully
+
+### 14.2 When Adding More Resource Types
+
+For each new inventory (Examples, Fonts, Shaders, Tests, Translations):
+
+1. Create the inventory instance in resourceManager()
+2. Extend the switch statement for that ResourceType
+3. Call its addFolder() method
+
+### 14.3 File Changes
+
+| File | Change | Status |
+|------|--------|--------|
+| main.cpp | Update resourceManager() with triple-nested loop | Required |
+| TemplatesInventory.hpp | No changes needed | Optional: Remove scanLocation() if not using |
+| TemplatesInventory.cpp | No changes needed | Optional: Remove scanLocation() if not using |
+| MainWindow | No changes needed | Already accepts inventory |
+| CMakeLists.txt | No changes needed | ResourceScanner already removed |
 
 ---
 
@@ -938,6 +881,7 @@ Each inventory knows its own folder name from ResourceTypeInfo.
 
 | Date | Author | Changes |
 |------|--------|---------|
-| 2026-01-19 | AI + User | Initial draft |
-| 2026-01-19 | User feedback | Simplified: Inventory IS the model, eliminate scanner class |
+| 2026-01-19 | AI + User | Initial draft - proposed separate models |
+| 2026-01-20 | User feedback | Simplified: Direct addFolder() calls, triple-nested loop in main |
+| 2026-01-20 | User corrections | Clarified dispatch strategy, removed unnecessary abstraction |
 

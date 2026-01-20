@@ -12,7 +12,6 @@
 #include <resourceInventory/resourceItem.hpp>
 #include <resourceInventory/ExamplesInventory.hpp>
 #include <resourceInventory/TemplatesInventory.hpp>
-#include <scadtemplates/editsubtype.hpp>
 #include <QDir>
 #include <QTemporaryDir>
 #include <QFile>
@@ -86,12 +85,10 @@ TEST_F(Phase2InventoryPipeline, ExamplesInventoryPreservesResourceScript) {
     
     ExamplesInventory inventory;
     
-    // ACT: Manually create and add ResourceScript (simulating scanner)
-    ResourceScript script;
-    script.setDisplayName("Test Example");
-    script.setCategory("TestCategory");
-    script.setPath(QDir(examplesDir).filePath("test_example.scad"));
-    script.setTier(ResourceTier::Installation);
+    // ACT: Manually create ResourceScript using constructor (simulating scanner)
+    QString scriptPath = QDir(examplesDir).filePath("test_example.scad");
+    ResourceScript script(scriptPath, ResourceType::Examples, ResourceTier::Installation, 
+                         ResourceAccess::ReadOnly, "", "Test Example", "", "TestCategory");
     script.addAttachment(QDir(examplesDir).filePath("test_example.json"));
     script.addAttachment(QDir(examplesDir).filePath("test_example.png"));
     
@@ -135,12 +132,10 @@ TEST_F(Phase2InventoryPipeline, TemplatesInventoryPreservesResourceTemplate) {
     
     TemplatesInventory inventory;
     
-    // ACT: Manually create and add ResourceTemplate (simulating scanner)
-    ResourceTemplate tmpl;
-    tmpl.setDisplayName("Cube Template");
-    tmpl.setPath(QDir(templatesDir).filePath("test_template.json"));
-    tmpl.setTier(ResourceTier::Installation);
-    tmpl.setEditSubtype(scadtemplates::EditSubtype::Json);
+    // ACT: Manually create ResourceTemplate using constructor (simulating scanner)
+    QString tmplPath = QDir(templatesDir).filePath("test_template.json");
+    ResourceTemplate tmpl(tmplPath, ResourceType::Templates, ResourceTier::Installation, 
+                         ResourceAccess::ReadOnly, "", "Cube Template");
     
     // Store in inventory as QVariant
     QString key = "installation-cube_template";
@@ -159,7 +154,6 @@ TEST_F(Phase2InventoryPipeline, TemplatesInventoryPreservesResourceTemplate) {
     
     // Verify all ResourceTemplate-specific data preserved
     EXPECT_EQ(retrievedTmpl.displayName(), "Cube Template");
-    EXPECT_EQ(retrievedTmpl.editSubtype(), scadtemplates::EditSubtype::Json);
     EXPECT_EQ(retrievedTmpl.tier(), ResourceTier::Installation);
 }
 
@@ -182,12 +176,10 @@ TEST_F(Phase2InventoryPipeline, MixedTypesInSingleContainer) {
     
     ResourceTemplate tmpl;
     tmpl.setDisplayName("Template 1");
-    tmpl.setEditSubtype(scadtemplates::EditSubtype::Json);
     mixedStorage.insert("template1", QVariant::fromValue(tmpl));
     
-    ResourceItem baseItem;
-    baseItem.setDisplayName("Base Item");
-    baseItem.setType(ResourceType::Examples);
+    ResourceItem baseItem("item1.txt", ResourceType::Examples, ResourceTier::User, 
+                         ResourceAccess::ReadOnly, "", "Base Item");
     mixedStorage.insert("base1", QVariant::fromValue(baseItem));
     
     // ASSERT: All types retrievable with correct type info
@@ -225,7 +217,6 @@ TEST_F(Phase2InventoryPipeline, QListPreservesTypes) {
     for (int i = 0; i < 3; i++) {
         ResourceTemplate tmpl;
         tmpl.setDisplayName(QString("Template %1").arg(i));
-        tmpl.setEditSubtype(scadtemplates::EditSubtype::Json);
         results.append(QVariant::fromValue(tmpl));
     }
     
@@ -239,8 +230,6 @@ TEST_F(Phase2InventoryPipeline, QListPreservesTypes) {
             EXPECT_TRUE(script.hasAttachments());
             scriptCount++;
         } else if (var.canConvert<ResourceTemplate>()) {
-            ResourceTemplate tmpl = var.value<ResourceTemplate>();
-            EXPECT_EQ(tmpl.editSubtype(), scadtemplates::EditSubtype::Json);
             templateCount++;
         }
     }

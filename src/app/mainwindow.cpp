@@ -461,7 +461,7 @@ void MainWindow::onInventorySelectionChanged() {
     QVariant itemData = m_inventory->data(index, Qt::UserRole);
     
     resourceInventory::ResourceTemplate tmpl = itemData.value<resourceInventory::ResourceTemplate>();
-    if (tmpl.sourcePath().isEmpty()) {
+    if (tmpl.path().isEmpty()) {
         return;
     }
     
@@ -525,7 +525,7 @@ void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceTe
 
                     QString prefix = selectedObj.value("prefix").toString(selectedKey);
                     QString desc = selectedObj.value("description").toString(item.description());
-                    QString sourceTag = selectedObj.value("_source").toString(item.sourceLocationKey());
+                    QString sourceTag = selectedObj.value("_source").toString(item.source());
 
                     m_prefixEdit->setText(prefix);
                     m_bodyEdit->setPlainText(bodyText);
@@ -535,19 +535,19 @@ void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceTe
                     // Fallback: treat as plain text
                     m_bodyEdit->setPlainText(QString::fromUtf8(data));
                     m_descriptionEdit->setText(item.description());
-                    m_sourceEdit->setText(item.sourceLocationKey());
+                    m_sourceEdit->setText(item.source());
                 }
             }
         } else {
             // Non-JSON: treat as plain text template
             m_bodyEdit->setPlainText(QString::fromUtf8(data));
             m_descriptionEdit->setText(item.description());
-            m_sourceEdit->setText(item.sourceLocationKey());
+            m_sourceEdit->setText(item.source());
         }
     } else {
         m_bodyEdit->setPlainText("");
         m_descriptionEdit->setText(item.description());
-        m_sourceEdit->setText(item.sourceLocationKey());
+        m_sourceEdit->setText(item.source());
     }
 
     updateTemplateButtons();

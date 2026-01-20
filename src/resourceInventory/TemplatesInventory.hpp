@@ -38,7 +38,7 @@ public:
     /**
      * @brief Add a template to inventory
      * 
-     * The ResourceLocation provides the location index and tier.
+     * The ResourceLocation provides tier, status, and index for uniqueID.
      * Template file must exist (already verified by scanner).
      * 
      * @param entry QDirEntry for the .json file

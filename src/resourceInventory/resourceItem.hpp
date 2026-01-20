@@ -5,8 +5,6 @@
 #include "../resourceMetadata/ResourceTier.hpp"
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 #include "../resourceMetadata/ResourceAccess.hpp"
-#include "../scadtemplates/edittype.hpp"
-#include "../scadtemplates/editsubtype.hpp"
 
 #include <QString>
 #include <QStringList>
@@ -21,10 +19,15 @@ namespace platformInfo {
 
 namespace resourceInventory {
 
-// Forward declaration for friend access
+// Forward declarations for friend access
 class TemplatesInventory;
+class ExamplesInventory;
+class FontsInventory;
+class ShadersInventory;
+class TestsInventory;
+class TranslationsInventory;
 
-// Use Gold Standard enums from resourceMetadata
+// Use enums from resourceMetadata
 using ResourceTier = resourceMetadata::ResourceTier;
 using ResourceType = resourceMetadata::ResourceType;
 using ResourceAccess = resourceMetadata::Access;
@@ -36,10 +39,21 @@ using ResourceAccess = resourceMetadata::Access;
  * Can be used directly for simple resources or subclassed for complex ones.
  */
 class PLATFORMINFO_API ResourceItem {
+private:
+    QString m_uniqueID;             // Unique identifier for inventory storage (e.g., "1000-cube")
+
 public:
-    explicit ResourceItem() = default;
-    explicit ResourceItem(const QString& path);
-    ResourceItem(const QString& path, ResourceType type, ResourceTier tier);
+    explicit ResourceItem(
+        const QString& path = QString(),
+        ResourceType type = ResourceType::Unknown,
+        ResourceTier tier = ResourceTier::User,
+        ResourceAccess access = ResourceAccess::ReadOnly,
+        const QString& name = QString(),
+        const QString& displayName = QString(),
+        const QString& description = QString(),
+        const QString& category = QString()
+    );
+    
     ResourceItem(const ResourceItem& other) = default;
     ResourceItem& operator=(const ResourceItem& other) = default;
     virtual ~ResourceItem() = default;
@@ -59,45 +73,45 @@ public:
     
     // Classification
     ResourceType type() const { return m_type; }
-    void setType(ResourceType type) { m_type = type; }
     
     ResourceTier tier() const { return m_tier; }
-    void setTier(ResourceTier tier) { m_tier = tier; }
     
     ResourceAccess access() const { return m_access; }
-    void setAccess(ResourceAccess access) { m_access = access; }
     
     // Category (for templates: subfolder name; for libraries: category tag)
     QString category() const { return m_category; }
     void setCategory(const QString& category) { m_category = category; }
     
-    // Source tracking (for updates)
-    QString sourcePath() const { return m_sourcePath; }
-    void setSourcePath(const QString& path) { m_sourcePath = path; }
-    
-    QString sourceLocationKey() const { return m_sourceLocationKey; }
-    void setSourceLocationKey(const QString& key) { m_sourceLocationKey = key; }
-    
     // Unique identifier (location-based key for inventory storage)
     QString uniqueID() const { return m_uniqueID; }
-    void setUniqueID(const QString& id) { m_uniqueID = id; }
     
     // For QVariant storage
     static int metaTypeId();
     
 protected:
-    QString m_path;
-    QString m_name;
-    QString m_displayName;
-    QString m_description;
-    QString m_category;
-    QString m_sourcePath;           // Original path where found
-    QString m_sourceLocationKey;    // Key in ResLocMap for updates
-    QString m_uniqueID;             // Unique identifier (locationIndex-filename)
+    // Friend access for inventories to set immutable properties
+    friend class TemplatesInventory;
+    friend class ExamplesInventory;
+    friend class FontsInventory;
+    friend class ShadersInventory;
+    friend class TestsInventory;
+    friend class TranslationsInventory;
     
-    ResourceType m_type = ResourceType::Unknown;
-    ResourceTier m_tier = ResourceTier::User;
-    ResourceAccess m_access = ResourceAccess::ReadOnly;
+    // Protected setters - immutable after construction, only inventories can set
+    void setUniqueID(const QString& id) { m_uniqueID = id; }
+    void setType(ResourceType type) { m_type = type; }
+    void setTier(ResourceTier tier) { m_tier = tier; }
+    void setAccess(ResourceAccess access) { m_access = access; }
+    
+    QString m_path;                 // Current file path
+    QString m_name;                 // Base name (no extension)
+    QString m_displayName;          // User-friendly display name
+    QString m_description;          // Human-readable description
+    QString m_category;             // Category/folder classification
+    
+    ResourceType m_type = ResourceType::Unknown;    // Resource type (for serialization/identification)
+    ResourceTier m_tier = ResourceTier::User;       // Installation/Machine/User tier
+    ResourceAccess m_access = ResourceAccess::ReadOnly; // Read-only or writable
 };
 
 /**
@@ -111,8 +125,21 @@ class PLATFORMINFO_API ResourceScript : public ResourceItem {
     friend class ExamplesInventory;
     
 public:
-    explicit ResourceScript() = default;
-    explicit ResourceScript(const QString& path);
+    // Convenience constructor for inventory use: path + name only
+    ResourceScript(const QString& path, const QString& name);
+    
+    // Full constructor with all parameters
+    explicit ResourceScript(
+        const QString& path = QString(),
+        ResourceType type = ResourceType::Examples,
+        ResourceTier tier = ResourceTier::User,
+        ResourceAccess access = ResourceAccess::ReadOnly,
+        const QString& name = QString(),
+        const QString& displayName = QString(),
+        const QString& description = QString(),
+        const QString& category = QString()
+    );
+    
     ResourceScript(const ResourceScript& other) = default;
     ResourceScript& operator=(const ResourceScript& other) = default;
     
@@ -127,10 +154,6 @@ public:
     bool hasAttachments() const { return !m_attachments.isEmpty(); }
     
 private:
-    // Location-aware constructor (only for ExamplesInventory)
-    ResourceScript(const QString& filePath, 
-                  const platformInfo::ResourceLocation& location);
-    
     QString m_scriptPath;
     QStringList m_attachments;
 };
@@ -142,12 +165,22 @@ private:
  * including format, source tag, and version.
  */
 class PLATFORMINFO_API ResourceTemplate : public ResourceItem {
-    // Grant TemplatesInventory exclusive access to location-based constructor
-    friend class TemplatesInventory;
-    
 public:
-    explicit ResourceTemplate() = default;
-    explicit ResourceTemplate(const QString& path);
+    // Convenience constructor for inventory use: path + name only
+    ResourceTemplate(const QString& path, const QString& name);
+    
+    // Full constructor with all parameters
+    explicit ResourceTemplate(
+        const QString& path = QString(),
+        ResourceType type = ResourceType::Templates,
+        ResourceTier tier = ResourceTier::User,
+        ResourceAccess access = ResourceAccess::ReadOnly,
+        const QString& name = QString(),
+        const QString& displayName = QString(),
+        const QString& description = QString(),
+        const QString& category = QString()
+    );
+    
     ResourceTemplate(const ResourceTemplate& other) = default;
     ResourceTemplate& operator=(const ResourceTemplate& other) = default;
     
@@ -179,13 +212,6 @@ public:
     void addScope(const QString& scope) { m_scopes.append(scope); }
     void clearScopes() { m_scopes.clear(); }
     
-    // File type classification
-    scadtemplates::EditType editType() const { return m_editType; }
-    void setEditType(scadtemplates::EditType type) { m_editType = type; }
-    
-    scadtemplates::EditSubtype editSubtype() const { return m_editSubtype; }
-    void setEditSubtype(scadtemplates::EditSubtype subtype);  // Also updates EditType
-    
     // JSON reading
     bool readJson(const QFileInfo& fileInfo);
     QString lastError() const { return m_lastError; }
@@ -203,6 +229,8 @@ private:
     ResourceTemplate(const QString& filePath, 
                     const platformInfo::ResourceLocation& location);
     
+    static inline const QString defaultVersion = QStringLiteral("1");
+    
     QString m_format;       // MIME type, e.g., "text/scad.template"
     QString m_source;       // Source tag: "legacy-converted", "cppsnippet-made", "openscad-made"
     QString m_version;      // Version string
@@ -210,8 +238,6 @@ private:
     QString m_rawText;      // Original legacy format text
     QString m_prefix;       // Trigger text for template insertion
     QStringList m_scopes;   // Language scopes for filtering
-    scadtemplates::EditType m_editType = scadtemplates::EditType::Text;
-    scadtemplates::EditSubtype m_editSubtype = scadtemplates::EditSubtype::Txt;
     QString m_lastError;    // Error message from last operation
 };
 

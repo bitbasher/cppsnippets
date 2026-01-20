@@ -283,7 +283,6 @@ set(LIB_SOURCES
     src/resourceMetadata/ResourceTypeInfo.cpp
     src/pathDiscovery/ResourcePaths.cpp
     src/resourceInventory/resourceItem.cpp
-    src/resourceInventory/ResourceIndexer.cpp
     src/resourceInventory/inventoryOperations.cpp
     src/resourceInventory/ExamplesInventory.cpp
     src/resourceInventory/TemplatesInventory.cpp
@@ -301,8 +300,6 @@ set(LIB_HEADERS
     src/scadtemplates/template_manager.hpp
     src/scadtemplates/scad_template_session.hpp
     src/scadtemplates/export.hpp
-    src/scadtemplates/editsubtype.hpp
-    src/scadtemplates/edittype.hpp
     src/platformInfo/export.hpp
     src/platformInfo/platformInfo.hpp
     src/platformInfo/ResourceLocation.hpp
@@ -523,7 +520,6 @@ if(BUILD_APP)
         src/resourceInventory/ExamplesInventory.cpp
         src/resourceInventory/TemplatesInventory.cpp
         src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/ResourceIndexer.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
         src/scadtemplates/legacy_template_converter.cpp
         src/platformInfo/ResourceLocation.cpp
@@ -537,7 +533,6 @@ if(BUILD_APP)
         tests/test_unit_g_examples_inventory.cpp
         src/resourceInventory/ExamplesInventory.cpp
         src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/ResourceIndexer.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
     )
 
@@ -546,7 +541,6 @@ if(BUILD_APP)
         tests/test_unit_g_templates_inventory.cpp
         src/resourceInventory/TemplatesInventory.cpp
         src/resourceInventory/resourceItem.cpp
-        src/resourceInventory/ResourceIndexer.cpp
         src/resourceMetadata/ResourceTypeInfo.cpp
         src/scadtemplates/legacy_template_converter.cpp
         src/jsonreader/JsonReader.cpp
@@ -681,8 +675,6 @@ if(BUILD_TESTS)
     # Test executable
     add_executable(scadtemplates_tests EXCLUDE_FROM_ALL
         tests/test_main.cpp
-        tests/test_unit_g_editsubtype.cpp
-        tests/test_unit_g_edittype.cpp
         tests/test_unit_g_resource_metadata.cpp
         tests/test_unit_g_resourcelocation.cpp
     )

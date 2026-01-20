@@ -1,5 +1,4 @@
 #include "resourceItem.hpp"
-#include "ResourceIndexer.hpp"
 #include "../platformInfo/ResourceLocation.hpp"
 #include "../scadtemplates/template_parser.hpp"
 #include <QFileInfo>
@@ -11,20 +10,26 @@ namespace resourceInventory {
 // ResourceItem
 // ============================================================================
 
-ResourceItem::ResourceItem(const QString& path)
-    : m_path(path)
-{
-    QFileInfo fi(path);
-    m_name = fi.baseName();
-}
-
-ResourceItem::ResourceItem(const QString& path, ResourceType type, ResourceTier tier)
+ResourceItem::ResourceItem(
+    const QString& path,
+    ResourceType type,
+    ResourceTier tier,
+    ResourceAccess access,
+    const QString& name,
+    const QString& displayName,
+    const QString& description,
+    const QString& category
+)
     : m_path(path)
     , m_type(type)
     , m_tier(tier)
+    , m_access(access)
+    , m_name(name)
+    , m_displayName(displayName)
+    , m_description(description)
+    , m_category(category)
 {
-    QFileInfo fi(path);
-    m_name = fi.baseName();
+    // No fallback - if subclass needs name derivation, it should do it explicitly
 }
 
 int ResourceItem::metaTypeId()
@@ -37,70 +42,75 @@ int ResourceItem::metaTypeId()
 // ResourceScript
 // ============================================================================
 
-ResourceScript::ResourceScript(const QString& path)
-    : ResourceItem(path)
+// Convenience constructor for inventory use
+ResourceScript::ResourceScript(const QString& path, const QString& name)
+    : ResourceItem(
+        path,
+        ResourceType::Examples,
+        ResourceTier::User,
+        ResourceAccess::ReadOnly,
+        name
+    )
 {
     m_scriptPath = path;
 }
 
-ResourceScript::ResourceScript(const QString& filePath, 
-                               const platformInfo::ResourceLocation& location)
-    : ResourceItem(filePath, ResourceType::Examples, location.tier())
+ResourceScript::ResourceScript(
+    const QString& path,
+    ResourceType type,
+    ResourceTier tier,
+    ResourceAccess access,
+    const QString& name,
+    const QString& displayName,
+    const QString& description,
+    const QString& category
+)
+    : ResourceItem(
+        path, 
+        type, 
+        tier, 
+        access, 
+        name,
+        displayName, 
+        description, 
+        category
+    )
 {
-    m_scriptPath = filePath;
-    
-    QFileInfo fi(filePath);
-    QString baseName = fi.baseName();
-    
-    // Use ResourceIndexer for unique index generation
-    QString indexString = ResourceIndexer::getOrCreateIndex(
-        location, 
-        ResourceType::Examples, 
-        baseName
-    );
-    m_uniqueID = QString("%1-%2").arg(indexString, baseName);
-    
-    // Set display name
-    m_displayName = baseName;
+    m_scriptPath = path;
 }
 
 // ============================================================================
 // ResourceTemplate
 // ============================================================================
 
-ResourceTemplate::ResourceTemplate(const QString& path)
-    : ResourceItem(path)
+// Convenience constructor for inventory use
+ResourceTemplate::ResourceTemplate(const QString& path, const QString& name)
+    : ResourceItem(
+        path,
+        ResourceType::Templates,
+        ResourceTier::User,
+        ResourceAccess::ReadOnly,
+        name
+    )
     , m_format(QStringLiteral("text/scad.template"))
-    , m_version(QStringLiteral("1"))
+    , m_version(defaultVersion)
 {
 }
 
-ResourceTemplate::ResourceTemplate(const QString& filePath, 
-                                   const platformInfo::ResourceLocation& location)
-    : ResourceItem(filePath, ResourceType::Templates, location.tier())
+ResourceTemplate::ResourceTemplate(
+    const QString& path,
+    ResourceType type,
+    ResourceTier tier,
+    ResourceAccess access,
+    const QString& name,
+    const QString& displayName,
+    const QString& description,
+    const QString& category
+)
+    : ResourceItem(path, type, tier, access, name, displayName, description, category)
     , m_format(QStringLiteral("text/scad.template"))
-    , m_version(QStringLiteral("1"))
+    , m_version(defaultVersion)
 {
-    QFileInfo fi(filePath);
-    QString baseName = fi.baseName();
-    
-    // Generate unique ID using unified ResourceIndexer
-    // Ensures uniqueness across ALL resource types and locations
-    QString indexString = ResourceIndexer::getOrCreateIndex(
-        location, 
-        ResourceType::Templates, 
-        baseName
-    );
-    m_uniqueID = QString("%1-%2").arg(indexString, baseName);
-    
-    // Set display name (will be overridden by JSON prefix if present)
-    m_displayName = baseName;
-}
-
-void ResourceTemplate::setEditSubtype(scadtemplates::EditSubtype subtype)
-{
-    m_editType = scadtemplates::typeFromSubtype(subtype);
-    m_editSubtype = subtype;
 }
 
 bool ResourceTemplate::readJson(const QFileInfo& fileInfo)
@@ -137,8 +147,6 @@ bool ResourceTemplate::readJson(const QFileInfo& fileInfo)
     setTier(tmpl.tier());
     setAccess(tmpl.access());
     setCategory(tmpl.category());
-    setSourcePath(fileInfo.filePath());
-    setSourceLocationKey(tmpl.sourceLocationKey());
 
     // Template-specific properties
     setFormat(tmpl.format());
@@ -148,8 +156,6 @@ bool ResourceTemplate::readJson(const QFileInfo& fileInfo)
     setRawText(tmpl.rawText());
     setPrefix(tmpl.prefix());
     setScopes(tmpl.scopes());
-    setEditType(tmpl.editType());
-    setEditSubtype(tmpl.editSubtype());
 
     return true;
 }

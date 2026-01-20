@@ -19,22 +19,13 @@
 
 namespace platformInfo {
 
-// Static member initialization
-int ResourceLocation::s_nextIndex = 1000;
-QHash<QString, QString> ResourceLocation::s_pathToIndex;
-QHash<QString, QString> ResourceLocation::s_indexToPath;
-
 // Default constructor
 ResourceLocation::ResourceLocation()
     : m_path()
     , m_rawPath()
     , m_description()
     , m_tier(ResourceTier::User)
-{
-    m_index = s_nextIndex++;
-    m_indexString = QString::number(m_index).rightJustified(4, '0');
-    m_uniqueID = QString("loc-%1").arg(m_indexString);
-}
+{}
 
 // Path constructor
 ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QString& rawPath, const QString& name, const QString& desc)
@@ -42,27 +33,7 @@ ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QS
     , m_rawPath(rawPath.isEmpty() ? p : rawPath)
     , m_description(desc)
     , m_tier(tier)
-{
-    // Normalize path for consistent indexing (forward slashes)
-    QString normalizedPath = QString(p).replace('\\', '/');
-    
-    // Create compound key: path + tier (allows same path in different tiers)
-    QString tierName = resourceMetadata::tierToString(tier);
-    QString compoundKey = QString("%1|%2").arg(normalizedPath, tierName);
-    
-    // Check if this (path,tier) combination already has an index assigned
-    if (s_pathToIndex.contains(compoundKey)) {
-        m_indexString = s_pathToIndex.value(compoundKey);
-        m_index = m_indexString.toInt();
-    } else {
-        m_index = s_nextIndex++;
-        m_indexString = QString::number(m_index).rightJustified(4, '0');
-        s_pathToIndex.insert(compoundKey, m_indexString);
-        s_indexToPath.insert(m_indexString, normalizedPath);  // Still map index -> path for reverse lookup
-    }
-    
-    m_uniqueID = QString("loc-%1").arg(m_indexString);
-}
+{}
 
 // Copy constructor
 ResourceLocation::ResourceLocation(const ResourceLocation& other)
@@ -70,9 +41,6 @@ ResourceLocation::ResourceLocation(const ResourceLocation& other)
     , m_rawPath(other.m_rawPath)
     , m_description(other.m_description)
     , m_tier(other.m_tier)
-    , m_index(other.m_index)
-    , m_indexString(other.m_indexString)
-    , m_uniqueID(other.m_uniqueID)
 {}
 
 QString ResourceLocation::getDisplayName() const

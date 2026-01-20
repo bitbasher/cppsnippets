@@ -4,6 +4,7 @@
  */
 
 #include "ExamplesInventory.hpp"
+#include "ResourceIndexer.hpp"
 #include "../platformInfo/ResourceLocation.hpp"
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 
@@ -22,14 +23,19 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry,
 {
     QString scriptPath = entry.filePath();
     
-    // Validate it's a .scad file
+    // Validate it's a .scad file FIRST
     if (!scriptPath.endsWith(QStringLiteral(".scad"), Qt::CaseInsensitive)) {
         return false;
     }
     
-    // Create ResourceScript using location-based constructor
-    ResourceScript script(scriptPath, location);
+    QFileInfo fi(scriptPath);
+    QString baseName = fi.baseName();
+    
+    // Create ResourceScript with convenience constructor
+    ResourceScript script(scriptPath, baseName);
+    script.setTier(location.tier());
     script.setCategory(category);
+    script.setDisplayName(baseName);
     
     // Scan for attachments
     QStringList attachments = scanAttachments(scriptPath);
@@ -37,8 +43,11 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry,
         script.setAttachments(attachments);
     }
     
+    // Generate unique ID using ResourceIndexer
+    QString uniqueID = ResourceIndexer::getUniqueIDString(baseName);
+    script.setUniqueID(uniqueID);
+    
     // Try to insert - fails if uniqueID already exists (atomic duplicate detection)
-    QString uniqueID = script.uniqueID();
     auto result = m_scripts.tryInsert(uniqueID, QVariant::fromValue(script));
     
     if (!result.inserted) {

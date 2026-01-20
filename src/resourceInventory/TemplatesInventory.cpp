@@ -4,6 +4,7 @@
  */
 
 #include "TemplatesInventory.hpp"
+#include "ResourceIndexer.hpp"
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 #include "../scadtemplates/legacy_template_converter.hpp"
 #include "JsonWriter/JsonWriter.h"
@@ -34,24 +35,33 @@ TemplatesInventory::TemplatesInventory(QObject* parent)
 bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry, 
                                       const platformInfo::ResourceLocation& location)
 {
-    // Create ResourceTemplate with location-based constructor
-    // This automatically sets type, tier, name, displayName, and uniqueID
-    ResourceTemplate tmpl(entry.filePath(), location);
+    QFileInfo fi(entry.filePath());
+    QString baseName = fi.baseName();
     
-    // Read JSON to populate template body, prefix, scopes, etc.
+    // Create ResourceTemplate with convenience constructor
+    ResourceTemplate tmpl(entry.filePath(), baseName);
+    tmpl.setTier(location.tier());
+    tmpl.setDisplayName(baseName);
+    
+    // Read and validate JSON FIRST before generating ID
     if (!tmpl.readJson(entry.fileInfo())) {
         qWarning() << "TemplatesInventory: Failed to read template JSON:" << entry.filePath()
                    << "-" << tmpl.lastError();
         return false;
     }
     
+    // NOW generate unique ID after validation succeeds - use ResourceIndexer
+    QString uniqueID = ResourceIndexer::getUniqueIDString(baseName);
+    tmpl.setUniqueID(uniqueID);
+    
     // Try to insert - fails if uniqueID already exists (atomic duplicate detection)
-    QString uniqueID = tmpl.uniqueID();
     if (m_templates.contains(uniqueID)) {
         qWarning() << "TemplatesInventory: Duplicate template ID:" << uniqueID
                    << "at" << entry.filePath();
         return false;
     }
+    
+    // Insert into inventory
     int row = m_keys.size();
     beginInsertRows(QModelIndex(), row, row);
     m_templates.insert(uniqueID, tmpl);
