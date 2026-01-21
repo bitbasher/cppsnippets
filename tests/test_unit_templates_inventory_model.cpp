@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QDir>
+#include <QDirListing>
 #include "../src/platformInfo/ResourceLocation.hpp"
 #include "../src/resourceInventory/TemplatesInventory.hpp"
 
@@ -51,7 +52,18 @@ int main(int argc, char* argv[])
     // Build ResourceLocation and inventory
     ResourceLocation loc(tmp.path(), ResourceTier::User);
     TemplatesInventory model;
-    int added = model.scanLocation(loc);
+    
+    // Scan templates folder using new API
+    QString templatesFolder = tmp.path() + "/templates";
+    QDirListing listing(templatesFolder, {"*.json"}, QDirListing::IteratorFlag::FilesOnly);
+    
+    int added = 0;
+    for (const auto& entry : listing) {
+        if (model.addTemplate(entry, loc)) {
+            added++;
+        }
+    }
+    
     if (added != 1) {
         qCritical() << "Expected 1 template, got" << added;
         return 1;

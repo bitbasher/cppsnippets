@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 #include <QDir>
 #include <QDirListing>
+#include <QSettings>
 
 #include "resourceInventory/TemplatesInventory.hpp"
 #include "resourceInventory/resourceItem.hpp"
@@ -20,9 +21,20 @@ protected:
     QString testDataPath;
     
     void SetUp() override {
+        // Configure test data paths in QSettings for discovery
+        QString testStructurePath = QDir::current().absolutePath() + "/testFileStructure";
+        QStringList testPaths = {
+            testStructurePath + "/inst/OpenSCAD",
+            testStructurePath + "/pers"
+        };
+        
+        QSettings settings("OpenSCAD", "ResourcePaths");
+        settings.setValue("user_designated_paths", testPaths);
+        settings.sync();
+        
         // Use testFileStructure for repeatable tests
         // Test runs from workspace root (d:\repositories\cppsnippets\cppsnippets)
-        testDataPath = QDir::current().absolutePath() + "/testFileStructure/inst/OpenSCAD/templates";
+        testDataPath = testStructurePath + "/inst/OpenSCAD/templates";
         ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure templates not found at: " << qPrintable(testDataPath);
     }
 };

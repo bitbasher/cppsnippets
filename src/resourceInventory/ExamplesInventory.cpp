@@ -59,14 +59,25 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry,
     return true;
 }
 
-int ExamplesInventory::addFolder(const QString& folderPath, 
-                                  const platformInfo::ResourceLocation& location,
-                                  const QString& category)
+int ExamplesInventory::addFolder(const QDirListing::DirEntry& dirEntry,
+                                  const platformInfo::ResourceLocation& location)
 {
     int sizeBefore = m_scripts.size();
     
+    // Extract category name from folder basename
+    // If basename matches resource type name (e.g., "examples"), it's uncategorized root
+    QString folderName = dirEntry.fileName();
+    QString category = folderName;
+    
+    // Check if this is the root examples folder (not a category subfolder)
+    const QString& examplesFolder = resourceMetadata::ResourceTypeInfo::s_resourceTypes
+        [resourceMetadata::ResourceType::Examples].getSubDir();
+    if (folderName == examplesFolder) {
+        category = QString();  // Empty for uncategorized
+    }
+    
     // Scan folder for .scad files (FilesOnly flag eliminates need for isFile() check)
-    QDirListing listing(folderPath, {"*.scad"}, QDirListing::IteratorFlag::FilesOnly);
+    QDirListing listing(dirEntry.filePath(), {"*.scad"}, QDirListing::IteratorFlag::FilesOnly);
     
     for (const auto& fileEntry : listing) {
         addExample(fileEntry, location, category);  // Failures logged internally

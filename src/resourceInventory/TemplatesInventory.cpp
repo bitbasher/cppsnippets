@@ -54,10 +54,11 @@ bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry,
     QString uniqueID = ResourceIndexer::getUniqueIDString(baseName);
     tmpl.setUniqueID(uniqueID);
     
-    // Try to insert - fails if uniqueID already exists (atomic duplicate detection)
+    // Try to insert - fails if uniqueID already exists (FATAL - indicates duplicate templates)
     if (m_templates.contains(uniqueID)) {
-        qWarning() << "TemplatesInventory: Duplicate template ID:" << uniqueID
-                   << "at" << entry.filePath();
+        qFatal("FATAL: Duplicate template ID detected: %s at %s\n"
+               "This template appears to be a duplicate : ",
+               qPrintable(uniqueID), qPrintable(entry.filePath()));
         return false;
     }
     
@@ -71,35 +72,19 @@ bool TemplatesInventory::addTemplate(const QDirListing::DirEntry& entry,
     return true;
 }
 
-int TemplatesInventory::addFolder(const QString& folderPath, 
+int TemplatesInventory::addFolder(const QDirListing::DirEntry& dirEntry, 
                                    const platformInfo::ResourceLocation& location)
 {
     int sizeBefore = m_templates.size();
     
     // Scan folder for .json files (FilesOnly flag eliminates need for isFile() check)
-    QDirListing listing(folderPath, {"*.json"}, QDirListing::IteratorFlag::FilesOnly);
+    QDirListing listing(dirEntry.filePath(), {"*.json"}, QDirListing::IteratorFlag::FilesOnly);
     
     for (const auto& fileEntry : listing) {
         addTemplate(fileEntry, location);  // Failures logged internally
     }
     
     return m_templates.size() - sizeBefore;
-}
-
-int TemplatesInventory::scanLocation(const platformInfo::ResourceLocation& location)
-{
-    const QString& folder = resourceMetadata::ResourceTypeInfo::s_resourceTypes[resourceMetadata::ResourceType::Templates].getSubDir();
-    QString templatesPath = location.path() + "/" + folder;
-    return addFolder(templatesPath, location);
-}
-
-int TemplatesInventory::scanLocations(const QList<platformInfo::ResourceLocation>& locations)
-{
-    int total = 0;
-    for (const auto& location : locations) {
-        total += scanLocation(location);
-    }
-    return total;
 }
 
 QJsonObject TemplatesInventory::getJsonContent(const QString& key) const

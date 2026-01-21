@@ -35,6 +35,13 @@ ResourceLocation::ResourceLocation(const QString& p, ResourceTier tier, const QS
     , m_tier(tier)
 {}
 
+ResourceLocation::ResourceLocation(const pathDiscovery::PathElement discoveryPath )
+    : m_path(discoveryPath.path())
+    , m_rawPath(discoveryPath.path())
+    , m_description()
+    , m_tier(discoveryPath.tier())
+{}
+
 // Copy constructor
 ResourceLocation::ResourceLocation(const ResourceLocation& other)
     : m_path(other.m_path)

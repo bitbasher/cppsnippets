@@ -168,6 +168,13 @@ public:
    */
   RESOURCEMETADATA_API static QString getResTypeString(ResourceType type);
 
+  /**
+   * @brief Get ResourceType from folder/subdirectory name
+   * @param folderName The folder name to look up (e.g., "templates", "examples")
+   * @return ResourceType enum value, or ResourceType::Unknown if not found
+   */
+  RESOURCEMETADATA_API static ResourceType getResourceTypeFromFolderName(const QString& folderName);
+
   // Static resource type registry
   RESOURCEMETADATA_API static const QMap<ResourceType, ResourceTypeInfo> s_resourceTypes;
 };

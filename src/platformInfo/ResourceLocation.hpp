@@ -1,8 +1,11 @@
 #pragma once
 #include "export.hpp"
 #include "../resourceMetadata/ResourceTier.hpp"
+#include "../pathDiscovery/PathElement.hpp"
+#include "../pathDiscovery/ResourcePaths.hpp"
 #include <QString>
 #include <QHash>
+#include <QDirListing>  
 
 namespace platformInfo {
 
@@ -26,6 +29,7 @@ public:
     // Constructors
     ResourceLocation();
     ResourceLocation(const QString& resolvedPath, ResourceTier tier, const QString& rawPath = QString(), const QString& name = QString(), const QString& desc = QString());
+    ResourceLocation(const pathDiscovery::PathElement discoveryPath );
     ResourceLocation(const ResourceLocation& other);
 
     bool operator==(const ResourceLocation& other) const { return m_path == other.m_path; }
@@ -43,6 +47,13 @@ public:
     void setDescription(const QString& desc) { m_description = desc; }
     void setTier(ResourceTier tier) { m_tier = tier; }
     
+    // validators
+    static bool locationHasResource(const pathDiscovery::PathElement& possibleLoc) {
+        using ItFlag = QDirListing::IteratorFlag;
+        QDirListing location(possibleLoc.path(), resourceMetadata::s_allResourceFolders, ItFlag::DirsOnly);
+        return (location.cbegin() != location.cend());
+    }
+
 private:
     QString m_path;                     ///< Absolute resolved path to the resource location
     QString m_rawPath;                  ///< Original path with env vars (e.g., "$OPENSCAD_LIBRARIES")

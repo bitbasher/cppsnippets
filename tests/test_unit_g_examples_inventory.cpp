@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 #include <QDir>
 #include <QDirListing>
+#include <QSettings>
 
 #include "platformInfo/ResourceLocation.hpp"
 #include "resourceInventory/ExamplesInventory.hpp"
@@ -23,9 +24,20 @@ protected:
     QString testDataPath;
     
     void SetUp() override {
+        // Configure test data paths in QSettings for discovery
+        QString testStructurePath = QDir::current().absolutePath() + "/testFileStructure";
+        QStringList testPaths = {
+            testStructurePath + "/inst/OpenSCAD",
+            testStructurePath + "/pers"
+        };
+        
+        QSettings settings("OpenSCAD", "ResourcePaths");
+        settings.setValue("user_designated_paths", testPaths);
+        settings.sync();
+        
         // Use existing testFileStructure for repeatable tests  
         // Test runs from workspace root (d:\repositories\cppsnippets\cppsnippets)
-        testDataPath = QDir::current().absolutePath() + "/testFileStructure/inst/OpenSCAD/examples";
+        testDataPath = testStructurePath + "/inst/OpenSCAD/examples";
         ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure not found at: " << testDataPath.toStdString();
     }
 };
@@ -162,12 +174,13 @@ TEST_F(ExamplesInventoryTest, AddFolderWithScripts) {
     ExamplesInventory inventory;
     ResourceLocation location(testDataPath, ResourceTier::Installation);
     
-    // Scan for BasicShapes folder
+    // Scan for BasicShapes folder using QDirListing (category extracted from folder name)
     QString shapesPath = testDataPath + "/BasicShapes";
-    int added = inventory.addFolder(shapesPath, location, "BasicShapes");
+    for (const auto& entry : QDirListing(shapesPath, {}, QDirListing::IteratorFlag::DirsOnly)) {
+        inventory.addFolder(entry, location);
+    }
     
-    EXPECT_GT(added, 0); // Should find at least cube.scad
-    EXPECT_GT(inventory.count(), 0);
+    EXPECT_GT(inventory.count(), 0); // Should find at least cube.scad
 }
 
 TEST_F(ExamplesInventoryTest, Clear) {

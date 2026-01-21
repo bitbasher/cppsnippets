@@ -26,6 +26,17 @@ QString ResourceTypeInfo::getResTypeString(ResourceType type)
     }
 }
 
+// Reverse lookup: Get ResourceType from folder name
+ResourceType ResourceTypeInfo::getResourceTypeFromFolderName(const QString& folderName)
+{
+    for (auto it = s_resourceTypes.constBegin(); it != s_resourceTypes.constEnd(); ++it) {
+        if (it.value().getSubDir() == folderName) {
+            return it.key();
+        }
+    }
+    return ResourceType::Unknown;
+}
+
 // Static resource type definitions with file extensions
 const QMap<ResourceType, ResourceTypeInfo> ResourceTypeInfo::s_resourceTypes = {
     {ResourceType::Unknown,

@@ -47,19 +47,19 @@ public:
                    const QString& category = QStringLiteral("uncategorized"));
     
     /**
-     * @brief Add a category folder (auto-detect if contains .scad files)
+     * @brief Add a category folder (auto-detect category from basename)
      * 
      * Scans folder for .scad files. If found, treats as category.
      * If no .scad files, ignores (empty group folder).
+     * Category name is extracted from the folder's basename.
+     * If basename matches resource type name, treats as uncategorized root folder.
      * 
-     * @param folderPath Absolute path to category folder
+     * @param dirEntry QDirEntry for the folder to scan
      * @param location ResourceLocation containing the examples folder
-     * @param category Category/group name
      * @return Number of examples added
      */
-    int addFolder(const QString& folderPath, 
-                  const platformInfo::ResourceLocation& location,
-                  const QString& category);
+    int addFolder(const QDirListing::DirEntry& dirEntry,
+                  const platformInfo::ResourceLocation& location);
     
     /**
      * @brief Get example by hierarchical key

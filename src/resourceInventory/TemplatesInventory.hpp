@@ -53,26 +53,12 @@ public:
      * 
      * Scans folder for .json template files.
      * 
-     * @param folderPath Absolute path to templates folder
+     * @param dirEntry Directory entry for the templates folder
      * @param location ResourceLocation containing the templates folder
      * @return Number of templates added
      */
-    int addFolder(const QString& folderPath, 
+    int addFolder(const QDirListing::DirEntry& dirEntry, 
                   const platformInfo::ResourceLocation& location);
-
-    /**
-     * @brief Scan templates at a single resource location
-     * @param location Resource location containing potential templates folder
-     * @return Number of templates added
-     */
-    int scanLocation(const platformInfo::ResourceLocation& location);
-
-    /**
-     * @brief Scan templates across multiple locations
-     * @param locations List of discovered resource locations
-     * @return Total number of templates added
-     */
-    int scanLocations(const QList<platformInfo::ResourceLocation>& locations);
     
     /**
      * @brief Get template by unique key
