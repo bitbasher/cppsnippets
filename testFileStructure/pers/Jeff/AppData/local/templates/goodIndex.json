@@ -1,0 +1,7 @@
+﻿{
+  "goodIndex": {
+    "prefix": "goodIndex",
+    "body": ["// goodIndex template"],
+    "description": "Test template for index verification"
+  }
+}

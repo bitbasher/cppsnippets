@@ -632,18 +632,50 @@ if(BUILD_TESTS)
     enable_testing()
 
     if(Qt6Test_FOUND)
-        add_executable(test_unit_templates_inventory_model
-            tests/test_unit_templates_inventory_model.cpp
+        add_executable(test_sa_discovery_inventory
+            tests/test_sa_discovery_inventory.cpp
         )
 
-        target_link_libraries(test_unit_templates_inventory_model PRIVATE
+        target_link_libraries(test_sa_discovery_inventory PRIVATE
             scadtemplates_lib
             Qt6::Core
             Qt6::Test
         )
 
-        set_target_properties(test_unit_templates_inventory_model PROPERTIES
-            OUTPUT_NAME test_unit_templates_inventory_model
+        set_target_properties(test_sa_discovery_inventory PROPERTIES
+            OUTPUT_NAME test_sa_discovery_inventory
+            WIN32_EXECUTABLE OFF
+        )
+
+        # Templates discovery test
+        add_executable(test_sa_templates_discovery
+            tests/test_sa_templates_discovery.cpp
+        )
+
+        target_link_libraries(test_sa_templates_discovery PRIVATE
+            scadtemplates_lib
+            Qt6::Core
+            Qt6::Test
+        )
+
+        set_target_properties(test_sa_templates_discovery PROPERTIES
+            OUTPUT_NAME test_sa_templates_discovery
+            WIN32_EXECUTABLE OFF
+        )
+
+        # Examples discovery test
+        add_executable(test_sa_examples_discovery
+            tests/test_sa_examples_discovery.cpp
+        )
+
+        target_link_libraries(test_sa_examples_discovery PRIVATE
+            scadtemplates_lib
+            Qt6::Core
+            Qt6::Test
+        )
+
+        set_target_properties(test_sa_examples_discovery PROPERTIES
+            OUTPUT_NAME test_sa_examples_discovery
             WIN32_EXECUTABLE OFF
         )
     endif()
@@ -726,7 +758,9 @@ if(BUILD_TESTS)
 
     # Build all standalone test utilities
     add_custom_target(build-all-standalone-tests
-        DEPENDS test_env_expansion test_path_discovery test_tier_standalone settings_generator
+        DEPENDS test_env_expansion test_path_discovery test_tier_standalone settings_generator 
+                test_sa_location_discovery test_sa_discovery_inventory 
+                test_sa_templates_discovery test_sa_examples_discovery
         COMMENT "Building all standalone test utilities"
     )
 

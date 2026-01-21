@@ -25,7 +25,10 @@ protected:
     
     void SetUp() override {
         // Configure test data paths in QSettings for discovery
-        QString testStructurePath = QDir::current().absolutePath() + "/testFileStructure";
+        // Tests run from build directory, so go up one level to workspace root
+        QDir currentDir = QDir::current();
+        currentDir.cdUp(); // Go from build/ to workspace root
+        QString testStructurePath = currentDir.absolutePath() + "/testFileStructure";
         QStringList testPaths = {
             testStructurePath + "/inst/OpenSCAD",
             testStructurePath + "/pers"
@@ -36,7 +39,7 @@ protected:
         settings.sync();
         
         // Use existing testFileStructure for repeatable tests  
-        // Test runs from workspace root (d:\repositories\cppsnippets\cppsnippets)
+        // Test runs from build directory, testFileStructure is in workspace root
         testDataPath = testStructurePath + "/inst/OpenSCAD/examples";
         ASSERT_TRUE(QDir(testDataPath).exists()) << "testFileStructure not found at: " << testDataPath.toStdString();
     }

@@ -24,7 +24,7 @@
 #include <resourceMetadata/ResourceTypeInfo.hpp>
 
 #ifdef USE_TEST_APP_INFO
-#include "testAppNameInfo.hpp"
+#include "ApplicationNameInfo.hpp"
 #else
 #include "applicationNameInfo.hpp"
 #endif

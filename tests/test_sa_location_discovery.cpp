@@ -17,7 +17,7 @@
 #include <QFileInfo>
 
 #ifdef USE_TEST_APP_INFO
-#include "testAppNameInfo.hpp"
+#include "ApplicationNameInfo.hpp"
 #else
 #include "applicationNameInfo.hpp"
 #endif
@@ -171,6 +171,10 @@ int main(int argc, char *argv[])
             
             if (!resourceFolders.isEmpty()) {
                 out << QString("     Resource folders: %1\n").arg(resourceFolders.join(", "));
+                // Show the unexpanded (raw) path for matching
+                if (loc.rawPath() != loc.path()) {
+                    out << QString("     Raw path (unexpanded): %1\n").arg(loc.rawPath());
+                }
             } else {
                 out << QString("     (no resource folders found)\n");
             }
