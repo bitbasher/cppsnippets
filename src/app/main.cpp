@@ -15,51 +15,53 @@
 #include "pathDiscovery/PathElement.hpp"
 #include "resourceInventory/TemplatesInventory.hpp"
 #include "resourceInventory/ExamplesInventory.hpp"
+#include "resourceInventory/UnknownInventory.hpp"
 #include "resourceMetadata/ResourceTypeInfo.hpp"
 
-// Global inventory instances
-static resourceInventory::TemplatesInventory* g_templatesInventory = nullptr;
-static resourceInventory::ExamplesInventory* g_examplesInventory = nullptr;
+// Global inventory instances (external linkage - accessible from other translation units)
+resourceInventory::TemplatesInventory* g_templatesInventory = nullptr;
+resourceInventory::ExamplesInventory* g_examplesInventory = nullptr;
+resourceInventory::UnknownInventory* g_fontsInventory = nullptr;
+resourceInventory::UnknownInventory* g_shadersInventory = nullptr;
+resourceInventory::UnknownInventory* g_librariesInventory = nullptr;
+resourceInventory::UnknownInventory* g_testsInventory = nullptr;
+resourceInventory::UnknownInventory* g_translationsInventory = nullptr;
+resourceInventory::UnknownInventory* g_colorSchemesInventory = nullptr;
+resourceInventory::UnknownInventory* g_unknownInventory = nullptr;
 
 /**
- * @brief Placeholder for unimplemented resource types
- */
-int unknownAddFolder(const QDirListing::DirEntry& dirEntry, const platformInfo::ResourceLocation& location) {
-    qWarning() << "Unimplemented resource scanner for folder:" << dirEntry.fileName()
-               << "at location:" << location.path();
-    return 0;
-}
-
-/**
- * @brief Get function pointer for addFolder based on resource type
+ * @brief Dispatch addFolder call based on resource type
  * @param resType The resource type to dispatch
- * @return Function pointer to appropriate addFolder method, or unknown handler
+ * @param dirEntry Directory entry being processed
+ * @param location Resource location context
+ * @return Number of resources added (0 for unimplemented types)
  */
-std::function<int(const QDirListing::DirEntry&, const platformInfo::ResourceLocation&)> 
-getAddFolderFunction(resourceMetadata::ResourceType resType) {
+int dispatchAddFolder(resourceMetadata::ResourceType resType,
+                      const QDirListing::DirEntry& dirEntry,
+                      const platformInfo::ResourceLocation& location) {
     using resourceMetadata::ResourceType;
     
-    static const QMap<ResourceType, std::function<int(const QDirListing::DirEntry&, const platformInfo::ResourceLocation&)>> dispatchMap = {
-        { ResourceType::Templates, [](const QDirListing::DirEntry& de, const platformInfo::ResourceLocation& loc) {
-            return g_templatesInventory->addFolder(de, loc);
-        }},
-        { ResourceType::Examples, [](const QDirListing::DirEntry& de, const platformInfo::ResourceLocation& loc) {
-            return g_examplesInventory->addFolder(de, loc);
-        }},
-        { ResourceType::Fonts, unknownAddFolder },
-        { ResourceType::Shaders, unknownAddFolder },
-        { ResourceType::Libraries, unknownAddFolder },
-        { ResourceType::Tests, unknownAddFolder },
-        { ResourceType::Translations, unknownAddFolder },
-        { ResourceType::ColorSchemes, unknownAddFolder },
-        { ResourceType::EditorColors, unknownAddFolder },
-        { ResourceType::RenderColors, unknownAddFolder },
-        { ResourceType::Group, unknownAddFolder },
-        { ResourceType::Unknown, unknownAddFolder }
-    };
-    
-    auto it = dispatchMap.find(resType);
-    return (it != dispatchMap.end()) ? *it : unknownAddFolder;
+    switch (resType) {
+        case ResourceType::Templates:
+            return g_templatesInventory->addFolder(dirEntry, location);
+        case ResourceType::Examples:
+            return g_examplesInventory->addFolder(dirEntry, location);
+        case ResourceType::Fonts:
+            return g_fontsInventory->addFolder(dirEntry, location);
+        case ResourceType::Shaders:
+            return g_shadersInventory->addFolder(dirEntry, location);
+        case ResourceType::Libraries:
+            return g_librariesInventory->addFolder(dirEntry, location);
+        case ResourceType::Tests:
+            return g_testsInventory->addFolder(dirEntry, location);
+        case ResourceType::Translations:
+            return g_translationsInventory->addFolder(dirEntry, location);
+        case ResourceType::ColorSchemes:
+            return g_colorSchemesInventory->addFolder(dirEntry, location);
+        case ResourceType::Unknown:
+        default:
+            return g_unknownInventory->addFolder(dirEntry, location);
+    }
 }
 
 /**
@@ -83,7 +85,7 @@ int resourceManager() {
                     , QDirListing::IteratorFlag::DirsOnly)) {
                     resourceMetadata::ResourceType resType = 
                         resourceMetadata::ResourceTypeInfo::getResourceTypeFromFolderName(dirEntry.fileName());
-                    getAddFolderFunction(resType)(dirEntry, location);
+                    dispatchAddFolder(resType, dirEntry, location);
                 }
             }
         }
@@ -112,6 +114,15 @@ int main(int argc, char *argv[]) {
     // Initialize global inventory instances
     g_templatesInventory = new resourceInventory::TemplatesInventory();
     g_examplesInventory = new resourceInventory::ExamplesInventory();
+    
+    // Initialize placeholder inventories for unimplemented resource types
+    g_fontsInventory = new resourceInventory::UnknownInventory();
+    g_shadersInventory = new resourceInventory::UnknownInventory();
+    g_librariesInventory = new resourceInventory::UnknownInventory();
+    g_testsInventory = new resourceInventory::UnknownInventory();
+    g_translationsInventory = new resourceInventory::UnknownInventory();
+    g_colorSchemesInventory = new resourceInventory::UnknownInventory();
+    g_unknownInventory = new resourceInventory::UnknownInventory();
     
     qDebug() << "Building resource inventory...";
     int result = resourceManager();
