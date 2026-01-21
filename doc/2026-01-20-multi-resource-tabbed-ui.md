@@ -222,17 +222,27 @@ Connects selections to Scintilla editor
   3. **Tab 1 "Examples":**
      - Add m_exampleTree directly (no splitter, full height)
      - Connect to m_examplesInventory
+     - **Configure tree model:**
+       - Two-level hierarchy: loose examples + category folders
+       - Strip `.scad` extension from display names
+       - Merge categories across all tiers (Installation/Machine/User)
+     - No attachments display
+     - No tier badges or filters
   4. Replace left panel of main splitter with m_resourceTabs
 
 **Files Modified:**
 - `src/app/mainwindow.hpp` (add member variables)
 - `src/app/mainwindow.cpp` (restructure UI creation)
+- `src/resourceInventory/ExamplesInventory.hpp` (may need display name method)
+- `src/resourceInventory/ExamplesInventory.cpp` (may need category grouping)
 
 **Success Criteria:**
 - ✅ Builds successfully
 - ✅ Left panel shows tabs
 - ✅ Templates tab displays as before (tree + small panel)
-- ✅ Examples tab shows tree full height
+- ✅ Examples tab shows two-level tree (loose + categories)
+- ✅ Example names display without .scad extension
+- ✅ Categories merge examples from all tiers
 - ✅ Clicking templates loads in Scintilla
 - ✅ Clicking examples loads in Scintilla
 - ✅ Tab switching works
@@ -274,7 +284,7 @@ Connects selections to Scintilla editor
 ---
 
 ### Phase 6: Handle Save Operations
-**Goal:** Save button respects active resource type  
+**Goal:** Save button respects active resource type and tier writability  
 **Risk:** Low - simple if/switch on active type  
 
 **Changes:**
@@ -283,6 +293,7 @@ Connects selections to Scintilla editor
   enum class ActiveResourceType { Templates, Examples };
   ActiveResourceType m_activeType = ActiveResourceType::Templates;
   QString m_currentResourceKey;  // ID of loaded resource
+  ResourceTier m_currentResourceTier;  // Track source tier
   ```
 - Update `onResourceTabChanged()` to set `m_activeType`
 - Update `onSaveClicked()`:
@@ -290,9 +301,18 @@ Connects selections to Scintilla editor
   if (m_activeType == ActiveResourceType::Templates) {
       // Save to m_templatesInventory->writeJsonContent()
   } else if (m_activeType == ActiveResourceType::Examples) {
-      // Save .scad file directly
+      if (m_currentResourceTier == ResourceTier::User) {
+          // Can overwrite original or prompt for Save As
+      } else {
+          // Must save to user-writable location
+          // Prompt for location in User examples folder
+      }
   }
   ```
+- **Save Policy:**
+  - User-tier resources: Allow overwrite or Save As
+  - Install/Machine tier resources: Force Save As to user location
+  - Update inventory immediately after save (no restart needed)
 
 **Files Modified:**
 - `src/app/mainwindow.hpp` (add state tracking)
@@ -301,6 +321,9 @@ Connects selections to Scintilla editor
 **Success Criteria:**
 - ✅ Saving templates updates .json files
 - ✅ Saving examples updates .scad files
+- ✅ User-tier examples can overwrite
+- ✅ Install/Machine tier examples force Save As
+- ✅ Inventory updates after save
 - ✅ No cross-contamination between types
 - ✅ Save disabled when nothing selected
 
@@ -403,9 +426,13 @@ Connects selections to Scintilla editor
 | File extension | `.json` | `.scad` |
 | Item type | `ResourceTemplate` | `ResourceScript` |
 | Folder name | `templates/` | `examples/` |
-| Structure | Flat files | May have category subfolders |
-| Metadata | JSON parsing | OpenSCAD comments |
+| Structure | Flat files | Two-level: loose + category folders |
+| Display name | Full filename | Strip `.scad` extension |
+| Category handling | N/A | Merge same-named categories across tiers |
+| Tier visibility | May show tier badges | Tiers hidden from user |
+| Metadata | JSON parsing | OpenSCAD comments + attachments |
 | Validation | JSON schema | OpenSCAD syntax (future) |
+| Attachments | None | Tracked but not displayed in UI |
 
 ### ResourceScript Class Status
 **Question:** Does ResourceScript already exist?  
@@ -483,17 +510,69 @@ Connects selections to Scintilla editor
 
 ---
 
+## Examples Tab Requirements (Clarified 2026-01-21)
+
+### Loading and Discovery
+- **Policy:** ExamplesInventory must be fully populated **before** GUI starts
+- **Rationale:** Example list must be immediately available for "Open" operations
+- **No Rescan:** Application never rescans at runtime (user must restart app if filesystem changes)
+- **Exception:** User-edited examples saved to writable locations will update inventory immediately
+
+### Display Structure
+- **Two-Level Tree:**
+  - Root level: Loose examples (no category) + Category folders
+  - Category level: Examples within that category
+- **Example:**
+  ```
+  anExample
+  anotherExample
+  📁 category1
+     cat1Example1
+     cat1Example2
+  📁 category2
+     cat2Example1
+  ```
+
+### File Extensions
+- **Strip .scad Extension:** Display names never show `.scad` (redundant - all examples are .scad)
+- **Example:** File `myExample.scad` displays as `myExample`
+
+### Category Handling
+- **Cross-Tier Grouping:** Categories with same name from all tiers (Installation/Machine/User) merge into single category folder
+- **Example:** 
+  - `C:\Program Files\OpenSCAD\examples\category1\` (Install tier)
+  - `C:\ProgramData\OpenSCAD\examples\category1\` (Machine tier)
+  - Both appear under one `📁 category1` branch
+- **Tier Transparency:** User doesn't see tier information - all examples of same category grouped together
+
+### Selection and Editing
+- **Double-Click:** Opens example in right-side Scintilla editor directly (no intermediate panel)
+- **Edit Button:** Same as double-click - loads into main editor
+- **No Attachments Display:** Attachment tracking exists (for future OpenSCAD integration) but not shown in UI
+- **Save Behavior:**
+  - User-tier examples: Can overwrite original or save as new file in writable location
+  - Install/Machine tier examples: Must save to user-writable location (prompt for location)
+
+### What's NOT Needed
+- ❌ No rescan/refresh button
+- ❌ No attachments list or count display
+- ❌ No tier filtering or tier badges
+- ❌ No attachment viewer
+- ❌ No status bar updates for scanning
+
+---
+
 ## Open Questions
 
-1. **ResourceScript Class:**
-   - Does it exist? 
-   - Does it handle .scad file metadata?
-   - Does it support category folders?
+~~1. **ResourceScript Class:**~~ ✅ RESOLVED
+   - Exists in `resourceItem.hpp`
+   - Handles .scad file metadata via `ResourceScript` class
+   - Supports category via `category()` method
 
-2. **Example Categories:**
-   - Are examples organized in subfolders (Basics/, Advanced/, etc.)?
-   - Should tree show hierarchy or flat list?
-   - How to handle examples with attachments?
+~~2. **Example Categories:**~~ ✅ RESOLVED (see Examples Tab Requirements above)
+   - Two-level tree: loose examples + category folders
+   - Categories merge across all tiers
+   - No tier visibility in UI
 
 3. **Template Editor Panel:**
    - What is currently displayed in the small bottom panel for templates?
@@ -521,3 +600,4 @@ Connects selections to Scintilla editor
 | Date | Author | Changes |
 |------|--------|---------|
 | 2026-01-20 | AI + User | Initial planning document created |
+| 2026-01-21 | AI + User | Added Examples Tab Requirements section with detailed policies for loading, display structure, category handling, and save behavior. Updated Phase 4 and Phase 6 to reflect clarified requirements. Resolved Open Questions 1 and 2. |

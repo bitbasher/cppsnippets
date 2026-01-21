@@ -587,6 +587,32 @@ if(BUILD_APP)
         SCADTEMPLATES_EXPORTS
     )
 
+    # Phase 2: ExamplesInventory attachment and category tests - Google Test unit test
+    add_executable(test_unit_g_examples_attachments_categories
+        tests/test_unit_g_examples_attachments_categories.cpp
+        src/resourceInventory/ExamplesInventory.cpp
+        src/resourceInventory/resourceItem.cpp
+        src/resourceMetadata/ResourceTypeInfo.cpp
+    )
+
+    target_link_libraries(test_unit_g_examples_attachments_categories PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        scadtemplates_lib
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    target_include_directories(test_unit_g_examples_attachments_categories PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/tests>
+    )
+    
+    target_compile_definitions(test_unit_g_examples_attachments_categories PRIVATE
+        PLATFORMINFO_EXPORTS
+        SCADTEMPLATES_EXPORTS
+    )
+
     target_link_libraries(test_unit_g_templates_inventory PRIVATE
         Qt6::Core
         Qt6::Gui
