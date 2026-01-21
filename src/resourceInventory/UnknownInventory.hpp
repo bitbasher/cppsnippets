@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "../platformInfo/export.hpp"
 #include <QAbstractItemModel>
 #include <QDirListing>
 #include "platformInfo/ResourceLocation.hpp"
@@ -18,10 +19,11 @@ namespace resourceInventory {
 /**
  * @class UnknownInventory
  * @brief Placeholder inventory that warns on access
+ * 
+ * Note: Does not inherit Q_OBJECT to avoid MOC/export complexity
+ * This is just a null-object pattern placeholder
  */
-class UnknownInventory : public QAbstractItemModel {
-    Q_OBJECT
-
+class PLATFORMINFO_API UnknownInventory : public QAbstractItemModel {
 public:
     UnknownInventory() = default;
     ~UnknownInventory() override = default;

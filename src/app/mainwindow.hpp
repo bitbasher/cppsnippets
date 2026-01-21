@@ -32,10 +32,9 @@ class MainWindow : public QMainWindow {
 public:
     /**
      * @brief Constructor
-    * @param inventory Pre-built resource inventory model
      * @param parent Parent widget
      */
-    explicit MainWindow(resourceInventory::TemplatesInventory* inventory, QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     
     /**
      * @brief Destructor

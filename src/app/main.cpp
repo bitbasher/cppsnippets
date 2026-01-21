@@ -66,31 +66,55 @@ int dispatchAddFolder(resourceMetadata::ResourceType resType,
 
 /**
  * @brief Discover and scan all resource locations
- * @return Populated TemplatesInventory model with discovered resources, or nullptr on failure
+ * @return 0 on success, 1 on failure
  */
 int resourceManager() {
-    int locationsBefore = 0;
     try {
         qDebug() << "Discovering resource locations...";
+        
+        // Track counts per resource type
+        QMap<resourceMetadata::ResourceType, int> resourceCounts;
+        using resourceMetadata::ResourceType;
         
         // Discover all qualified search paths using implemented discovery
         pathDiscovery::ResourcePaths pathDiscovery;
         QList<pathDiscovery::PathElement> discoveredPaths = pathDiscovery.qualifiedSearchPaths();
         
+        qDebug() << "Found" << discoveredPaths.size() << "search paths";
+        
         for (const auto& pathElem : discoveredPaths) {
             if( platformInfo::ResourceLocation::locationHasResource(pathElem) ) {
                 const platformInfo::ResourceLocation location(pathElem);
+                qDebug() << "  Scanning:" << location.path();
+                
                 for (const auto &dirEntry : QDirListing(pathElem.path()
                     , resourceMetadata::s_allResourceFolders
                     , QDirListing::IteratorFlag::DirsOnly)) {
                     resourceMetadata::ResourceType resType = 
                         resourceMetadata::ResourceTypeInfo::getResourceTypeFromFolderName(dirEntry.fileName());
-                    dispatchAddFolder(resType, dirEntry, location);
+                    
+                    int count = dispatchAddFolder(resType, dirEntry, location);
+                    resourceCounts[resType] += count;
                 }
             }
         }
         
-        qDebug() << "Resource discovery completed";
+        // Report findings
+        qDebug() << "Resource discovery completed:";
+        qDebug() << "  Templates:" << resourceCounts.value(ResourceType::Templates, 0);
+        qDebug() << "  Examples:" << resourceCounts.value(ResourceType::Examples, 0);
+        qDebug() << "  Fonts:" << resourceCounts.value(ResourceType::Fonts, 0);
+        qDebug() << "  Shaders:" << resourceCounts.value(ResourceType::Shaders, 0);
+        qDebug() << "  Libraries:" << resourceCounts.value(ResourceType::Libraries, 0);
+        qDebug() << "  Tests:" << resourceCounts.value(ResourceType::Tests, 0);
+        qDebug() << "  Translations:" << resourceCounts.value(ResourceType::Translations, 0);
+        qDebug() << "  ColorSchemes:" << resourceCounts.value(ResourceType::ColorSchemes, 0);
+        
+        int totalResources = 0;
+        for (int count : resourceCounts) {
+            totalResources += count;
+        }
+        qDebug() << "Total resources discovered:" << totalResources;
         
         return 0;
     } catch (const std::exception& e) {
@@ -132,7 +156,7 @@ int main(int argc, char *argv[]) {
     }
     
     qDebug() << "Creating main window...";
-    MainWindow window(g_templatesInventory);
+    MainWindow window;
     qDebug() << "Showing main window...";
     window.show();
     qDebug() << "Entering event loop...";

@@ -4,6 +4,7 @@
  */
 
 #include "mainwindow.hpp"
+#include "Inventories.hpp"
 #include "gui/preferencesdialog.hpp"
 #include "gui/aboutDialog.hpp"
 #include "applicationNameInfo.hpp"
@@ -45,10 +46,10 @@
 #include <QDir>
 #include <QHeaderView>
 
-MainWindow::MainWindow(resourceInventory::TemplatesInventory* inventory, QWidget *parent)
+MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_settings(std::make_unique<QSettings>(QStringLiteral("OpenSCAD"), QStringLiteral("ScadTemplates")))
-    , m_inventory(inventory)
+    , m_inventory(g_templatesInventory)
 {
     setupUi();
     setupMenus();

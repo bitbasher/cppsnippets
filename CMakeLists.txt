@@ -286,6 +286,7 @@ set(LIB_SOURCES
     src/resourceInventory/inventoryOperations.cpp
     src/resourceInventory/ExamplesInventory.cpp
     src/resourceInventory/TemplatesInventory.cpp
+    src/resourceInventory/UnknownInventory.cpp
     src/resourceInventory/FontsInventory.cpp
     src/resourceInventory/ShadersInventory.cpp
     src/resourceInventory/TranslationsInventory.cpp
