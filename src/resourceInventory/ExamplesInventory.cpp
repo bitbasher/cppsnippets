@@ -11,11 +11,17 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QDirListing>
+#include <QFont>
 
 namespace resourceInventory {
 
 using namespace resourceMetadata;
 using namespace platformInfo;
+
+ExamplesInventory::ExamplesInventory(QObject* parent)
+    : QAbstractItemModel(parent)
+{
+}
 
 bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry, 
                                     const platformInfo::ResourceLocation& location,
@@ -47,14 +53,50 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry,
     QString uniqueID = ResourceIndexer::getUniqueIDString(baseName);
     script.setUniqueID(uniqueID);
     
-    // Try to insert - fails if uniqueID already exists (atomic duplicate detection)
-    auto result = m_scripts.tryInsert(uniqueID, QVariant::fromValue(script));
-    
-    if (!result.inserted) {
+    // Check for duplicates
+    if (m_scripts.contains(uniqueID)) {
         qWarning() << "ExamplesInventory: Duplicate example ID:" << uniqueID
                    << "at" << entry.filePath();
         return false;
     }
+    
+    // Insert into storage
+    m_scripts.insert(uniqueID, script);
+    
+    // Update category mapping
+    if (!m_categoryToIds.contains(category)) {
+        // New category - add to category keys in sorted position
+        int insertPos = 0;
+        if (category.isEmpty()) {
+            // Empty category (loose files) always first
+            insertPos = 0;
+        } else {
+            // Find sorted position (skip empty if present)
+            int startIdx = m_categoryKeys.isEmpty() || !m_categoryKeys.first().isEmpty() ? 0 : 1;
+            for (int i = startIdx; i < m_categoryKeys.size(); ++i) {
+                if (category.compare(m_categoryKeys[i], Qt::CaseInsensitive) < 0) {
+                    insertPos = i;
+                    break;
+                }
+            }
+            if (insertPos == 0 && !m_categoryKeys.isEmpty()) {
+                insertPos = m_categoryKeys.size(); // append
+            }
+        }
+        
+        beginInsertRows(QModelIndex(), insertPos, insertPos);
+        m_categoryKeys.insert(insertPos, category);
+        m_categoryToIds[category] = QList<QString>();
+        endInsertRows();
+    }
+    
+    // Add script ID to category's list
+    QModelIndex categoryIndex = createIndex(categoryRow(category), 0);
+    int scriptPos = m_categoryToIds[category].size();
+    
+    beginInsertRows(categoryIndex, scriptPos, scriptPos);
+    m_categoryToIds[category].append(uniqueID);
+    endInsertRows();
     
     return true;
 }
@@ -88,7 +130,10 @@ int ExamplesInventory::addFolder(const QDirListing::DirEntry& dirEntry,
 
 QVariant ExamplesInventory::get(const QString& key) const
 {
-    return m_scripts.value(key);
+    if (m_scripts.contains(key)) {
+        return QVariant::fromValue(m_scripts.value(key));
+    }
+    return QVariant();
 }
 
 bool ExamplesInventory::contains(const QString& path) const
@@ -98,18 +143,22 @@ bool ExamplesInventory::contains(const QString& path) const
 
 QList<QVariant> ExamplesInventory::getAll() const
 {
-    return m_scripts.values();
+    QList<QVariant> all;
+    for (const ResourceScript& script : m_scripts) {
+        all.append(QVariant::fromValue(script));
+    }
+    return all;
 }
 
 QList<QVariant> ExamplesInventory::getByCategory(const QString& category) const
 {
     QList<QVariant> filtered;
     
-    for (const QVariant& var : m_scripts) {
-        if (var.canConvert<ResourceScript>()) {
-            ResourceScript script = var.value<ResourceScript>();
-            if (script.category() == category) {
-                filtered.append(var);
+    if (m_categoryToIds.contains(category)) {
+        const QList<QString>& ids = m_categoryToIds[category];
+        for (const QString& id : ids) {
+            if (m_scripts.contains(id)) {
+                filtered.append(QVariant::fromValue(m_scripts[id]));
             }
         }
     }
@@ -119,20 +168,23 @@ QList<QVariant> ExamplesInventory::getByCategory(const QString& category) const
 
 QStringList ExamplesInventory::getCategories() const
 {
+    // Return copy of sorted category keys (excluding empty for loose files)
     QStringList categories;
-    
-    for (const QVariant& var : m_scripts) {
-        if (var.canConvert<ResourceScript>()) {
-            ResourceScript script = var.value<ResourceScript>();
-            QString cat = script.category();
-            if (!cat.isEmpty() && !categories.contains(cat)) {
-                categories.append(cat);
-            }
+    for (const QString& cat : m_categoryKeys) {
+        if (!cat.isEmpty()) {
+            categories.append(cat);
         }
     }
-    
-    categories.sort(Qt::CaseInsensitive);
     return categories;
+}
+
+void ExamplesInventory::clear()
+{
+    beginResetModel();
+    m_scripts.clear();
+    m_categoryToIds.clear();
+    m_categoryKeys.clear();
+    endResetModel();
 }
 
 QStringList ExamplesInventory::scanAttachments(const QString& scriptPath) const
@@ -161,6 +213,188 @@ QStringList ExamplesInventory::scanAttachments(const QString& scriptPath) const
     }
     
     return attachments;
+}
+
+// ============================================================================
+// QAbstractItemModel Implementation
+// ============================================================================
+
+QModelIndex ExamplesInventory::index(int row, int column, const QModelIndex& parent) const
+{
+    if (row < 0 || column < 0 || column >= 2) {
+        return QModelIndex();
+    }
+    
+    if (!parent.isValid()) {
+        // Top level: category rows
+        if (row >= m_categoryKeys.size()) {
+            return QModelIndex();
+        }
+        // Use category name as internal pointer (stored in m_categoryKeys)
+        return createIndex(row, column, quintptr(row));
+    } else {
+        // Child level: script rows within category
+        QString category = m_categoryKeys.value(parent.row());
+        const QList<QString>& ids = m_categoryToIds.value(category);
+        
+        if (row >= ids.size()) {
+            return QModelIndex();
+        }
+        
+        // Encode parent row in high bits, child row in low bits
+        quintptr id = (quintptr(parent.row()) << 32) | quintptr(row);
+        return createIndex(row, column, id);
+    }
+}
+
+QModelIndex ExamplesInventory::parent(const QModelIndex& index) const
+{
+    if (!index.isValid()) {
+        return QModelIndex();
+    }
+    
+    quintptr id = index.internalId();
+    
+    // Check if this is a child item (has parent)
+    if (id > quintptr(m_categoryKeys.size())) {
+        // Extract parent row from high bits
+        int parentRow = int(id >> 32);
+        if (parentRow >= 0 && parentRow < m_categoryKeys.size()) {
+            return createIndex(parentRow, 0, quintptr(parentRow));
+        }
+    }
+    
+    // Top-level item (category) has no parent
+    return QModelIndex();
+}
+
+int ExamplesInventory::rowCount(const QModelIndex& parent) const
+{
+    if (!parent.isValid()) {
+        // Top level: number of categories
+        return m_categoryKeys.size();
+    }
+    
+    if (parent.column() != 0) {
+        return 0; // Only column 0 has children
+    }
+    
+    // Child level: number of scripts in category
+    QString category = m_categoryKeys.value(parent.row());
+    return m_categoryToIds.value(category).size();
+}
+
+int ExamplesInventory::columnCount(const QModelIndex& parent) const
+{
+    Q_UNUSED(parent);
+    return 2; // Name, ID
+}
+
+QVariant ExamplesInventory::data(const QModelIndex& index, int role) const
+{
+    if (!index.isValid()) {
+        return QVariant();
+    }
+    
+    if (!index.parent().isValid()) {
+        // Category row (parent)
+        QString category = m_categoryKeys.value(index.row());
+        
+        if (role == Qt::DisplayRole && index.column() == 0) {
+            if (category.isEmpty()) {
+                return QStringLiteral("(Loose Files)");
+            }
+            return category;
+        }
+        
+        if (role == Qt::FontRole && index.column() == 0) {
+            QFont font;
+            font.setBold(true);
+            return font;
+        }
+        
+        return QVariant();
+    }
+    
+    // Script row (child)
+    QString category = m_categoryKeys.value(index.parent().row());
+    const QList<QString>& ids = m_categoryToIds.value(category);
+    
+    if (index.row() >= ids.size()) {
+        return QVariant();
+    }
+    
+    QString scriptId = ids.at(index.row());
+    const ResourceScript& script = m_scripts.value(scriptId);
+    
+    if (role == Qt::DisplayRole) {
+        switch (index.column()) {
+            case 0: return script.displayName();
+            case 1: return script.uniqueID();
+            default: return QVariant();
+        }
+    }
+    
+    if (role == Qt::UserRole) {
+        return QVariant::fromValue(script);
+    }
+    
+    if (role == Qt::ToolTipRole && index.column() == 0) {
+        QString tooltip = QString("Path: %1\nTier: %2\nID: %3")
+            .arg(script.path())
+            .arg(tierToString(script.tier()))
+            .arg(script.uniqueID());
+        
+        if (script.hasAttachments()) {
+            tooltip += "\nAttachments: " + script.attachments().join(", ");
+        }
+        
+        return tooltip;
+    }
+    
+    return QVariant();
+}
+
+QVariant ExamplesInventory::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+        switch (section) {
+            case 0: return QStringLiteral("Name");
+            case 1: return QStringLiteral("ID");
+            default: return QVariant();
+        }
+    }
+    return QVariant();
+}
+
+Qt::ItemFlags ExamplesInventory::flags(const QModelIndex& index) const
+{
+    if (!index.isValid()) {
+        return Qt::NoItemFlags;
+    }
+    
+    Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+    
+    // Only child items (scripts) are editable, not categories
+    if (index.parent().isValid()) {
+        flags |= Qt::ItemIsEditable;
+    }
+    
+    return flags;
+}
+
+int ExamplesInventory::categoryRow(const QString& category) const
+{
+    return m_categoryKeys.indexOf(category);
+}
+
+int ExamplesInventory::scriptRowInCategory(const QString& uniqueID, const QString& category) const
+{
+    if (!m_categoryToIds.contains(category)) {
+        return -1;
+    }
+    
+    return m_categoryToIds[category].indexOf(uniqueID);
 }
 
 } // namespace resourceInventory

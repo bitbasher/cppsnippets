@@ -12,6 +12,7 @@
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 #include "resourceItem.hpp"
 
+#include <QAbstractItemModel>
 #include <QHash>
 #include <QString>
 #include <QVariant>
@@ -21,15 +22,21 @@
 namespace resourceInventory {
 
 /**
- * @brief Inventory for example scripts with attachment detection
+ * @brief Tree model inventory for example scripts with category grouping
  * 
- * Stores ResourceScript objects in QHash using file path as key.
- * Provides O(1) lookup and filtered list generation for GUI.
+ * Implements QAbstractItemModel for QTreeView display.
+ * Tree structure:
+ * - Root level: Categories (folders) + loose files (no category)
+ * - Child level: Example files within categories
+ * 
+ * Storage: QHash for O(1) lookup by unique ID
+ * Categories merged across all tiers (Installation, Machine, User)
  */
-class PLATFORMINFO_API ExamplesInventory {
+class PLATFORMINFO_API ExamplesInventory : public QAbstractItemModel {
+    Q_OBJECT
 public:
-    ExamplesInventory() = default;
-    ~ExamplesInventory() = default;
+    explicit ExamplesInventory(QObject* parent = nullptr);
+    ~ExamplesInventory() override = default;
     
     /**
      * @brief Add an example script to inventory
@@ -103,7 +110,16 @@ public:
     /**
      * @brief Clear all examples
      */
-    void clear() { m_scripts.clear(); }
+    void clear();
+
+    // QAbstractItemModel overrides
+    QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
+    QModelIndex parent(const QModelIndex& index) const override;
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    Qt::ItemFlags flags(const QModelIndex& index) const override;
 
 private:
     /**
@@ -118,12 +134,41 @@ private:
     QStringList scanAttachments(const QString& scriptPath) const;
     
     /**
-     * @brief Primary storage - indexed by file path
+     * @brief Primary storage - indexed by unique ID
      * 
-     * Key: Absolute file path to .scad file
-     * Value: QVariant containing ResourceScript
+     * Key: uniqueID from ResourceIndexer (e.g., "0", "1", "2")
+     * Value: ResourceScript object
      */
-    QHash<QString, QVariant> m_scripts;
+    QHash<QString, ResourceScript> m_scripts;
+    
+    /**
+     * @brief Category-to-IDs mapping for tree structure
+     * 
+     * Key: Category name (empty QString for loose files)
+     * Value: List of script unique IDs in that category
+     */
+    QHash<QString, QList<QString>> m_categoryToIds;
+    
+    /**
+     * @brief Stable ordering of category names for tree rows
+     * Categories sorted alphabetically, empty category (loose files) appears first
+     */
+    QStringList m_categoryKeys;
+    
+    /**
+     * @brief Helper: Get internal row number for a category
+     * @param category Category name
+     * @return Row index in m_categoryKeys, or -1 if not found
+     */
+    int categoryRow(const QString& category) const;
+    
+    /**
+     * @brief Helper: Get internal row number for a script within category
+     * @param uniqueID Script's unique ID
+     * @param category Category name
+     * @return Row index in m_categoryToIds[category], or -1 if not found
+     */
+    int scriptRowInCategory(const QString& uniqueID, const QString& category) const;
 };
 
 } // namespace resourceInventory
