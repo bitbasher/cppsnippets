@@ -91,7 +91,8 @@ bool ExamplesInventory::addExample(const QDirListing::DirEntry& entry,
     }
     
     // Add script ID to category's list
-    QModelIndex categoryIndex = createIndex(categoryRow(category), 0);
+    int catRow = categoryRow(category);
+    QModelIndex categoryIndex = createIndex(catRow, 0, quintptr(-1 - catRow));
     int scriptPos = m_categoryToIds[category].size();
     
     beginInsertRows(categoryIndex, scriptPos, scriptPos);
@@ -230,8 +231,9 @@ QModelIndex ExamplesInventory::index(int row, int column, const QModelIndex& par
         if (row >= m_categoryKeys.size()) {
             return QModelIndex();
         }
-        // Use category name as internal pointer (stored in m_categoryKeys)
-        return createIndex(row, column, quintptr(row));
+        // Use NEGATIVE values for categories to distinguish from children
+        // Category index: -(row + 1), so cat 0 = -1, cat 1 = -2, etc.
+        return createIndex(row, column, quintptr(-1 - row));
     } else {
         // Child level: script rows within category
         QString category = m_categoryKeys.value(parent.row());
@@ -241,8 +243,8 @@ QModelIndex ExamplesInventory::index(int row, int column, const QModelIndex& par
             return QModelIndex();
         }
         
-        // Encode parent row in high bits, child row in low bits
-        quintptr id = (quintptr(parent.row()) << 32) | quintptr(row);
+        // Child index: encode parent row in high bits, child row in low bits, add 1 to ensure positive
+        quintptr id = (quintptr(parent.row() + 1) << 16) | quintptr(row + 1);
         return createIndex(row, column, id);
     }
 }
@@ -253,18 +255,22 @@ QModelIndex ExamplesInventory::parent(const QModelIndex& index) const
         return QModelIndex();
     }
     
-    quintptr id = index.internalId();
+    qintptr id = qintptr(index.internalId());
     
-    // Check if this is a child item (has parent)
-    if (id > quintptr(m_categoryKeys.size())) {
+    // Category items have negative IDs
+    if (id < 0) {
+        return QModelIndex(); // Top-level category has no parent
+    }
+    
+    // Child items have positive IDs with parent encoded
+    if (id > 0) {
         // Extract parent row from high bits
-        int parentRow = int(id >> 32);
+        int parentRow = int((quintptr(id) >> 16) - 1);
         if (parentRow >= 0 && parentRow < m_categoryKeys.size()) {
-            return createIndex(parentRow, 0, quintptr(parentRow));
+            return createIndex(parentRow, 0, quintptr(-1 - parentRow));
         }
     }
     
-    // Top-level item (category) has no parent
     return QModelIndex();
 }
 
@@ -279,8 +285,20 @@ int ExamplesInventory::rowCount(const QModelIndex& parent) const
         return 0; // Only column 0 has children
     }
     
-    // Child level: number of scripts in category
-    QString category = m_categoryKeys.value(parent.row());
+    // Check if parent is a category (negative id) or a script (positive id)
+    qintptr id = qintptr(parent.internalId());
+    if (id >= 0) {
+        // This is a script item (positive id), scripts have no children
+        return 0;
+    }
+    
+    // Category item (negative id): number of scripts in category
+    // Category row is encoded as -(row + 1), so row = -(id + 1)
+    int categoryRow = -int(id + 1);
+    if (categoryRow < 0 || categoryRow >= m_categoryKeys.size()) {
+        return 0;
+    }
+    QString category = m_categoryKeys.value(categoryRow);
     return m_categoryToIds.value(category).size();
 }
 

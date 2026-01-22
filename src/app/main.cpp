@@ -70,22 +70,17 @@ int dispatchAddFolder(resourceMetadata::ResourceType resType,
  */
 int resourceManager() {
     try {
-        qDebug() << "Discovering resource locations...";
-        
         // Track counts per resource type
         QMap<resourceMetadata::ResourceType, int> resourceCounts;
         using resourceMetadata::ResourceType;
         
-        // Discover all qualified search paths using implemented discovery
+        // Discover all qualified search paths
         pathDiscovery::ResourcePaths pathDiscovery;
         QList<pathDiscovery::PathElement> discoveredPaths = pathDiscovery.qualifiedSearchPaths();
-        
-        qDebug() << "Found" << discoveredPaths.size() << "search paths";
         
         for (const auto& pathElem : discoveredPaths) {
             if( platformInfo::ResourceLocation::locationHasResource(pathElem) ) {
                 const platformInfo::ResourceLocation location(pathElem);
-                qDebug() << "  Scanning:" << location.path();
                 
                 for (const auto &dirEntry : QDirListing(pathElem.path()
                     , resourceMetadata::s_allResourceFolders
@@ -103,12 +98,6 @@ int resourceManager() {
         qDebug() << "Resource discovery completed:";
         qDebug() << "  Templates:" << resourceCounts.value(ResourceType::Templates, 0);
         qDebug() << "  Examples:" << resourceCounts.value(ResourceType::Examples, 0);
-        qDebug() << "  Fonts:" << resourceCounts.value(ResourceType::Fonts, 0);
-        qDebug() << "  Shaders:" << resourceCounts.value(ResourceType::Shaders, 0);
-        qDebug() << "  Libraries:" << resourceCounts.value(ResourceType::Libraries, 0);
-        qDebug() << "  Tests:" << resourceCounts.value(ResourceType::Tests, 0);
-        qDebug() << "  Translations:" << resourceCounts.value(ResourceType::Translations, 0);
-        qDebug() << "  ColorSchemes:" << resourceCounts.value(ResourceType::ColorSchemes, 0);
         
         int totalResources = 0;
         for (int count : resourceCounts) {
@@ -127,39 +116,41 @@ int resourceManager() {
 }
 
 int main(int argc, char *argv[]) {
-    qDebug() << "Starting" << appInfo::displayName << "application...";
-    
-    QApplication app(argc, argv);
-    
-    app.setApplicationName(appInfo::displayName);
-    app.setApplicationVersion(appInfo::version);
-    app.setOrganizationName(appInfo::organization);
-    
-    // Initialize global inventory instances
-    g_templatesInventory = new resourceInventory::TemplatesInventory();
-    g_examplesInventory = new resourceInventory::ExamplesInventory();
-    
-    // Initialize placeholder inventories for unimplemented resource types
-    g_fontsInventory = new resourceInventory::UnknownInventory();
-    g_shadersInventory = new resourceInventory::UnknownInventory();
-    g_librariesInventory = new resourceInventory::UnknownInventory();
-    g_testsInventory = new resourceInventory::UnknownInventory();
-    g_translationsInventory = new resourceInventory::UnknownInventory();
-    g_colorSchemesInventory = new resourceInventory::UnknownInventory();
-    g_unknownInventory = new resourceInventory::UnknownInventory();
-    
-    qDebug() << "Building resource inventory...";
-    int result = resourceManager();
-    if (result != 0) {
-        qCritical() << "Failed to build resource inventory";
-        return result;
+    try {
+        QApplication app(argc, argv);
+        
+        app.setApplicationName(appInfo::displayName);
+        app.setApplicationVersion(appInfo::version);
+        app.setOrganizationName(appInfo::organization);
+        
+        // Initialize global inventory instances
+        g_templatesInventory = new resourceInventory::TemplatesInventory();
+        g_examplesInventory = new resourceInventory::ExamplesInventory();
+        
+        // Initialize placeholder inventories for unimplemented resource types
+        g_fontsInventory = new resourceInventory::UnknownInventory();
+        g_shadersInventory = new resourceInventory::UnknownInventory();
+        g_librariesInventory = new resourceInventory::UnknownInventory();
+        g_testsInventory = new resourceInventory::UnknownInventory();
+        g_translationsInventory = new resourceInventory::UnknownInventory();
+        g_colorSchemesInventory = new resourceInventory::UnknownInventory();
+        g_unknownInventory = new resourceInventory::UnknownInventory();
+        
+        int result = resourceManager();
+        if (result != 0) {
+            qCritical() << "Failed to build resource inventory";
+            return result;
+        }
+        
+        MainWindow window;
+        window.show();
+        
+        return app.exec();
+    } catch (const std::exception& e) {
+        qCritical() << "EXCEPTION in main():" << e.what();
+        return 1;
+    } catch (...) {
+        qCritical() << "UNKNOWN EXCEPTION in main()";
+        return 1;
     }
-    
-    qDebug() << "Creating main window...";
-    MainWindow window;
-    qDebug() << "Showing main window...";
-    window.show();
-    qDebug() << "Entering event loop...";
-    
-    return app.exec();
 }

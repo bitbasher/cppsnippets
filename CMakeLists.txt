@@ -396,6 +396,82 @@ if(BUILD_APP)
         WIN32_EXECUTABLE ON
     )
 
+    # ========== UI FACTORING TEST EXECUTABLES ==========
+    # Test Templates Tab Only
+    add_executable(test_main_templates EXCLUDE_FROM_ALL 
+        src/app/test_main_templates.cpp
+        src/app/mainwindow.cpp
+        src/app/mainwindow.hpp
+        src/gui/preferencesdialog.cpp
+        src/gui/preferencesdialog.hpp
+        src/gui/platformInfoWidget.cpp
+        src/gui/platformInfoWidget.hpp
+        src/gui/dialogButtonBar.cpp
+        src/gui/dialogButtonBar.hpp
+        src/gui/aboutDialog.cpp
+        src/gui/aboutDialog.hpp
+        src/gui/sysInfoDialog.cpp
+        src/gui/sysInfoDialog.hpp
+    )
+    target_link_libraries(test_main_templates PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(test_main_templates PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    )
+    set_target_properties(test_main_templates PROPERTIES
+        OUTPUT_NAME test_main_templates
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Test Examples Tab Only
+    add_executable(test_main_examples EXCLUDE_FROM_ALL 
+        src/app/test_main_examples.cpp
+        src/app/mainwindow.cpp
+        src/app/mainwindow.hpp
+        src/gui/preferencesdialog.cpp
+        src/gui/preferencesdialog.hpp
+        src/gui/platformInfoWidget.cpp
+        src/gui/platformInfoWidget.hpp
+        src/gui/dialogButtonBar.cpp
+        src/gui/dialogButtonBar.hpp
+        src/gui/aboutDialog.cpp
+        src/gui/aboutDialog.hpp
+        src/gui/sysInfoDialog.cpp
+        src/gui/sysInfoDialog.hpp
+    )
+    target_link_libraries(test_main_examples PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(test_main_examples PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    )
+    set_target_properties(test_main_examples PROPERTIES
+        OUTPUT_NAME test_main_examples
+        WIN32_EXECUTABLE OFF
+    )
+
+    # Test Combined Tabs
+    add_executable(test_main_combined EXCLUDE_FROM_ALL 
+        src/app/test_main_combined.cpp
+        src/app/mainwindow.cpp
+        src/app/mainwindow.hpp
+        src/gui/preferencesdialog.cpp
+        src/gui/preferencesdialog.hpp
+        src/gui/platformInfoWidget.cpp
+        src/gui/platformInfoWidget.hpp
+        src/gui/dialogButtonBar.cpp
+        src/gui/dialogButtonBar.hpp
+        src/gui/aboutDialog.cpp
+        src/gui/aboutDialog.hpp
+        src/gui/sysInfoDialog.cpp
+        src/gui/sysInfoDialog.hpp
+    )
+    target_link_libraries(test_main_combined PRIVATE scadtemplates_lib ${QT_LIBRARIES})
+    target_include_directories(test_main_combined PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+    )
+    set_target_properties(test_main_combined PROPERTIES
+        OUTPUT_NAME test_main_combined
+        WIN32_EXECUTABLE OFF
+    )
+
     # Environment variable expansion test utility (standalone)
     add_executable(test_sa_env_expansion EXCLUDE_FROM_ALL src/tools/test_sa_env_expansion.cpp)
     target_link_libraries(test_sa_env_expansion PRIVATE Qt6::Core)

@@ -45,6 +45,8 @@
 #include <QRegularExpression>
 #include <QDir>
 #include <QHeaderView>
+#include <QTabWidget>
+#include <resourceInventory/ExamplesInventory.hpp>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -76,14 +78,40 @@ void MainWindow::setupUi() {
     
     QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
     
-    // Create a splitter for resizable panels
-    QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
+    // Create main horizontal splitter
+    QSplitter* mainSplitter = new QSplitter(Qt::Horizontal, this);
     
-    // Left panel - template browser
-    QWidget* leftPanel = new QWidget(this);
-    QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
-    leftLayout->setContentsMargins(0, 0, 0, 0);
+    // ========== LEFT PANEL: Tab widget for resource types ==========
+    m_resourceTabs = new QTabWidget(this);
     
+    // Build each tab
+    setupTemplatesTab(m_resourceTabs);
+    setupExamplesTab(m_resourceTabs);
+    
+    // Connect tab change signal
+    connect(m_resourceTabs, QOverload<int>::of(&QTabWidget::currentChanged),
+            this, &MainWindow::onResourceTabChanged);
+    
+    mainSplitter->addWidget(m_resourceTabs);
+    
+    // Setup main editor panel
+    setupMainEditor(mainSplitter);
+    
+    // Set initial sizes (1:2 ratio for left:right)
+    mainSplitter->setSizes({400, 800});
+    
+    mainLayout->addWidget(mainSplitter);
+}
+
+void MainWindow::setupTemplatesTab(QWidget* parentContainer) {
+    QWidget* templatesTabWidget = new QWidget();
+    QVBoxLayout* templatesTabLayout = new QVBoxLayout(templatesTabWidget);
+    templatesTabLayout->setContentsMargins(0, 0, 0, 0);
+    
+    // Create vertical splitter: tree (top) + editor (bottom)
+    m_templatesSplitter = new QSplitter(Qt::Vertical, this);
+    
+    // Search + tree section
     QGroupBox* listGroup = new QGroupBox(tr("Templates"), this);
     QVBoxLayout* listLayout = new QVBoxLayout(listGroup);
     
@@ -101,12 +129,12 @@ void MainWindow::setupUi() {
     m_templateTree->setRootIsDecorated(true);
     m_templateTree->setSortingEnabled(true);
     m_templateTree->setUniformRowHeights(true);
-    // Configure columns: Name stretches, ID fits content
+    // Configure columns
     m_templateTree->header()->setStretchLastSection(false);
-    m_templateTree->header()->setSectionResizeMode(0, QHeaderView::Interactive); // Name - user resizable
-    m_templateTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents); // ID - auto size
-    m_templateTree->setColumnWidth(0, 300); // Initial width for Name
-    m_templateTree->expandAll(); // Expand all tier nodes by default
+    m_templateTree->header()->setSectionResizeMode(0, QHeaderView::Interactive);
+    m_templateTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_templateTree->setColumnWidth(0, 300);
+    m_templateTree->expandAll();
     connect(m_templateTree->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &MainWindow::onInventorySelectionChanged);
     listLayout->addWidget(m_templateTree);
@@ -132,14 +160,13 @@ void MainWindow::setupUi() {
     buttonLayout->addWidget(m_editBtn);
     listLayout->addLayout(buttonLayout);
     
-    // Initialize button visibility
     updateTemplateButtons();
     
-    leftLayout->addWidget(listGroup);
+    m_templatesSplitter->addWidget(listGroup);
     
-    // Template editor section
-    QGroupBox* editorGroup = new QGroupBox(tr("Template Editor"), this);
-    QVBoxLayout* editorLayout = new QVBoxLayout(editorGroup);
+    // Small editor panel (bottom of Templates tab)
+    m_editorGroup = new QGroupBox(tr("Template Editor"), this);
+    QVBoxLayout* editorLayout = new QVBoxLayout(m_editorGroup);
     
     QHBoxLayout* nameLayout = new QHBoxLayout();
     nameLayout->addWidget(new QLabel(tr("Name:"), this));
@@ -170,11 +197,48 @@ void MainWindow::setupUi() {
     editorButtonLayout->addWidget(m_cancelBtn);
     editorLayout->addLayout(editorButtonLayout);
     
-    leftLayout->addWidget(editorGroup);
+    m_templatesSplitter->addWidget(m_editorGroup);
+    m_templatesSplitter->setSizes({300, 150});
     
-    splitter->addWidget(leftPanel);
+    templatesTabLayout->addWidget(m_templatesSplitter);
     
-    // Right panel - main text editor
+    // Cast to QTabWidget and add tab
+    QTabWidget* tabs = qobject_cast<QTabWidget*>(parentContainer);
+    if (tabs) {
+        tabs->addTab(templatesTabWidget, tr("Templates"));
+    }
+}
+
+void MainWindow::setupExamplesTab(QWidget* parentContainer) {
+    QWidget* examplesTabWidget = new QWidget();
+    QVBoxLayout* examplesTabLayout = new QVBoxLayout(examplesTabWidget);
+    examplesTabLayout->setContentsMargins(0, 0, 0, 0);
+    
+    QGroupBox* examplesGroup = new QGroupBox(tr("Examples"), this);
+    QVBoxLayout* examplesLayout = new QVBoxLayout(examplesGroup);
+    
+    m_exampleTree = new QTreeView(this);
+    if (g_examplesInventory) {
+        m_exampleTree->setModel(g_examplesInventory);
+    }
+    m_exampleTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_exampleTree->setAlternatingRowColors(true);
+    m_exampleTree->setRootIsDecorated(true);
+    m_exampleTree->setSortingEnabled(false);
+    m_exampleTree->setUniformRowHeights(true);
+    m_exampleTree->expandAll();
+    examplesLayout->addWidget(m_exampleTree);
+    
+    examplesTabLayout->addWidget(examplesGroup);
+    
+    // Cast to QTabWidget and add tab
+    QTabWidget* tabs = qobject_cast<QTabWidget*>(parentContainer);
+    if (tabs) {
+        tabs->addTab(examplesTabWidget, tr("Examples"));
+    }
+}
+
+void MainWindow::setupMainEditor(QWidget* parentContainer) {
     QWidget* rightPanel = new QWidget(this);
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setContentsMargins(0, 0, 0, 0);
@@ -196,12 +260,17 @@ void MainWindow::setupUi() {
     
     rightLayout->addWidget(mainEditorGroup);
     
-    splitter->addWidget(rightPanel);
-    
-    // Set initial sizes (1:2 ratio)
-    splitter->setSizes({400, 800});
-    
-    mainLayout->addWidget(splitter);
+    // Cast to QSplitter and add widget
+    QSplitter* splitter = qobject_cast<QSplitter*>(parentContainer);
+    if (splitter) {
+        splitter->addWidget(rightPanel);
+    }
+}
+
+void MainWindow::onResourceTabChanged(int index) {
+    qDebug() << "Resource tab changed to:" << index;
+    // Tab 0 = Templates, Tab 1 = Examples
+    // Can add syntax highlighting switching here in Phase 5
 }
 
 void MainWindow::setupMenus() {
@@ -365,11 +434,35 @@ void MainWindow::onDeleteTemplate() {
         return;
     }
     
+    // Check if template is read-only (Installation or Machine tier)
+    if (m_selectedItem.tier() != resourceInventory::ResourceTier::User) {
+        QString tierName = (m_selectedItem.tier() == resourceInventory::ResourceTier::Installation) 
+            ? tr("Installation") : tr("Machine");
+        QMessageBox::warning(this, tr("Cannot Delete"),
+            tr("Template '%1' is in the %2 tier and is read-only.\n\n"
+               "Only User tier templates can be deleted.").arg(m_selectedItem.name(), tierName));
+        return;
+    }
+    
     if (QMessageBox::question(this, tr("Delete Template"),
             tr("Delete template '%1'?").arg(m_selectedItem.name()),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
-        // TODO: Implement delete logic
-        statusBar()->showMessage(tr("Deleted template: %1").arg(m_selectedItem.name()));
+        // Delete the file
+        QFile file(m_selectedItem.path());
+        if (file.remove()) {
+            statusBar()->showMessage(tr("Deleted template: %1").arg(m_selectedItem.name()));
+            // Clear selection and editor
+            m_selectedItem = resourceInventory::ResourceTemplate();
+            m_prefixEdit->clear();
+            m_bodyEdit->clear();
+            m_descriptionEdit->clear();
+            m_sourceEdit->clear();
+            updateTemplateButtons();
+            refreshInventory();
+        } else {
+            QMessageBox::warning(this, tr("Delete Failed"),
+                tr("Could not delete file: %1").arg(m_selectedItem.path()));
+        }
     }
 }
 
@@ -391,9 +484,23 @@ void MainWindow::onCopyTemplate() {
 }
 
 void MainWindow::onEditTemplate() {
+    // Check if template is read-only (Installation or Machine tier)
+    if (m_selectedItem.tier() != resourceInventory::ResourceTier::User) {
+        QString tierName = (m_selectedItem.tier() == resourceInventory::ResourceTier::Installation) 
+            ? tr("Installation") : tr("Machine");
+        QMessageBox::warning(this, tr("Cannot Edit"),
+            tr("Template '%1' is in the %2 tier and is read-only.\n\n"
+               "Use Copy to create an editable copy in your User folder.").arg(m_selectedItem.name(), tierName));
+        return;
+    }
+    
     m_editMode = true;
     m_prefixEdit->setReadOnly(false);
+    m_prefixEdit->setEnabled(true);
     m_descriptionEdit->setReadOnly(false);
+    m_descriptionEdit->setEnabled(true);
+    m_bodyEdit->setReadOnly(false);
+    m_bodyEdit->setEnabled(true);
     updateTemplateButtons();
 }
 
@@ -408,6 +515,31 @@ void MainWindow::onSaveTemplate() {
         return;
     }
     
+    // If editing an existing template that is not new/copy
+    if (!m_selectedItem.path().isEmpty()) {
+        // Check if original is read-only (Installation or Machine tier)
+        if (m_selectedItem.tier() != resourceInventory::ResourceTier::User) {
+            QString tierName = (m_selectedItem.tier() == resourceInventory::ResourceTier::Installation) 
+                ? tr("Installation") : tr("Machine");
+            QMessageBox::warning(this, tr("Cannot Save"),
+                tr("Template '%1' is in the %2 tier and is read-only.\n\n"
+                   "Use Copy to create an editable copy in your User folder.").arg(m_selectedItem.name(), tierName));
+            return;
+        }
+        
+        // Save to original location for User tier templates
+        if (m_selectedItem.tier() == resourceInventory::ResourceTier::User) {
+            if (saveTemplateToPath(m_selectedItem.path(), prefix, body, description)) {
+                m_editMode = false;
+                setEditorFieldsEnabled(false);
+                statusBar()->showMessage(tr("Saved template: %1").arg(prefix));
+                updateTemplateButtons();
+                return;
+            }
+        }
+    }
+    
+    // New template or copy - save to user folder
     ResourceTemplate tmpl;
     tmpl.setPrefix(prefix);
     tmpl.setBody(body);
@@ -418,6 +550,7 @@ void MainWindow::onSaveTemplate() {
     
     if (saveTemplateToUser(tmpl)) {
         m_editMode = false;
+        setEditorFieldsEnabled(false);
         refreshInventory();
         statusBar()->showMessage(tr("Saved template: %1").arg(prefix));
         updateTemplateButtons();
@@ -426,8 +559,7 @@ void MainWindow::onSaveTemplate() {
 
 void MainWindow::onCancelEdit() {
     m_editMode = false;
-    m_prefixEdit->setReadOnly(true);
-    m_descriptionEdit->setReadOnly(true);
+    setEditorFieldsEnabled(false);
     if (!m_selectedItem.path().isEmpty()) {
         populateEditorFromSelection(m_selectedItem);
     } else {
@@ -471,6 +603,9 @@ void MainWindow::onInventorySelectionChanged() {
 
 void MainWindow::populateEditorFromSelection(const resourceInventory::ResourceTemplate& item) {
     m_prefixEdit->setText(item.name());
+    
+    // Disable editing by default - will be enabled by Edit button
+    setEditorFieldsEnabled(false);
 
     // Prefer structured parse via TemplateParser/JSON to extract body/description/source
     QFile file(item.path());
@@ -615,6 +750,55 @@ bool MainWindow::saveTemplateToUser(const ResourceTemplate& tmpl) {
     
     statusBar()->showMessage(tr("Template saved to: %1").arg(filePath), 3000);
     return true;
+}
+
+bool MainWindow::saveTemplateToPath(const QString& filePath, const QString& prefix, const QString& body, const QString& description) {
+    // Build JSON in VS Code snippet format
+    QJsonObject snippetContent;
+    
+    // Body as array of lines
+    QStringList bodyLines = body.split('\n');
+    QJsonArray bodyArray;
+    for (const QString& line : bodyLines) {
+        bodyArray.append(line);
+    }
+    snippetContent["body"] = bodyArray;
+    snippetContent["prefix"] = prefix;
+    snippetContent["description"] = description;
+    snippetContent["_source"] = QStringLiteral("user");
+    
+    // Use prefix as key
+    QJsonObject root;
+    root[prefix] = snippetContent;
+    
+    // Write to file
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, tr("Save Failed"),
+            tr("Could not write to file: %1").arg(filePath));
+        return false;
+    }
+    
+    QJsonDocument doc(root);
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    
+    return true;
+}
+
+void MainWindow::setEditorFieldsEnabled(bool enabled) {
+    m_prefixEdit->setReadOnly(!enabled);
+    m_prefixEdit->setEnabled(enabled || !m_selectedItem.path().isEmpty()); // Always show content
+    m_descriptionEdit->setReadOnly(!enabled);
+    m_descriptionEdit->setEnabled(enabled || !m_selectedItem.path().isEmpty());
+    m_bodyEdit->setReadOnly(!enabled);
+    m_bodyEdit->setEnabled(enabled || !m_selectedItem.path().isEmpty());
+    
+    // Visual feedback - dim when disabled
+    QString style = enabled ? QString() : QStringLiteral("background-color: #f0f0f0;");
+    m_prefixEdit->setStyleSheet(style);
+    m_descriptionEdit->setStyleSheet(style);
+    m_bodyEdit->setStyleSheet(style);
 }
 
 void MainWindow::applyFilterToTree(const QString& text) {
