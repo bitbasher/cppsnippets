@@ -1,0 +1,13 @@
+{
+  "unicode_multilingual_template": {
+    "prefix": "unicode_test",
+    "body": [
+      "// English: The quick red fox",
+      "// Amharic: ፈጣኑ ቀይ ቀበሮ",
+      "// Bulgarian: Бързата червена лисица",
+      "// Czech: Rychlý červený lišák",
+      "// Polish: Szybki czerwony lis",
+      "// Symbols: ✓ ✗ ∞ € £"
+    ]
+  }
+}

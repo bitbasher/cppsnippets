@@ -123,7 +123,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(INFO "Display build configuration info at end of cmake config" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Build test suite" OFF)
-option(BUILD_APP "Build Qt application" OFF)  # Disabled: GUI still uses Phase 1 architecture
+option(BUILD_APP "Build Qt application" ON)
 option(USE_QSCINTILLA "Enable QScintilla editor integration" OFF)
 
 # Export compile commands for IDE support
@@ -132,9 +132,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Auto-detect Qt6 path based on compiler
 if(NOT DEFINED CMAKE_PREFIX_PATH OR CMAKE_PREFIX_PATH STREQUAL "")
     if(MSVC)
-        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/msvc2022_64")
+        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.1/msvc2022_64")
     elseif(MINGW)
-        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.0/mingw_64")
+        set(QT6_DEFAULT_PATH "C:/bin/Qt/6.10.1/mingw_64")
     else()
         set(QT6_DEFAULT_PATH "")
     endif()

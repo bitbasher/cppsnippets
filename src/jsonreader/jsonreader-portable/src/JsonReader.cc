@@ -1,4 +1,4 @@
-#include "JsonReader.hpp"
+#include "JsonReader/JsonReader.hpp"
 
 #include <QFile>
 

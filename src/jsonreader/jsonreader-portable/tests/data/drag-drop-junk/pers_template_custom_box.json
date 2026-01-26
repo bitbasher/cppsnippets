@@ -1,0 +1,21 @@
+{
+  "name": "User's Custom Box",
+  "description": "Custom box template created by user",
+  "scope": "source.scad",
+  "body": [
+    "// User-created custom box template",
+    "// Location: pers/Jeff/Documents/OpenSCAD/templates/",
+    "// This is a user-customized template",
+    "module custom_box(width, depth, height, wall_thickness) {",
+    "    difference() {",
+    "        cube([${1:width}, ${2:depth}, ${3:height}]);",
+    "        translate([${4:wall_thickness}, ${5:wall_thickness}, ${6:wall_thickness}])",
+    "            cube([width - 2*wall_thickness, depth - 2*wall_thickness, height]);",
+    "    }",
+    "}",
+    "",
+    "custom_box(${7:20}, ${8:20}, ${9:10}, ${10:2});",
+    "$0"
+  ],
+  "prefix": "custom_box_user"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Sphere with parameters",
+  "description": "Parametric sphere from installation OpenSCAD",
+  "scope": "source.scad",
+  "body": [
+    "// Parametric sphere template from installation",
+    "// Location: inst/OpenSCAD/templates/",
+    "// Radius variable",
+    "r = ${1:5};",
+    "",
+    "sphere(r=${2:r}, $fn=${3:50});",
+    "$0"
+  ],
+  "prefix": "sphere_param"
+}

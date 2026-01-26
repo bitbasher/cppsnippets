@@ -1,4 +1,4 @@
-#include "JsonWriter/JsonWriter.h"
+#include "JsonWriter/JsonWriter.hpp"
 
 #include <QFile>
 #include <QSaveFile>

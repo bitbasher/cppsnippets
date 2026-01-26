@@ -7,15 +7,14 @@
 #include "ResourceIndexer.hpp"
 #include "../resourceMetadata/ResourceTypeInfo.hpp"
 #include "../scadtemplates/legacy_template_converter.hpp"
-#include "JsonWriter/JsonWriter.h"
+#include "JsonWriter/JsonWriter.hpp"
+#include "JsonReader/JsonReader.hpp"
 
 #include <QDir>
 #include <QDirListing>
 #include <QFileInfo>
 #include <QDebug>
-#include <QFile>
 #include <QJsonDocument>
-#include <QJsonParseError>
 #include <QCoreApplication>
 #include <QVariant>
 
@@ -101,30 +100,15 @@ QJsonObject TemplatesInventory::getJsonContent(const QString& key) const
 
 QJsonObject TemplatesInventory::parseJsonFile(const QString& filePath) const
 {
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "TemplatesInventory: Cannot open JSON file:" << filePath;
+    // Use JsonReader for consistent error reporting
+    JsonErrorInfo err;
+    QJsonObject jsonObj;
+    
+    if (!JsonReader::readObject(filePath.toStdString(), jsonObj, err)) {
+        qWarning() << "TemplatesInventory: JSON read error:" 
+                   << QString::fromStdString(err.formatError());
         return QJsonObject();
     }
-    
-    QByteArray jsonData = file.readAll();
-    file.close();
-    
-    QJsonParseError parseError;
-    QJsonDocument doc = QJsonDocument::fromJson(jsonData, &parseError);
-    
-    if (parseError.error != QJsonParseError::NoError) {
-        qWarning() << "TemplatesInventory: JSON parse error in" << filePath 
-                   << ":" << parseError.errorString();
-        return QJsonObject();
-    }
-    
-    if (!doc.isObject()) {
-        qWarning() << "TemplatesInventory: JSON file is not an object:" << filePath;
-        return QJsonObject();
-    }
-    
-    QJsonObject jsonObj = doc.object();
     
     // Unwrap snippet: Modern format has wrapper key (e.g., {"cube_basic": {...}})
     // Extract the first (and only) snippet's content
