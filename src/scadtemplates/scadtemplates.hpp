@@ -14,29 +14,6 @@
  * @author Jeff Hayes
  * @copyright MIT License
  * 
- * @section usage Usage
- * 
- * @code{.cpp}
- * #include <scadtemplates/scadtemplates.hpp>
- * #include <iostream>
- * 
- * int main() {
- *     scadtemplates::SnippetManager manager;
- *     
- *     // Create and add a template
- *     scadtemplates::Template tmpl("cube", "cube([$1, $2, $3]);", "Create a cube");
- *     manager.addTemplate(tmpl);
- *     
- *     // Find a template
- *     auto found = manager.findByPrefix("cube");
- *     if (found) {
- *         std::cout << found->getBody() << std::endl;
- *     }
- *     
- *     return 0;
- * }
- * @endcode
- * 
  * @section metadata Application Metadata
  * 
  * For application name, version, and build information:
@@ -73,9 +50,6 @@
 #pragma once
 
 #include "export.hpp"
-#include "template.hpp"
-#include "template_parser.hpp"
-#include "template_manager.hpp"
 
 /**
  * @namespace scadtemplates
