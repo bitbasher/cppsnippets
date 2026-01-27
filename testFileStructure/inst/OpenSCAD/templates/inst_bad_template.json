@@ -1,0 +1,8 @@
+{
+  "prefix": "sphere_param,
+  "body": [
+    "sphere($fn = ${1:16}, r = ${2:5});",
+    "$0"
+  ],
+  "description": "Parametric sphere"
+}
