@@ -39,8 +39,6 @@ using ResourceAccess = resourceMetadata::Access;
  * Can be used directly for simple resources or subclassed for complex ones.
  */
 class PLATFORMINFO_API ResourceItem {
-private:
-    QString m_uniqueID;             // Unique identifier for inventory storage (e.g., "1000-cube")
 
 public:
     explicit ResourceItem(
@@ -87,7 +85,10 @@ public:
     
     // For QVariant storage
     static int metaTypeId();
-    
+
+private:
+    QString m_uniqueID;             // Unique identifier for inventory storage (e.g., "1000-cube")
+
 protected:
     // Friend access for inventories to set immutable properties
     friend class TemplatesInventory;
@@ -231,6 +232,17 @@ private:
     
     static inline const QString defaultVersion = QStringLiteral("1");
     
+    // From resourceItem:
+    // QString m_path;                 // Current file path
+    // QString m_name;                 // Base name (no extension)
+    // QString m_displayName;          // User-friendly display name
+    // QString m_description;          // Human-readable description
+    // QString m_category;             // Category/folder classification
+    
+    // ResourceType m_type = ResourceType::Unknown;    // Resource type (for serialization/identification)
+    // ResourceTier m_tier = ResourceTier::User;       // Installation/Machine/User tier
+    // ResourceAccess m_access = ResourceAccess::ReadOnly; // Read-only or writable
+
     QString m_format;       // MIME type, e.g., "text/scad.template"
     QString m_source;       // Source tag: "legacy-converted", "cppsnippet-made", "openscad-made"
     QString m_version;      // Version string

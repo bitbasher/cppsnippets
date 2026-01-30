@@ -59,7 +59,7 @@ public:
      * @return JSON object in modern format with _source field
      */
     static QJsonObject templateToJson(const ResourceTemplate& tmpl, 
-                                       const QString& source = QStringLiteral("cppsnippet-made"));
+                const QString& source = QStringLiteral("cppsnippet-made"));
 
     /**
      * @brief Convert a template to JSON format

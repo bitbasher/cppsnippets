@@ -5,8 +5,11 @@
 
 #include "scadtemplates/template_parser.hpp"
 #include "jsonreader/JsonReader.hpp"
+#include "resourceInventory/resourceIndexer.hpp"
+
 #include <QFile>
 #include <QJsonDocument>
+#include <QJsonParseError>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QString>
@@ -59,6 +62,9 @@ static bool isModernFormat(const QJsonObject& json) {
     
     return hasValidStructure;
 }
+
+
+
 static ResourceTemplate parseLegacyTemplate(const QJsonObject& json) {
     QString key = json["key"].toString();
     QString content = json["content"].toString();
@@ -121,7 +127,10 @@ static QList<ResourceTemplate> parseModernTemplate(const QJsonObject& root) {
         } else {
             tmpl.setSource(QStringLiteral("vscode-snippet"));
         }
-        
+            // NOW generate unique ID after validation succeeds - use ResourceIndexer
+        QString uniqueID = ResourceIndexer::getUniqueIDString(templateName);
+        tmpl.setUniqueID(uniqueID);
+
         results.append(tmpl);
     }
     
@@ -137,10 +146,18 @@ ParseResult TemplateParser::parseJson(const QString& jsonContent) {
         return result;
     }
     
-    // Parse JSON
-    QJsonDocument doc = QJsonDocument::fromJson(jsonContent.toUtf8());
+    // Parse JSON with detailed error reporting
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonContent.toUtf8(), &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        result.errorMessage = QString("JSON parse error at offset %1: %2")
+            .arg(parseError.offset)
+            .arg(parseError.errorString());
+        return result;
+    }
+
     if (!doc.isObject()) {
-        result.errorMessage = QStringLiteral("Invalid JSON: not an object");
+        result.errorMessage = QStringLiteral("Invalid JSON: root element is not an object");
         return result;
     }
     
@@ -156,31 +173,27 @@ ParseResult TemplateParser::parseJson(const QString& jsonContent) {
             if (!templates.empty()) {
                 result.templates = templates;
                 result.success = true;
-                return result;
             }
         }
     }
-    
-    // Check if it's legacy format
-    if (isLegacyFormat(root)) {
+    else if (isLegacyFormat(root)) {  // Check if it's legacy format
         // Parse as legacy template
         ResourceTemplate tmpl = parseLegacyTemplate(root);
         result.templates.append(tmpl);
         result.success = true;
-        return result;
     }
-    
-    // Try modern format (even without marker)
-    if (isModernFormat(root)) {
+    else if (isModernFormat(root)) { // Try modern format (even without marker)
         auto templates = parseModernTemplate(root);
         if (!templates.empty()) {
             result.templates = templates;
             result.success = true;
-            return result;
         }
     }
     
-    result.errorMessage = QStringLiteral("Failed to identify JSON format (not legacy or modern template)");
+    if(!result.success)
+        result.errorMessage = QStringLiteral("Failed to identify JSON format (legacy nor modern)");
+    else
+        result.errorMessage.clear();
     return result;
 }
 
@@ -218,6 +231,25 @@ ParseResult TemplateParser::parseFile(const QString& filePath) {
     }
     
     QString content = QString::fromUtf8(file.readAll());
+    file.close();
+
+    // Parse with detailed error reporting before delegating to parseJson()
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(content.toUtf8(), &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        result.errorMessage = QString("JSON parse error in %1 at offset %2: %3")
+            .arg(filePath)
+            .arg(parseError.offset)
+            .arg(parseError.errorString());
+        return result;
+    }
+
+    if (!doc.isObject()) {
+        result.errorMessage = QStringLiteral("Invalid JSON: root element is not an object");
+        return result;
+    }
+
+    // Delegate to parseJson to reuse format detection and conversions
     return parseJson(content);
 }
 

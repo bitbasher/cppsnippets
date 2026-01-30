@@ -1,0 +1,19 @@
+{
+  "name": "Linear Extrude from Machine",
+  "description": "Linear extrude template - Machine",
+  "scope": "source.scad",
+  "body": [
+    "// Linear extrude template from machine",
+    "// Location: C:\ProgramData\OpenSCAD\templates",
+    "linear_extrude(",
+    "  height=${1:10},",
+    "  center=${2:false},",
+    "  slices=${3:10},",
+    "  twist=${4:0}",
+    ") {",
+    "  ${5:circle(r=5);}",
+    "}",
+    "$0"
+  ],
+  "prefix": "linear_extrude_machine"
+}
